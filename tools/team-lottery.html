@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebTools - Useful Browser Tools</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+        }
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .tool-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+        .tool-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .tool-card p {
+            color: #666;
+            font-size: 0.95em;
+            margin-bottom: 15px;
+        }
+        .tool-link {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background 0.3s;
+            font-size: 0.9em;
+        }
+        .tool-link:hover {
+            background: #764ba2;
+        }
+        .copy-url {
+            font-size: 0.8em;
+            color: #999;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+        .copy-url:hover {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛠️ WebTools</h1>
+            <p>Your collection of useful browser tools</p>
+        </header>
+
+        <div class="tools-grid">
+            <div class="tool-card">
+                <h3>Team Lottery</h3>
+                <p>Generate a team for your grass-touching adventures!</p>
+                <a href="/tools/team-lottery.html" class="tool-link">Open Tool</a>
+                <div class="copy-url" onclick="copyUrl('/tools/team-lottery.html')">📋 Copy Link</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyUrl(url) {
+            const fullUrl = window.location.origin + url;
+            navigator.clipboard.writeText(fullUrl).then(() => {
+                alert('Link copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>
