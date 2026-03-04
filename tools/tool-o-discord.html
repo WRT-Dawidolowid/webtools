@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pobieracz avatarów Discord</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+body {
+    font-family: "Outfit", sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin: 0;
+    padding: 10px;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-family: "Outfit", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    border: 2px solid rgba(255,255,255,0.3);
+    transition: 0.3s;
+}
+
+.back-btn:hover {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: rgba(255,255,255,0.6);
+    transform: translateY(-2px);
+}
+
+h1 {
+    font-weight: 700;
+    font-size: 1.8em;
+    margin-bottom: 20px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.language-selector select {
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.3);
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-family: "Outfit", sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+}
+
+.language-selector select option {
+    background: #4a4a4a;
+    color: white;
+}
+
+.input-section {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+textarea {
+    flex: 1;
+    min-width: 200px;
+    height: 150px;
+    padding: 15px;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.3);
+    outline: none;
+    font-size: 16px;
+    font-family: "Outfit", sans-serif;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    resize: none;
+    transition: 0.3s;
+    box-sizing: border-box;
+}
+
+textarea:focus {
+    border-color: rgba(255,255,255,0.6);
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.players-skills {
+    flex: 1;
+    min-width: 250px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.3);
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.avatar-entry {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin: 8px 0;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 8px;
+    border-radius: 8px;
+    align-items: flex-start;
+}
+
+.avatar-entry img {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+}
+
+.avatar-meta {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.avatar-meta input[type="text"] {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: none;
+    font-family: "Outfit", sans-serif;
+    background: rgba(255, 255, 255, 0.06);
+    color: white;
+    font-size: 13px;
+}
+
+.avatar-controls {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.avatar-controls select, .avatar-controls button {
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    background: rgba(255,255,255,0.15);
+    color: white;
+    font-size: 12px;
+    transition: 0.2s;
+}
+
+.avatar-controls button:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+button.primary {
+    margin-top: 20px;
+    padding: 14px 40px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: "Outfit", sans-serif;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+button.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+.update-btn {
+    padding: 10px 15px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.1);
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+    font-family: "Outfit", sans-serif;
+}
+
+.update-btn:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.teams {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 40px;
+    flex-wrap: wrap;
+}
+
+.team {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 25px;
+    border-radius: 16px;
+    min-width: 250px;
+    flex: 1;
+    max-width: 280px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.team h2 {
+    margin-top: 0;
+    font-size: 1.3em;
+    margin-bottom: 15px;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 15px;
+    }
+    .top-bar {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .back-btn, .language-selector, .language-selector select {
+        width: 100%;
+        box-sizing: border-box;
+        justify-content: center;
+    }
+    h1 {
+        font-size: 1.5em;
+        margin-bottom: 15px;
+    }
+    .input-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    textarea {
+        height: 150px;
+        font-size: 14px;
+    }
+    .players-skills {
+        flex: 1;
+        max-height: 420px;
+    }
+    button.primary {
+        width: 100%;
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+    .teams {
+        gap: 15px;
+    }
+    .team {
+        width: 100%;
+        max-width: 100%;
+        padding: 20px;
+    }
+    .team h2 {
+        font-size: 1.1em;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="top-bar">
+        <a href="/webtools/" class="back-btn" id="backBtn">⬅️ Wróć</a>
+        
+        <div class="language-selector">
+            <select id="language" onchange="changeLanguage()">
+                <option value="pl">Polski</option>
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+            </select>
+        </div>
+    </div>
+
+    <h1 id="title">🔧 Tool'o Discord</h1>
+
+    <div class="input-section">
+        <div style="flex:1; min-width:200px; display: flex; flex-direction: column;">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:10px;">
+                <span style="font-size: 14px; opacity: 0.8;" id="inputLabel">Wklej User ID lub linki:</span>
+                <button onclick="updateAvatarList()" class="update-btn" id="updateBtn">Aktualizuj</button>
+            </div>
+            <textarea id="avatarsInput" placeholder="Wklej user ID (każdy w nowej linii) lub URL'e avatarów Discord (każdy w nowej linii)">80351110224678912
+https://cdn.discordapp.com/embed/avatars/0.png</textarea>
+        </div>
+        
+        <div class="players-skills" id="playersSkills">
+            <div style="opacity:0.7; padding-top: 100px;">Kliknij "Aktualizuj" aby wygenerować listę</div>
+        </div>
+    </div>
+
+    <br>
+    <button onclick="downloadAll()" id="downloadBtn" class="primary">Pobierz wszystkie</button>
+
+    <div class="teams">
+        <div class="team">
+            <h2 id="teamATitle">Informacje</h2>
+            <div id="info">
+                Wystarczy, że podasz samo <strong>User ID</strong> użytkownika Discord, a narzędzie automatycznie wyciągnie jego avatar (nie potrzebujesz żadnych tokenów). Możesz również podawać bezpośrednie linki do avatarów.
+            </div>
+        </div>
+
+        <div class="team">
+            <h2 id="teamBTitle">Preset</h2>
+            <div id="teamB">
+                <button onclick="exportPreset()" style="width:100%; padding:8px; margin-bottom:6px; border-radius: 8px; border: none; cursor: pointer; background: rgba(255,255,255,0.2); color: white;">Eksportuj listę</button>
+                <button onclick="importPreset()" style="width:100%; padding:8px; border-radius: 8px; border: none; cursor: pointer; background: rgba(255,255,255,0.2); color: white;">Importuj listę</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const translations = {
+    pl: {
+        title: "🔧 Tool'o Discord",
+        downloadBtn: "Pobierz wszystkie",
+        infoTitle: "Informacje",
+        presetTitle: "Preset",
+        exportBtn: "Eksportuj listę",
+        importBtn: "Importuj listę",
+        backBtn: "⬅️ Wróć",
+        inputLabel: "Wklej User ID lub linki:",
+        updateBtn: "Aktualizuj",
+        infoText: "Wystarczy, że podasz samo <strong>User ID</strong> użytkownika Discord, a narzędzie automatycznie wyciągnie jego avatar (nie potrzebujesz żadnych tokenów). Możesz również podawać bezpośrednie linki do avatarów.",
+        errorMsg: "Błąd (Złe ID / API przeciążone)"
+    },
+    en: {
+        title: "🔧 Tool'o Discord",
+        downloadBtn: "Download all",
+        infoTitle: "Info",
+        presetTitle: "Preset",
+        exportBtn: "Export list",
+        importBtn: "Import list",
+        backBtn: "⬅️ Back",
+        inputLabel: "Paste User IDs or Links:",
+        updateBtn: "Update",
+        infoText: "Just provide a Discord <strong>User ID</strong> and the tool will automatically fetch the avatar (no tokens needed). You can also use direct image links.",
+        errorMsg: "Error (Bad ID or API limits)"
+    },
+    es: {
+        title: "🔧 Tool'o Discord",
+        downloadBtn: "Descargar todo",
+        infoTitle: "Información",
+        presetTitle: "Preset",
+        exportBtn: "Exportar lista",
+        importBtn: "Importar lista",
+        backBtn: "⬅️ Volver",
+        inputLabel: "Pegar ID de usuario o Enlaces:",
+        updateBtn: "Actualizar",
+        infoText: "Solo proporciona el <strong>ID de usuario</strong> de Discord y la herramienta obtendrá automáticamente el avatar (sin necesidad de tokens). También puedes usar enlaces directos.",
+        errorMsg: "Error (Mal ID o Límite de API)"
+    },
+    fr: {
+        title: "🔧 Tool'o Discord",
+        downloadBtn: "Tout télécharger",
+        infoTitle: "Informations",
+        presetTitle: "Preset",
+        exportBtn: "Exporter la liste",
+        importBtn: "Importer la liste",
+        backBtn: "⬅️ Retour",
+        inputLabel: "Coller les ID ou Liens:",
+        updateBtn: "Mettre à jour",
+        infoText: "Fournissez simplement l'<strong>ID utilisateur</strong> Discord et l'outil récupérera automatiquement l'avatar (aucun jeton requis). Vous pouvez aussi utiliser des liens directs.",
+        errorMsg: "Erreur (Mauvais ID ou Limite API)"
+    },
+    de: {
+        title: "🔧 Tool'o Discord",
+        downloadBtn: "Alle herunterladen",
+        infoTitle: "Information",
+        presetTitle: "Preset",
+        exportBtn: "Liste exportieren",
+        importBtn: "Liste importieren",
+        backBtn: "⬅️ Zurück",
+        inputLabel: "Benutzer-IDs oder Links:",
+        updateBtn: "Aktualisieren",
+        infoText: "Geben Sie einfach eine Discord <strong>Benutzer-ID</strong> ein und das Tool ruft automatisch den Avatar ab (keine Tokens erforderlich). Direkte Links funktionieren ebenfalls.",
+        errorMsg: "Fehler (Falsche ID oder API-Limit)"
+    }
+};
+
+function sanitizeUrl(url) {
+    try {
+        const u = new URL(url);
+        return u.origin + u.pathname;
+    } catch (e) {
+        return null;
+    }
+}
+
+function detectExtension(url) {
+    const m = url.match(/\.([a-zA-Z0-9]+)$/);
+    return m ? m[1].toLowerCase() : null;
+}
+
+function buildPreviewUrl(base, size) {
+    return base + '?size=' + size;
+}
+
+// Zmienione na stabilne i darmowe API JAPI.rest
+async function fetchUserData(userId) {
+    try {
+        const res = await fetch(`https://japi.rest/discord/v1/user/${userId}`);
+        if (!res.ok) return null;
+        const json = await res.json();
+        return json.data; // JAPI zwraca dane w obiekcie "data"
+    } catch (e) {
+        return null;
+    }
+}
+
+async function updateAvatarList() {
+    const lang = document.getElementById("language").value;
+    const errorText = translations[lang].errorMsg;
+    
+    // Wskaźnik ładowania
+    const btn = document.getElementById("updateBtn");
+    btn.innerText = "Ładowanie...";
+    btn.style.opacity = "0.7";
+    btn.disabled = true;
+    
+    let lines = document.getElementById("avatarsInput").value
+        .split("\n")
+        .map(l => l.trim())
+        .filter(l => l !== "");
+
+    if (lines.length === 0) {
+        document.getElementById("playersSkills").innerHTML = '<div style="opacity:0.7;">Brak linków/ID</div>';
+        btn.innerText = translations[lang].updateBtn;
+        btn.style.opacity = "1";
+        btn.disabled = false;
+        return;
+    }
+
+    let parts = [];
+    for (let i = 0; i < lines.length; i++) {
+        const raw = lines[i];
+        const possibleUrl = sanitizeUrl(raw);
+        if (possibleUrl) {
+            parts.push({ type: 'url', raw, base: possibleUrl, ext: detectExtension(possibleUrl), fileName: (possibleUrl.split('/').pop() || `avatar_${i}`).replace(/[^a-zA-Z0-9._-]/g,'_') });
+            continue;
+        }
+        
+        // Sprawdzanie ID (od 15 do 22 cyfr)
+        if (/^\d{15,22}$/.test(raw)) {
+            let user = await fetchUserData(raw);
+            if (user && user.id) {
+                // Wybieramy avatar (jeśli go brak to bierze domyślny z JAPI)
+                let baseLink = user.avatarURL || user.defaultAvatarURL;
+                
+                if (baseLink) {
+                    // Czyścimy adres URL (usuwamy domyślne query parametry jak ?size=)
+                    const urlObj = new URL(baseLink);
+                    urlObj.search = '';
+                    const base = urlObj.toString();
+                    
+                    const isGif = base.includes('.gif');
+                    const ext = isGif ? 'gif' : 'png';
+                    
+                    // Nazwa użytkownika
+                    const username = user.globalName || user.username || user.id;
+                    parts.push({ type: 'user', raw: raw, base, ext, fileName: `${username}`.replace(/[^a-zA-Z0-9._-]/g,'_') });
+                } else {
+                    parts.push({ type: 'user', raw: raw, base: '', ext: 'png', fileName: `user_${raw}`, error: true });
+                }
+            } else {
+                parts.push({ type: 'user', raw: raw, base: '', ext: 'png', fileName: `user_${raw}`, error: true });
+            }
+            continue;
+        }
+        
+        // Fallback: traktujemy jako zwykły ciąg znaków, jeśli to ani link, ani ID
+        parts.push({ type: 'raw', raw, base: raw, ext: detectExtension(raw), fileName: raw.replace(/[^a-zA-Z0-9._-]/g,'_') });
+    }
+
+    let html = parts.map((p, i) => {
+        const preview = p.base ? buildPreviewUrl(p.base.replace(/\.\w+$/,''), 256) : '';
+        const fileName = p.fileName || `avatar_${i}`;
+        let opts = '';
+        if (p.ext === 'gif') {
+            opts += `<option value="gif">GIF</option>`;
+        } else {
+            opts += `<option value="webp">WEBP</option><option value="png">PNG</option><option value="jpg">JPG</option>`;
+        }
+        const inputVal = p.raw;
+        const imgTag = p.base ? `<img src="${preview}" alt="avatar">` : `<div style="width:64px;height:64px;border-radius:8px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;text-align:center;font-size:10px;color:#ffb3b3;">Błąd</div>`;
+        const disabledNote = p.error ? `<div style="font-size:12px;color:#ffb3b3;">${errorText}</div>` : '';
+        return `
+        <div class="avatar-entry" data-base="${p.base}" data-filename="${fileName}">
+            ${imgTag}
+            <div class="avatar-meta">
+                <input type="text" value="${inputVal}" data-baseinput="${i}" readonly>
+                <div class="avatar-controls">
+                    <select data-size="${i}" style="color: black; background-color: white;">
+                        <option value="128">128</option>
+                        <option value="256" selected>256</option>
+                        <option value="512">512</option>
+                        <option value="1024">1024</option>
+                        <option value="2048">2048</option>
+                    </select>
+                    <select data-ext="${i}" style="color: black; background-color: white;">
+                        ${opts}
+                    </select>
+                    <button onclick="downloadOne(${i})" ${p.error ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>Pobierz</button>
+                </div>
+                ${disabledNote}
+            </div>
+        </div>
+        `;
+    }).join("");
+
+    document.getElementById("playersSkills").innerHTML = html;
+    
+    // Reset przycisku
+    btn.innerText = translations[lang].updateBtn;
+    btn.style.opacity = "1";
+    btn.disabled = false;
+}
+
+function changeLanguage() {
+    const lang = document.getElementById("language").value;
+    document.getElementById("title").textContent = translations[lang].title;
+    document.getElementById("downloadBtn").textContent = translations[lang].downloadBtn;
+    document.getElementById("teamATitle").textContent = translations[lang].infoTitle;
+    document.getElementById("teamBTitle").textContent = translations[lang].presetTitle;
+    document.getElementById("backBtn").textContent = translations[lang].backBtn;
+    document.getElementById("inputLabel").textContent = translations[lang].inputLabel;
+    document.getElementById("updateBtn").textContent = translations[lang].updateBtn;
+    document.getElementById("info").innerHTML = translations[lang].infoText;
+    
+    const entries = getEntries();
+    if(entries.length > 0) {
+        updateAvatarList(); 
+    }
+}
+
+function getEntries() {
+    const container = document.getElementById("playersSkills");
+    const entries = Array.from(container.querySelectorAll('.avatar-entry'));
+    return entries.map((el, i) => {
+        const base = el.getAttribute('data-base') || '';
+        const fileName = el.getAttribute('data-filename') || `avatar_${i}`;
+        const size = el.querySelector(`select[data-size="${i}"]`)?.value || '256';
+        const ext = el.querySelector(`select[data-ext="${i}"]`)?.value || detectExtension(base) || 'webp';
+        return { base, fileName, size, ext };
+    });
+}
+
+function buildDownloadUrl(entry) {
+    let url = entry.base || '';
+    const currentExt = detectExtension(url);
+    if (currentExt && currentExt !== entry.ext && !url.includes('.gif')) {
+        url = url.replace(new RegExp('\\.' + currentExt + '$'), '.' + entry.ext);
+    }
+    return buildPreviewUrl(url, entry.size);
+}
+
+// Poprawiona metoda pobierania, radząca sobie z CORS na różne sposoby
+function triggerDownload(url, name) {
+    if (!url) return;
+    
+    // Próbujemy pobrać plik przez JS aby wymusić nazwę pliku
+    fetch(url, { mode: 'cors' })
+        .then(response => response.blob())
+        .then(blob => {
+            const blobUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = blobUrl;
+            a.download = name;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(blobUrl);
+            document.body.removeChild(a);
+        })
+        .catch(err => {
+            // Bezpieczny fallback w przypadku blokady CORS przez przeglądarkę
+            console.log("CORS zablokował fetch, używam fallbacku (otwarcie w nowej karcie)");
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = name; // Działa na tej samej domenie, na innej otwiera obraz
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+}
+
+function downloadOne(index) {
+    const entries = getEntries();
+    const e = entries[index];
+    if (!e || !e.base) return;
+    const url = buildDownloadUrl(e);
+    const ext = e.ext.split('?')[0];
+    const name = e.fileName + '.' + ext;
+    triggerDownload(url, name);
+}
+
+function downloadAll() {
+    const entries = getEntries();
+    if (entries.length === 0) return;
+    let delay = 0;
+    entries.forEach((e) => {
+        if (!e.base) return;
+        setTimeout(() => {
+            const url = buildDownloadUrl(e);
+            const ext = e.ext.split('?')[0];
+            const name = e.fileName + '.' + ext;
+            triggerDownload(url, name);
+        }, delay);
+        delay += 350; // Zwiększone opóźnienie aby przeglądarka nie zablokowała wielu pobierań na raz
+    });
+}
+
+function exportPreset() {
+    const text = document.getElementById("avatarsInput").value;
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "avatars_list.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function importPreset() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".txt,.csv,.list";
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            document.getElementById("avatarsInput").value = event.target.result;
+            updateAvatarList();
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+// Inicjalizacja podglądu początkowego pliku
+updateAvatarList();
+</script>
+
+</body>
+</html>
