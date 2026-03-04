@@ -27,15 +27,40 @@ body {
     backdrop-filter: blur(10px);
 }
 
+/* NOWE STYLE - PASEK GÓRNY I PRZYCISK POWROTU */
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    font-family: "Outfit", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    border: 2px solid rgba(255,255,255,0.3);
+    transition: 0.3s;
+}
+
+.back-btn:hover {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: rgba(255,255,255,0.6);
+    transform: translateY(-2px);
+}
+
 h1 {
     font-weight: 700;
     font-size: 1.8em;
     margin-bottom: 20px;
     text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-}
-
-.language-selector {
-    margin-bottom: 20px;
 }
 
 .language-selector select {
@@ -47,6 +72,12 @@ h1 {
     font-family: "Outfit", sans-serif;
     font-size: 14px;
     cursor: pointer;
+    outline: none;
+}
+
+.language-selector select option {
+    background: #4a4a4a;
+    color: white;
 }
 
 .input-section {
@@ -194,6 +225,18 @@ button:hover {
         padding: 15px;
     }
     
+    /* MOBILE FIX DLA PASKA GÓRNEGO */
+    .top-bar {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .back-btn, .language-selector, .language-selector select {
+        width: 100%;
+        box-sizing: border-box;
+        justify-content: center;
+    }
+    
     h1 {
         font-size: 1.5em;
         margin-bottom: 15px;
@@ -245,14 +288,19 @@ button:hover {
 <body>
 
 <div class="container">
-    <div class="language-selector">
-        <select id="language" onchange="changeLanguage()">
-            <option value="pl">Polski</option>
-            <option value="en">English</option>
-            <option value="es">Español</option>
-            <option value="fr">Français</option>
-            <option value="de">Deutsch</option>
-        </select>
+    <!-- DODANY PASEK GÓRNY (Przycisk Back + Język) -->
+    <div class="top-bar">
+        <a href="/webtools/" class="back-btn" id="backBtn">⬅️ Wróć</a>
+        
+        <div class="language-selector">
+            <select id="language" onchange="changeLanguage()">
+                <option value="pl">Polski</option>
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+            </select>
+        </div>
     </div>
 
     <h1 id="title">🏀 Losowanie składów</h1>
@@ -293,7 +341,8 @@ const translations = {
         teamB: "Drużyna B",
         exportBtn: "Eksportuj preset",
         importBtn: "Importuj preset",
-        savePreset: "Zapisz preset"
+        savePreset: "Zapisz preset",
+        backBtn: "⬅️ Wróć"
     },
     en: {
         title: "🏀 Team Lottery",
@@ -302,7 +351,8 @@ const translations = {
         teamB: "Team B",
         exportBtn: "Export preset",
         importBtn: "Import preset",
-        savePreset: "Save preset"
+        savePreset: "Save preset",
+        backBtn: "⬅️ Back"
     },
     es: {
         title: "🏀 Sorteo de Equipos",
@@ -311,7 +361,8 @@ const translations = {
         teamB: "Equipo B",
         exportBtn: "Exportar preset",
         importBtn: "Importar preset",
-        savePreset: "Guardar preset"
+        savePreset: "Guardar preset",
+        backBtn: "⬅️ Volver"
     },
     fr: {
         title: "🏀 Tirage au Sort",
@@ -320,7 +371,8 @@ const translations = {
         teamB: "Équipe B",
         exportBtn: "Exporter preset",
         importBtn: "Importer preset",
-        savePreset: "Enregistrer preset"
+        savePreset: "Enregistrer preset",
+        backBtn: "⬅️ Retour"
     },
     de: {
         title: "🏀 Mannschaftsauslosung",
@@ -329,13 +381,16 @@ const translations = {
         teamB: "Team B",
         exportBtn: "Preset exportieren",
         importBtn: "Preset importieren",
-        savePreset: "Preset speichern"
+        savePreset: "Preset speichern",
+        backBtn: "⬅️ Zurück"
     }
 };
 
 document.getElementById("players").addEventListener("input", updatePlayerSkills);
 
 function updatePlayerSkills() {
+    const lang = document.getElementById("language").value;
+    
     let players = document.getElementById("players").value
         .split("\n")
         .map(p => p.trim())
@@ -349,9 +404,10 @@ function updatePlayerSkills() {
         </div>
     `).join("");
 
+    // Dynamiczne pobieranie tłumaczeń dla przycisków
     skillsHtml += `
-        <button onclick="exportPreset()" style="width: 100%; margin-top: 10px; padding: 8px; font-size: 12px;">Eksportuj preset</button>
-        <button onclick="importPreset()" style="width: 100%; margin-top: 5px; padding: 8px; font-size: 12px;">Importuj preset</button>
+        <button id="exportBtn" onclick="exportPreset()" style="width: 100%; margin-top: 10px; padding: 8px; font-size: 12px;">${translations[lang].exportBtn}</button>
+        <button id="importBtn" onclick="importPreset()" style="width: 100%; margin-top: 5px; padding: 8px; font-size: 12px;">${translations[lang].importBtn}</button>
     `;
 
     document.getElementById("playersSkills").innerHTML = skillsHtml;
@@ -368,6 +424,13 @@ function changeLanguage() {
     document.getElementById("drawBtn").textContent = translations[lang].drawBtn;
     document.getElementById("teamATitle").textContent = translations[lang].teamA;
     document.getElementById("teamBTitle").textContent = translations[lang].teamB;
+    document.getElementById("backBtn").textContent = translations[lang].backBtn; // Tłumaczenie przycisku powrotu
+    
+    // Tłumaczenie przycisków Import/Export jeśli istnieją
+    const exportBtn = document.getElementById("exportBtn");
+    const importBtn = document.getElementById("importBtn");
+    if (exportBtn) exportBtn.textContent = translations[lang].exportBtn;
+    if (importBtn) importBtn.textContent = translations[lang].importBtn;
 }
 
 function shuffle(array) {
