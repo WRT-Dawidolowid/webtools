@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChartStudio Beta v1</title>
+    
+    <!-- External Fonts and Libraries -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+    <style>
+        :root {
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --accent: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+            --sidebar-bg: rgba(0, 0, 0, 0.45);
+            --default-navy: #1e1b4b;
+        }
+
+        body {
+            font-family: "Outfit", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- HEADER & BRANDING --- */
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 35px;
+            backdrop-filter: blur(25px);
+            box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+            border: 1px solid var(--glass-border);
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { margin: 0; font-size: 2.2em; letter-spacing: -1px; display: flex; align-items: baseline; gap: 10px; }
+        
+        .version-tag {
+            font-size: 0.4em;
+            opacity: 0.7;
+            font-weight: 600;
+            background: rgba(255,255,255,0.15);
+            padding: 3px 10px;
+            border-radius: 7px;
+            color: #ffd89b;
+        }
+
+        .credits { margin: 0; font-size: 0.9em; opacity: 0.5; font-weight: 400; }
+
+        .back-btn {
+            text-decoration: none; padding: 12px 24px; border-radius: 15px;
+            background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--glass-border);
+            font-size: 14px; font-weight: 600; transition: 0.3s;
+        }
+        .back-btn:hover { background: rgba(0,0,0,0.5); transform: translateX(-3px); }
+
+        /* --- LAYOUT --- */
+        .layout { display: grid; grid-template-columns: 360px 1fr; gap: 30px; }
+
+        .sidebar {
+            background: var(--sidebar-bg);
+            padding: 25px;
+            border-radius: 25px;
+            border: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: fit-content;
+        }
+
+        .section-label { color: #ffd89b; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; display: block; margin-bottom: 8px; }
+
+        .btn-main {
+            width: 100%; padding: 15px; background: var(--accent); border: none; border-radius: 12px;
+            color: white; font-weight: 700; cursor: pointer; transition: 0.3s;
+        }
+
+        .chart-toggle { display: flex; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 12px; }
+        .toggle-btn { flex: 1; padding: 10px; border: none; background: transparent; color: white; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .toggle-btn.active { background: rgba(255,255,255,0.15); }
+
+        .metrics-list { max-height: 180px; overflow-y: auto; background: rgba(255,255,255,0.05); border-radius: 15px; padding: 12px; }
+        .metric-item { display: flex; align-items: center; padding: 8px; cursor: pointer; font-size: 14px; }
+        .metric-item input { margin-right: 12px; accent-color: #ffd89b; width: 17px; height: 17px; }
+
+        .config-row { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; }
+        input[type="color"] { border: none; width: 34px; height: 34px; cursor: pointer; background: none; }
+
+        .sidebar-pagination {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.2); padding: 12px; border-radius: 15px; border: 1px solid var(--glass-border);
+        }
+        .nav-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white;
+            width: 42px; height: 42px; border-radius: 10px; cursor: pointer; font-size: 20px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .metric-dropdown { width: 100%; margin-top: 10px; background: rgba(0, 0, 0, 0.4); color: white; border: 1px solid var(--glass-border); padding: 12px; border-radius: 12px; outline: none; cursor: pointer; font-family: inherit; }
+
+        /* --- CHART WORKSPACE --- */
+        .chart-card {
+            background: var(--default-navy); border-radius: 35px; padding: 35px;
+            border: 1px solid var(--glass-border); display: flex; flex-direction: column;
+            position: relative; min-height: 700px;
+        }
+
+        .chart-title-textbox {
+            background: rgba(255, 255, 255, 0.04); border: 1px solid transparent; color: #ffd89b;
+            font-size: 2.2em; font-weight: 700; font-family: 'Outfit'; text-align: center;
+            width: 90%; padding: 8px; border-radius: 15px; outline: none; transition: 0.3s;
+            margin: 0 auto 15px auto; display: block;
+        }
+
+        .chart-wrapper { flex: 1; position: relative; border-radius: 20px; display: flex; align-items: center; justify-content: center; }
+
+        #reviewChart { opacity: 0; transition: opacity 0.4s ease; z-index: 2; }
+
+        #interactiveTip {
+            position: absolute; top: 15px; left: 15px; font-size: 11px;
+            background: rgba(255,255,255,0.1); padding: 6px 12px;
+            border-radius: 8px; opacity: 0.8; pointer-events: none;
+            display: none; z-index: 10; color: #ffd89b;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .action-buttons { display: flex; gap: 15px; justify-content: center; margin-top: 25px; }
+        .btn-action {
+            background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white;
+            padding: 14px 28px; border-radius: 14px; cursor: pointer; font-weight: 600;
+            transition: 0.3s; display: flex; align-items: center; gap: 10px;
+        }
+        .btn-action:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
+
+        /* MODAL */
+        #actionModal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(15, 15, 35, 0.98); padding: 30px; border-radius: 25px;
+            border: 1px solid var(--ffd89b); z-index: 1000; display: none; text-align: center;
+            box-shadow: 0 0 60px rgba(0,0,0,0.9); backdrop-filter: blur(15px);
+        }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 999; display: none; }
+        .modal-btn { display: block; width: 220px; margin: 12px auto; padding: 14px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; cursor: pointer; font-weight: 600; font-family: 'Outfit'; }
+        .modal-btn:hover { background: var(--accent); }
+
+        .settings-row { display: flex; align-items: center; gap: 10px; font-size: 13px; opacity: 0.8; cursor: pointer; }
+        .no-data { text-align: center; opacity: 0.4; position: absolute; z-index: 1; font-size: 1.4em; }
+
+        @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<!-- Hidden Utility Inputs -->
+<input type="color" id="elementColorPicker" style="position:fixed; visibility:hidden;">
+<input type="file" id="settingsInput" style="display:none" accept=".json" onchange="loadSettings(event)">
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal()"></div>
+<div id="actionModal">
+    <h3 style="margin-top:0; color:#ffd89b; font-size: 1.5em;">Edit Segment</h3>
+    <p id="modalInfo" style="font-size: 0.9em; opacity: 0.6; margin-bottom: 20px;"></p>
+    <button class="modal-btn" onclick="triggerColorChange()">🎨 Change Color</button>
+    <button class="modal-btn" onclick="triggerValueChange()">🔢 Change Value</button>
+    <button class="modal-btn" onclick="closeModal()" style="opacity:0.4; margin-top: 10px; border:none;">Cancel</button>
+</div>
+
+<div class="container">
+    <div class="header">
+        <div>
+            <h1>ChartStudio <span class="version-tag">Beta v1</span></h1>
+            <p class="credits">Made by Dawidolowid</p>
+        </div>
+        <a href="javascript:history.back()" class="back-btn">⬅ Back to App</a>
+    </div>
+
+    <div class="layout">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div>
+                <span class="section-label">1. Data Source</span>
+                <button class="btn-main" onclick="document.getElementById('fileInput').click()">📁 Import Data (.json)</button>
+                <input type="file" id="fileInput" style="display:none" accept=".json" onchange="importFile(event)">
+            </div>
+
+            <div>
+                <span class="section-label">2. Visual Style</span>
+                <div class="chart-toggle">
+                    <button class="toggle-btn active" id="btn-bar" onclick="setChartType('bar')">Pillar</button>
+                    <button class="toggle-btn" id="btn-pie" onclick="setChartType('pie')">Circle</button>
+                </div>
+            </div>
+
+            <div>
+                <span class="section-label">3. Theme & Titles</span>
+                <div class="config-row">
+                    <span style="font-size: 11px;">Canvas BG</span>
+                    <input type="color" id="bgColorPicker" value="#1e1b4b" onchange="updateChart()">
+                </div>
+                <div class="config-row" style="margin-top:8px;">
+                    <span style="font-size: 11px;">Title Color</span>
+                    <input type="color" id="titleColorPicker" value="#ffd89b" onchange="updateTitleColor(this.value)">
+                </div>
+            </div>
+
+            <label class="settings-row">
+                <input type="checkbox" id="hideDismissed" onchange="updateChart()" checked>
+                <span>Full Chart Reflow</span>
+            </label>
+
+            <div>
+                <span class="section-label">4. Select Counters</span>
+                <div class="metrics-list" id="metricsList">
+                    <div style="padding:10px; font-size:12px; opacity:0.5;">No data loaded.</div>
+                </div>
+            </div>
+
+            <div id="paginationContainer" style="display:none">
+                <span class="section-label">5. Navigation & Layout</span>
+                <div class="sidebar-pagination">
+                    <button class="nav-btn" title="Load Layout" onclick="document.getElementById('settingsInput').click()">📂</button>
+                    <button class="nav-btn" id="prevBtn" onclick="changePage(-1)">←</button>
+                    <div id="pageIndicator" style="font-weight:700; color:#ffd89b; font-size:14px;">1 / 1</div>
+                    <button class="nav-btn" id="nextBtn" onclick="changePage(1)">→</button>
+                    <button class="nav-btn" title="Save Layout" onclick="saveSettings()">💾</button>
+                </div>
+                <select id="pageDropdown" onchange="jumpToPage(this.value)" class="metric-dropdown"></select>
+            </div>
+        </div>
+
+        <!-- Workspace -->
+        <div class="chart-card" id="chartCard">
+            <input type="text" id="chartTitleInput" class="chart-title-textbox" 
+                   value="" oninput="handleTitleInput(this.value)" placeholder="Chart Title...">
+
+            <div class="chart-wrapper">
+                <div id="interactiveTip">💡 Tip: Click a segment to change its color or value!</div>
+                <div id="emptyMsg" class="no-data">Upload your JSON data to begin.</div>
+                <canvas id="reviewChart"></canvas>
+            </div>
+
+            <div class="action-buttons" id="actionButtons" style="display:none">
+                <button class="btn-action" onclick="exportToPng()">🖼️ Export PNG</button>
+                <button class="btn-action" onclick="copyToClipboard()">📋 Copy Image</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    Chart.register(ChartDataLabels);
+
+    let rawData = [];
+    let myChart = null;
+    let currentChartType = 'bar';
+    let selectedMetrics = [];
+    let currentPageIndex = 0;
+    
+    let categoryColorMap = {}; 
+    let customTitlesMap = {}; 
+    let activeEditIndex = null;
+
+    // --- CONTRAST CALCULATOR ---
+    function getContrastColor(hex) {
+        if (!hex || hex.startsWith('rgb')) return '#ffffff';
+        var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+        hex = hex.replace(shorthandRegex, function(m, r, g, b) { return r + r + g + g + b + b; });
+        var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (!result) return '#ffffff';
+        var r = parseInt(result[1], 16), g = parseInt(result[2], 16), b = parseInt(result[3], 16);
+        var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+        return (yiq >= 128) ? '#000000' : '#ffffff';
+    }
+
+    // --- SEGMENT ACTIONS ---
+    function closeModal() { document.getElementById('actionModal').style.display = 'none'; document.getElementById('modalOverlay').style.display = 'none'; }
+    
+    function triggerColorChange() {
+        const currentC = myChart.data.datasets[0].backgroundColor[activeEditIndex];
+        const segPicker = document.getElementById('elementColorPicker');
+        segPicker.value = currentC.startsWith('#') ? currentC : '#ffffff';
+        closeModal(); segPicker.click();
+    }
+
+    function triggerValueChange() {
+        const catName = myChart.data.labels[activeEditIndex];
+        const metricName = selectedMetrics[currentPageIndex];
+        const currentVal = myChart.data.datasets[0].data[activeEditIndex];
+        const newVal = prompt(`Set new value for ${catName}:`, currentVal);
+        if (newVal !== null && !isNaN(newVal)) {
+            rawData.forEach(cat => {
+                if(cat.name === catName) { cat.items.forEach(item => { if(item.name === metricName) item.value = parseFloat(newVal); }); }
+            });
+            updateChart();
+        }
+        closeModal();
+    }
+
+    async function copyToClipboard() {
+        if(!myChart) return;
+        myChart.render();
+        document.getElementById('reviewChart').toBlob(async (blob) => {
+            try { await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]); alert("Image copied to clipboard!"); }
+            catch (err) { alert("Copy failed."); }
+        });
+    }
+
+    // --- SETTINGS ---
+    function saveSettings() {
+        const config = { colors: categoryColorMap, titles: customTitlesMap, theme: { bg: document.getElementById('bgColorPicker').value, titleColor: document.getElementById('titleColorPicker').value, chartType: currentChartType, hideDismissed: document.getElementById('hideDismissed').checked } };
+        const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
+        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "chartstudio_beta.json"; a.click();
+    }
+
+    function loadSettings(event) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const s = JSON.parse(e.target.result);
+                categoryColorMap = s.colors || {}; customTitlesMap = s.titles || {};
+                if(s.theme) { document.getElementById('bgColorPicker').value = s.theme.bg; document.getElementById('titleColorPicker').value = s.theme.titleColor; document.getElementById('hideDismissed').checked = s.theme.hideDismissed; setChartType(s.theme.chartType); }
+                updateChart();
+            } catch (err) { alert("Load failed."); }
+        };
+        reader.readAsText(event.target.files[0]);
+    }
+
+    // --- CORE CHART ENGINE ---
+    function handleTitleInput(val) {
+        const metric = selectedMetrics[currentPageIndex];
+        customTitlesMap[metric] = val;
+        if(myChart) { myChart.options.plugins.title.text = val; myChart.update('none'); }
+    }
+
+    function updateTitleColor(val) { document.getElementById('chartTitleInput').style.color = val; updateChart(); }
+
+    function importFile(event) {
+        const reader = new FileReader();
+        reader.onload = (e) => { try { rawData = JSON.parse(e.target.result); renderMetricSelection(); updateChart(); } catch (err) { alert("Invalid JSON."); } };
+        reader.readAsText(event.target.files[0]);
+    }
+
+    function renderMetricSelection() {
+        const list = document.getElementById('metricsList');
+        const names = new Set(); rawData.forEach(cat => cat.items?.forEach(i => names.add(i.name)));
+        list.innerHTML = "";
+        Array.from(names).sort().forEach(name => {
+            const label = document.createElement('label'); label.className = 'metric-item';
+            label.innerHTML = `<input type="checkbox" value="${name}" onchange="toggleMetric(this, '${name}')"><span>${name}</span>`;
+            list.appendChild(label);
+        });
+    }
+
+    function toggleMetric(checkbox, name) {
+        if (checkbox.checked) selectedMetrics.push(name); else selectedMetrics = selectedMetrics.filter(m => m !== name);
+        currentPageIndex = 0; populateDropdown(); updateChart();
+    }
+
+    function populateDropdown() {
+        const dd = document.getElementById('pageDropdown'); dd.innerHTML = '';
+        selectedMetrics.forEach((metric, index) => { const opt = document.createElement('option'); opt.value = index; opt.text = metric; dd.appendChild(opt); });
+    }
+
+    function setChartType(type) {
+        currentChartType = type;
+        document.getElementById('btn-bar').classList.toggle('active', type === 'bar');
+        document.getElementById('btn-pie').classList.toggle('active', type === 'pie');
+        updateChart();
+    }
+
+    function changePage(step) { currentPageIndex += step; updateChart(); }
+    function jumpToPage(val) { currentPageIndex = parseInt(val); updateChart(); }
+
+    const segPicker = document.getElementById('elementColorPicker');
+    segPicker.addEventListener('input', (e) => {
+        if (activeEditIndex !== null) { categoryColorMap[myChart.data.labels[activeEditIndex]] = e.target.value; updateChart(); }
+    });
+
+    function updateChart() {
+        const canvas = document.getElementById('reviewChart'); const ctx = canvas.getContext('2d');
+        const bgHex = document.getElementById('bgColorPicker').value;
+        const frameTextColor = getContrastColor(bgHex);
+        const gridColor = (frameTextColor === '#ffffff') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+        const borderColor = (frameTextColor === '#ffffff') ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)';
+
+        if (myChart) myChart.destroy();
+        if (selectedMetrics.length === 0) {
+            document.getElementById('emptyMsg').style.display = 'block'; document.getElementById('actionButtons').style.display = 'none';
+            document.getElementById('paginationContainer').style.display = 'none'; document.getElementById('chartTitleInput').style.display = 'none';
+            document.getElementById('interactiveTip').style.display = 'none'; canvas.style.opacity = '0'; return;
+        }
+
+        canvas.style.opacity = '1'; document.getElementById('emptyMsg').style.display = 'none';
+        document.getElementById('actionButtons').style.display = 'flex'; document.getElementById('paginationContainer').style.display = 'block';
+        document.getElementById('chartTitleInput').style.display = 'block';
+
+        const currentMetric = selectedMetrics[currentPageIndex];
+        const currentDisplayTitle = customTitlesMap[currentMetric] || currentMetric;
+        document.getElementById('chartTitleInput').value = currentDisplayTitle;
+        document.getElementById('chartTitleInput').style.color = document.getElementById('titleColorPicker').value;
+        document.getElementById('pageDropdown').value = currentPageIndex;
+        document.getElementById('pageIndicator').innerText = `${currentPageIndex + 1} / ${selectedMetrics.length}`;
+        document.getElementById('prevBtn').disabled = (currentPageIndex === 0);
+        document.getElementById('nextBtn').disabled = (currentPageIndex === selectedMetrics.length - 1);
+
+        const labels = [], values = [], colors = [];
+        rawData.forEach((cat) => {
+            const item = cat.items.find(i => i.name === currentMetric);
+            if (item && item.value > 0) {
+                labels.push(cat.name); values.push(item.value);
+                if (!categoryColorMap[cat.name]) categoryColorMap[cat.name] = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+                colors.push(categoryColorMap[cat.name]);
+            }
+        });
+
+        document.getElementById('interactiveTip').style.display = labels.length > 0 ? 'block' : 'none';
+
+        myChart = new Chart(ctx, {
+            type: currentChartType,
+            data: { labels: labels, datasets: [{ data: values, backgroundColor: colors, borderColor: borderColor, borderWidth: 2, borderRadius: currentChartType === 'bar' ? 12 : 0 }] },
+            plugins: [ChartDataLabels, {
+                id: 'canvasBg',
+                beforeDraw: (chart) => {
+                    const {ctx} = chart; ctx.save(); ctx.globalCompositeOperation = 'destination-over';
+                    ctx.fillStyle = bgHex; ctx.fillRect(0, 0, chart.width, chart.height); ctx.restore();
+                }
+            }],
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                onClick: (e, elements) => {
+                    if (elements.length > 0) {
+                        activeEditIndex = elements[0].index;
+                        document.getElementById('modalInfo').innerText = `Editing: ${labels[activeEditIndex]}`;
+                        document.getElementById('actionModal').style.display = 'block';
+                        document.getElementById('modalOverlay').style.display = 'block';
+                    }
+                },
+                plugins: {
+                    title: { display: true, text: currentDisplayTitle, color: document.getElementById('titleColorPicker').value, font: { size: 28, family: 'Outfit', weight: 'bold' }, padding: 15 },
+                    legend: {
+                        display: currentChartType === 'pie', position: 'bottom',
+                        labels: { color: frameTextColor, font: { family: 'Outfit', size: 14 } },
+                        onClick: (e, legendItem, legend) => {
+                            const ci = legend.chart; const index = legendItem.index; ci.toggleDataVisibility(index);
+                            if (document.getElementById('hideDismissed').checked) ci.update(); else ci.draw();
+                        }
+                    },
+                    datalabels: {
+                        color: (context) => {
+                            if (currentChartType === 'pie') return getContrastColor(context.dataset.backgroundColor[context.dataIndex]);
+                            else return frameTextColor;
+                        },
+                        font: (context) => { const size = currentChartType === 'pie' ? Math.max(12, context.chart.width / 35) : 15; return { weight: 'bold', family: 'Outfit', size: size }; },
+                        anchor: currentChartType === 'bar' ? 'end' : 'center', align: currentChartType === 'bar' ? 'top' : 'center',
+                        formatter: val => val, display: (context) => context.chart.getDataVisibility(context.dataIndex)
+                    }
+                },
+                scales: currentChartType === 'bar' ? {
+                    y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: frameTextColor, font: { family: 'Outfit' } } },
+                    x: { ticks: { color: frameTextColor, font: { family: 'Outfit' } } }
+                } : {}
+            }
+        });
+    }
+
+    function exportToPng() {
+        if(!myChart) return; myChart.render();
+        const link = document.createElement('a'); link.download = `${document.getElementById('chartTitleInput').value || 'chart'}.png`;
+        link.href = document.getElementById('reviewChart').toDataURL('image/png', 1.0); link.click();
+    }
+
+    window.onload = () => { const local = localStorage.getItem('infiniteCounters'); if (local) { rawData = JSON.parse(local); renderMetricSelection(); } };
+</script>
+
+</body>
+</html>
