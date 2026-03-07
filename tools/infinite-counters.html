@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infinite Counters ♾️</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --glass: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --accent: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+    --green-flash: rgba(144, 238, 144, 0.4);
+    --red-flash: rgba(255, 99, 71, 0.4);
+}
+
+body {
+    font-family: "Outfit", sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin: 0;
+    padding: 10px;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 25px;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 30px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    border: 1px solid var(--glass-border);
+}
+
+/* ANIMACJE */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes flashGreen { 0% { background: var(--green-flash); } 100% { background: rgba(255,255,255,0.06); } }
+@keyframes flashRed { 0% { background: var(--red-flash); } 100% { background: rgba(255,255,255,0.06); } }
+
+.animate-in { animation: fadeInUp 0.4s ease forwards; }
+.flash-up { animation: flashGreen 0.4s ease; }
+.flash-down { animation: flashRed 0.4s ease; }
+
+h1 { text-align: center; font-size: 2.2em; margin-bottom: 30px; letter-spacing: -1px; }
+
+/* TOP BAR */
+.top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+.back-btn { text-decoration: none; padding: 10px 20px; border-radius: 12px; background: rgba(0,0,0,0.3); color: white; font-size: 14px; border: 1px solid var(--glass-border); }
+.language-selector select { padding: 10px; border-radius: 10px; background: rgba(0,0,0,0.4); color: white; border: 1px solid var(--glass-border); }
+
+/* ADD SECTION */
+.add-category-box { display: flex; gap: 12px; margin-bottom: 40px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 20px; }
+input[type="text"] { flex: 1; padding: 14px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.1); color: white; outline: none; }
+.btn-main { padding: 12px 25px; background: var(--accent); border: none; border-radius: 12px; color: white; font-weight: 700; cursor: pointer; transition: 0.3s; }
+
+/* CATEGORY CARD & DRAG */
+.category-card { 
+    background: var(--glass); 
+    border-radius: 22px; 
+    margin-bottom: 25px; 
+    border: 1px solid var(--glass-border); 
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+.category-card.dragging { opacity: 0.4; border: 2px dashed #ffd89b; transform: scale(0.98); }
+
+.category-header { background: rgba(0,0,0,0.25); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-radius: 22px 22px 0 0; }
+.category-title { font-weight: 700; font-size: 1.3em; color: #ffd89b; }
+.category-actions { display: flex; gap: 10px; align-items: center; }
+
+/* UCHWYT DO PRZECIĄGANIA (KATEGORIE I ELEMENTY) */
+.drag-handle {
+    cursor: grab;
+    padding: 0 10px;
+    font-size: 20px;
+    color: rgba(255,255,255,0.3);
+    user-select: none;
+    transition: 0.2s;
+}
+.drag-handle:hover { color: white; }
+.drag-handle:active { cursor: grabbing; }
+
+.icon-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: white; width: 35px; height: 35px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+/* ITEMS */
+.category-content { padding: 20px; }
+.add-item-row { display: flex; gap: 10px; margin-bottom: 20px; }
+
+.counter-item { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    background: rgba(255,255,255,0.06); 
+    margin-bottom: 10px; 
+    padding: 12px 15px; 
+    border-radius: 15px; 
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.counter-item.dragging { opacity: 0.5; background: rgba(255,255,255,0.2); }
+
+.item-left { display: flex; align-items: center; gap: 10px; }
+.counter-name { font-weight: 600; }
+
+.counter-controls { display: flex; align-items: center; gap: 15px; }
+.val-btn { width: 36px; height: 36px; border-radius: 10px; border: none; color: white; font-weight: 700; font-size: 1.2em; cursor: pointer; }
+.minus { background: rgba(255, 99, 71, 0.4); }
+.plus { background: rgba(144, 238, 144, 0.4); }
+.counter-value { font-weight: 700; min-width: 40px; text-align: center; font-size: 1.4em; }
+.delete-item { background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 18px; }
+
+/* FOOTER */
+.footer-actions { display: flex; gap: 12px; margin-top: 30px; }
+.btn-secondary { flex: 1; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; border-radius: 12px; cursor: pointer; font-size: 13px; font-weight: 600; }
+
+@media (max-width: 600px) { .add-category-box, .footer-actions { flex-direction: column; } }
+</style>
+</head>
+
+<body>
+
+<div class="container animate-in">
+    <div class="top-bar">
+        <a href="#" class="back-btn" id="backBtn">⬅️ Wróć</a>
+        <div class="language-selector">
+            <select id="language" onchange="changeLanguage()">
+                <option value="pl">Polski</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+    </div>
+
+    <h1 id="title">Infinite Counters ♾️</h1>
+
+    <div class="add-category-box">
+        <input type="text" id="catNameInput" placeholder="Nowa kategoria...">
+        <button class="btn-main" onclick="addCategory()" id="addCatBtn">Dodaj</button>
+    </div>
+
+    <div id="categoriesContainer"></div>
+
+    <div class="footer-actions">
+        <button class="btn-secondary" onclick="exportData()" id="exportBtn">Eksportuj (.json)</button>
+        <button class="btn-secondary" onclick="importData()" id="importBtn">Importuj (.json)</button>
+        <button class="btn-secondary" onclick="resetAll()" id="resetBtn" style="color: #ffb3b3;">Wyczyść wszystko</button>
+    </div>
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem('infiniteCounters')) || [];
+
+const translations = {
+    pl: { title: "Infinite Counters ♾️", addCatBtn: "Dodaj", catPlaceholder: "Nowa kategoria...", itemPlaceholder: "Nazwa...", addItemBtn: "Dodaj", backBtn: "⬅️ Wróć", exportBtn: "Eksportuj (.json)", importBtn: "Importuj (.json)", resetBtn: "Wyczyść wszystko", confirmDelete: "Usunąć?", confirmDeleteCat: "Usunąć kategorię?", confirmReset: "Usunąć WSZYSTKO?" },
+    en: { title: "Infinite Counters ♾️", addCatBtn: "Add", catPlaceholder: "New category...", itemPlaceholder: "Name...", addItemBtn: "Add", backBtn: "⬅️ Back", exportBtn: "Export (.json)", importBtn: "Import (.json)", resetBtn: "Clear all", confirmDelete: "Delete?", confirmDeleteCat: "Delete category?", confirmReset: "Are you sure?" }
+};
+
+function save() { localStorage.setItem('infiniteCounters', JSON.stringify(data)); }
+
+function addCategory() {
+    const input = document.getElementById("catNameInput");
+    if (input.value.trim()) {
+        data.push({ name: input.value.trim(), items: [] });
+        input.value = "";
+        save(); render();
+    }
+}
+
+function addItem(catIdx) {
+    const input = document.getElementById(`itemInput-${catIdx}`);
+    if (input.value.trim()) {
+        data[catIdx].items.push({ name: input.value.trim(), value: 0 });
+        input.value = "";
+        save(); render();
+    }
+}
+
+function updateValue(btn, catIdx, itemIdx, delta) {
+    data[catIdx].items[itemIdx].value += delta;
+    if (data[catIdx].items[itemIdx].value < 0) data[catIdx].items[itemIdx].value = 0;
+    save();
+    
+    const row = btn.closest('.counter-item');
+    row.querySelector('.counter-value').textContent = data[catIdx].items[itemIdx].value;
+    
+    const flashClass = delta > 0 ? 'flash-up' : 'flash-down';
+    row.classList.remove('flash-up', 'flash-down');
+    void row.offsetWidth;
+    row.classList.add(flashClass);
+}
+
+function deleteItem(catIdx, itemIdx) {
+    if (confirm(translations[document.getElementById("language").value].confirmDelete)) {
+        data[catIdx].items.splice(itemIdx, 1);
+        save(); render();
+    }
+}
+
+function deleteCategory(catIdx) {
+    if (confirm(translations[document.getElementById("language").value].confirmDeleteCat)) {
+        data.splice(catIdx, 1);
+        save(); render();
+    }
+}
+
+function resetAll() {
+    if (confirm(translations[document.getElementById("language").value].confirmReset)) {
+        data = []; save(); render();
+    }
+}
+
+// --- RENDEROWANIE ---
+
+function render() {
+    const container = document.getElementById("categoriesContainer");
+    const lang = document.getElementById("language").value;
+    container.innerHTML = "";
+
+    data.forEach((cat, catIdx) => {
+        const catDiv = document.createElement("div");
+        catDiv.className = "category-card";
+        catDiv.setAttribute('draggable', 'true');
+        catDiv.dataset.catIndex = catIdx;
+
+        // Renderowanie elementów wewnątrz kategorii
+        let itemsHtml = cat.items.map((item, itemIdx) => `
+            <div class="counter-item" draggable="true" data-item-index="${itemIdx}" data-cat-index="${catIdx}">
+                <div class="item-left">
+                    <div class="drag-handle item-handle">⋮⋮</div>
+                    <span class="counter-name">${item.name}</span>
+                </div>
+                <div class="counter-controls">
+                    <button class="val-btn minus" onclick="updateValue(this, ${catIdx}, ${itemIdx}, -1)">-</button>
+                    <span class="counter-value">${item.value}</span>
+                    <button class="val-btn plus" onclick="updateValue(this, ${catIdx}, ${itemIdx}, 1)">+</button>
+                    <button class="delete-item" onclick="deleteItem(${catIdx}, ${itemIdx})">🗑️</button>
+                </div>
+            </div>
+        `).join("");
+
+        catDiv.innerHTML = `
+            <div class="category-header">
+                <div class="category-title">${cat.name}</div>
+                <div class="category-actions">
+                    <div class="drag-handle cat-handle">⋮⋮</div>
+                    <button class="icon-btn" onclick="deleteCategory(${catIdx})" style="color:#ff6347">✖</button>
+                </div>
+            </div>
+            <div class="category-content">
+                <div class="add-item-row">
+                    <input type="text" id="itemInput-${catIdx}" placeholder="${translations[lang].itemPlaceholder}">
+                    <button class="btn-main" onclick="addItem(${catIdx})">${translations[lang].addItemBtn}</button>
+                </div>
+                <div class="items-list" data-cat-index="${catIdx}">${itemsHtml}</div>
+            </div>
+        `;
+        
+        // Setup Drag & Drop dla Kategorii
+        setupCategoryDrag(catDiv);
+        
+        // Setup Drop Zone dla listy elementów (żeby przyjmowała upuszczane liczniki)
+        const itemsList = catDiv.querySelector('.items-list');
+        setupItemsListDropZone(itemsList);
+        
+        // Setup Drag & Drop dla pojedynczych elementów
+        const items = catDiv.querySelectorAll('.counter-item');
+        items.forEach(item => setupItemDrag(item));
+
+        container.appendChild(catDiv);
+    });
+}
+
+// --- DRAG & DROP LOGIC ---
+
+const container = document.getElementById('categoriesContainer');
+
+// 1. DLA KATEGORII
+function setupCategoryDrag(card) {
+    card.addEventListener('dragstart', (e) => {
+        // Sprawdzamy czy nie ciągniemy elementu wewnątrz
+        if(e.target.classList.contains('counter-item')) return;
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    });
+
+    card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        updateCategoryOrder();
+    });
+}
+
+// Główny kontener przyjmuje kategorie
+container.addEventListener('dragover', e => {
+    e.preventDefault();
+    const draggable = document.querySelector('.category-card.dragging');
+    if (!draggable) return;
+
+    const afterElement = getDragAfterElement(container, e.clientY, '.category-card:not(.dragging)');
+    if (afterElement == null) {
+        container.appendChild(draggable);
+    } else {
+        container.insertBefore(draggable, afterElement);
+    }
+});
+
+function updateCategoryOrder() {
+    const newOrder = [];
+    document.querySelectorAll('.category-card').forEach(card => {
+        newOrder.push(data[card.dataset.catIndex]);
+    });
+    data = newOrder;
+    save(); render();
+}
+
+// 2. DLA ELEMENTÓW (COUNTERÓW)
+function setupItemDrag(item) {
+    item.addEventListener('dragstart', (e) => {
+        e.stopPropagation(); // Ważne: nie uruchamiaj dragstart dla kategorii
+        item.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    });
+
+    item.addEventListener('dragend', (e) => {
+        e.stopPropagation();
+        item.classList.remove('dragging');
+        const catIdx = item.closest('.items-list').dataset.catIndex;
+        updateItemsOrder(catIdx);
+    });
+}
+
+function setupItemsListDropZone(list) {
+    list.addEventListener('dragover', e => {
+        e.preventDefault();
+        const draggable = list.querySelector('.counter-item.dragging');
+        if (!draggable) return; // Jeśli ciągniemy kategorię, a jesteśmy nad listą itemów - ignoruj
+
+        const afterElement = getDragAfterElement(list, e.clientY, '.counter-item:not(.dragging)');
+        if (afterElement == null) {
+            list.appendChild(draggable);
+        } else {
+            list.insertBefore(draggable, afterElement);
+        }
+    });
+}
+
+function updateItemsOrder(catIdx) {
+    const list = document.querySelector(`.items-list[data-cat-index="${catIdx}"]`);
+    const newItems = [];
+    
+    // Pobieramy stary indeks z atrybutu data i mapujemy na nowe obiekty
+    // Ale łatwiej jest pobrać dane z globalnej tablicy na podstawie starego indexu
+    list.querySelectorAll('.counter-item').forEach(itemRow => {
+        const oldItemIdx = itemRow.dataset.itemIndex;
+        // Bierzemy stary item z TEJ SAMEJ kategorii w pamięci
+        // (Zakładamy, że nie przenosimy między kategoriami w tej wersji)
+        newItems.push(data[catIdx].items[oldItemIdx]); 
+    });
+
+    data[catIdx].items = newItems;
+    save(); render();
+}
+
+// WSPÓLNA FUNKCJA POMOCNICZA
+function getDragAfterElement(container, y, selector) {
+    const draggableElements = [...container.querySelectorAll(selector)];
+
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// --- POZOSTAŁE ---
+
+function changeLanguage() {
+    const lang = document.getElementById("language").value;
+    const t = translations[lang];
+    document.getElementById("title").textContent = t.title;
+    document.getElementById("addCatBtn").textContent = t.addCatBtn;
+    document.getElementById("catNameInput").placeholder = t.catPlaceholder;
+    document.getElementById("backBtn").textContent = t.backBtn;
+    document.getElementById("exportBtn").textContent = t.exportBtn;
+    document.getElementById("importBtn").textContent = t.importBtn;
+    document.getElementById("resetBtn").textContent = t.resetBtn;
+    render();
+}
+
+function exportData() {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "counters.json"; a.click();
+}
+
+function importData() {
+    const input = document.createElement("input");
+    input.type = "file"; input.accept = ".json";
+    input.onchange = (e) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try { data = JSON.parse(event.target.result); save(); render(); } catch(err) { alert("Błąd!"); }
+        };
+        reader.readAsText(e.target.files[0]);
+    };
+    input.click();
+}
+
+document.getElementById("catNameInput").addEventListener("keypress", (e) => { if (e.key === "Enter") addCategory(); });
+
+render();
+</script>
+
+</body>
+</html>
