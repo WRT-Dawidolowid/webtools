@@ -102,6 +102,17 @@
             text-transform: uppercase;
         }
 
+        .new-pill {
+            background: #40945a;
+            color: white;
+            font-size: 0.6em;
+            padding: 2px 6px;
+            border-radius: 4px;
+            vertical-align: middle;
+            margin-left: 5px;
+            text-transform: uppercase;
+        }
+
         .tool-card p {
             color: #666;
             font-size: 0.95em;
@@ -272,7 +283,6 @@
                         <div class="version-grid">
                             <a href="/webtools/tools/infinite-counters-v1.html" class="v-btn">V1</a>
                             <a href="/webtools/tools/infinite-counters-v2.html" class="v-btn">V2</a>
-                            <!-- To add V3, just add: <a href="..." class="v-btn">V3</a> -->
                         </div>
                         <button class="v-cancel" onclick="toggleCounterVersions(false)">Go back</button>
                     </div>
@@ -281,24 +291,22 @@
                 </div>
 
                 <div class="tool-card" id="chartCard">
-                    <h3>ChartStudio <span class="beta-pill">Beta</span></h3>
+                    <h3>ChartStudio <span class="new-pill">New</span></h3>
                     <p>Input your counter data to create impressive circle or pillar charts.</p>
                     
-                    <button id="unlockBtn" class="unlock-btn" onclick="toggleBeta(true)">Unlock Beta</button>
-                    <a href="#" id="openToolBtn" class="tool-link" style="display: none; background: #10b981;">Open Tool</a>
+                    <!-- Unique ID for this button -->
+                    <button id="chartMainBtn" class="version-trigger" onclick="toggleChartVersions(true)">Open Tool</button>
 
-                    <div id="betaAuth" class="beta-auth-area">
-                        <div class="beta-input-wrapper">
-                            <input type="password" id="passInput" class="beta-input" placeholder="Password...">
-                            <button class="btn-go" onclick="checkPass()">Go</button>
-                            <button class="btn-cancel" onclick="toggleBeta(false)">✕</button>
+                    <!-- Unique ID for this selector -->
+                    <div id="chartVersions" class="version-selector-container">
+                        <div class="version-grid">
+                            <a href="/webtools/tools/chartstudiobetabydawidolowid.html" class="v-btn">Beta V1</a>
+                            <a href="/webtools/tools/chartstudio-v1.html" class="v-btn">Release V1<span class="new-pill">New</span></a>
                         </div>
-                        <div id="errorMsg" class="error-msg">Incorrect beta password</div>
+                        <button class="v-cancel" onclick="toggleChartVersions(false)">Go back</button>
                     </div>
 
-                    <div id="copyChartLink" class="copy-url copy-locked" onclick="lockedFeedback()">
-                        🔒 Link Locked (Unlock Beta first)
-                    </div>
+                    <div class="copy-url" onclick="copyUrl('/webtools/tools/chartstudio-v1.html')">📋 Copy Link (Latest)</div>
                 </div>
             </div>
         </div>
@@ -313,6 +321,19 @@
         function toggleCounterVersions(show) {
             const mainBtn = document.getElementById('counterMainBtn');
             const selector = document.getElementById('counterVersions');
+            
+            if (show) {
+                mainBtn.style.display = 'none';
+                selector.style.display = 'block';
+            } else {
+                mainBtn.style.display = 'inline-block';
+                selector.style.display = 'none';
+            }
+        }
+
+        function toggleChartVersions(show) {
+            const mainBtn = document.getElementById('chartMainBtn');
+            const selector = document.getElementById('chartVersions');
             
             if (show) {
                 mainBtn.style.display = 'none';
