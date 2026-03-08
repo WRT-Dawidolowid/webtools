@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infinite Counters</title>
+
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+:root {
+    --glass: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --accent: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+    --green-flash: rgba(144, 238, 144, 0.4);
+    --red-flash: rgba(255, 99, 71, 0.4);
+}
+
+body {
+    font-family: "Outfit", sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin: 0;
+    padding: 10px;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+input, button, select { font-family: inherit; }
+
+.container {
+    max-width: 800px; /* Default 1 col */
+    margin: 20px auto;
+    padding: 25px;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 30px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    border: 1px solid var(--glass-border);
+    transition: max-width 0.3s ease;
+}
+
+/* Width adjustments based on layout mode */
+.container.layout-mode-2 { max-width: 1100px; }
+.container.layout-mode-3 { max-width: 1400px; }
+
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes flashGreen { 0% { background: var(--green-flash); } 100% { background: rgba(255,255,255,0.06); } }
+@keyframes flashRed { 0% { background: var(--red-flash); } 100% { background: rgba(255,255,255,0.06); } }
+
+.animate-in { animation: fadeInUp 0.4s ease forwards; }
+.flash-up { animation: flashGreen 0.4s ease; }
+.flash-down { animation: flashRed 0.4s ease; }
+
+/* --- HEADER --- */
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+.header h1 { margin: 0; font-size: 2.2em; letter-spacing: -1px; display: flex; align-items: center; gap: 10px; }
+.version-tag { font-size: 0.4em; opacity: 0.7; font-weight: 600; background: rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 7px; color: #ffd89b; margin-left: 5px; }
+.credits { margin: 0; font-size: 0.9em; opacity: 0.5; font-weight: 400; }
+
+.header-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.header-actions { display: flex; gap: 8px; }
+
+/* CUSTOM SELECT DROPDOWNS */
+.main-select {
+    padding: 12px 35px 12px 15px; border-radius: 12px; background: rgba(0,0,0,0.4); 
+    color: white; border: 1px solid var(--glass-border); outline: none; cursor: pointer;
+    appearance: none; -webkit-appearance: none; font-weight: 600; font-size: 14px;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat; background-position: right 10px center; background-size: 20px;
+}
+.main-select option { background: #1e1b4b; color: white; padding: 10px; }
+
+.back-btn { display: flex; align-items: center; gap: 8px; text-decoration: none; padding: 12px 20px; border-radius: 12px; background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--glass-border); font-size: 14px; font-weight: 600; transition: 0.3s; }
+.back-btn:hover { background: rgba(0,0,0,0.5); transform: translateX(-3px); }
+
+/* ADD SECTION & TOP TOOLS */
+.add-category-box { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 20px; }
+.add-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; width: 100%; }
+input[type="text"].main-input { flex: 1; padding: 14px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.1); color: white; outline: none; min-width: 150px; box-sizing: border-box; }
+.btn-main { padding: 12px 25px; background: var(--accent); border: none; border-radius: 12px; color: white; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; justify-content: center;}
+.top-action-group { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Buttons */
+.btn-outline { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; height: auto; padding: 12px 18px; border-radius: 12px; cursor: pointer; transition: 0.3s; font-size: 1em; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600;}
+.btn-outline:hover { background: rgba(255,255,255,0.2); }
+.btn-outline.danger { background: rgba(255,99,71,0.15); border-color: rgba(255,99,71,0.4); color: #ff6347; }
+.btn-outline.danger:hover { background: rgba(255,99,71,0.3); }
+.btn-outline.primary { background: rgba(100,149,237,0.15); border-color: rgba(100,149,237,0.4); color: #8cb6ff; }
+.btn-outline.primary:hover { background: rgba(100,149,237,0.3); }
+.btn-outline.success { background: rgba(144,238,144,0.15); border-color: rgba(144,238,144,0.4); color: #90ee90; }
+.btn-outline.success:hover { background: rgba(144,238,144,0.3); }
+.btn-outline.info { background: rgba(255,216,155,0.15); border-color: rgba(255,216,155,0.4); color: #ffd89b; }
+.btn-outline.info:hover { background: rgba(255,216,155,0.3); }
+
+.btn-secondary {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 12px 25px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-weight: 600;
+    font-size: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.2); }
+
+/* GRID VIEW LOGIC */
+#categoriesContainer { display: block; }
+#categoriesContainer.layout-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+}
+#categoriesContainer.layout-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* CATEGORY CARD */
+.category-card { background: var(--glass); border-radius: 22px; margin-bottom: 25px; border: 1px solid var(--glass-border); transition: transform 0.2s ease, opacity 0.2s ease, margin 0.3s ease; position: relative;}
+/* In grid views, remove bottom margin as gap handles it */
+#categoriesContainer.layout-2 .category-card, 
+#categoriesContainer.layout-3 .category-card { margin-bottom: 0; }
+
+.category-card.dragging { opacity: 0.4; border: 2px dashed #ffd89b; transform: scale(0.98); }
+.deleting { opacity: 0 !important; transform: scale(0.8) translateY(-20px) !important; pointer-events: none; }
+
+.category-header { background: rgba(0,0,0,0.25); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-radius: 22px 22px 0 0; transition: border-radius 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
+.category-card.collapsed .category-header { border-radius: 22px; }
+.category-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+/* INLINE INPUTS */
+.category-input-wrapper { flex: 1; min-width: 0; margin: 0 15px; }
+.category-title-input { font-weight: 700; font-size: 1.3em; color: #ffd89b; background: transparent; border: 1px solid transparent; outline: none; width: 100%; box-sizing: border-box; border-radius: 8px; padding: 4px 10px; transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.category-title-input:focus { background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); }
+
+.item-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; margin-right: 15px; }
+.item-name-input { font-weight: 600; font-size: 1em; color: white; background: transparent; border: 1px solid transparent; outline: none; flex: 1; min-width: 0; box-sizing: border-box; border-radius: 6px; padding: 4px 10px; transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-name-input:focus { background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); }
+
+/* BUTTONS & HANDLES */
+.drag-handle { cursor: grab; padding: 0 5px; font-size: 18px; color: rgba(255,255,255,0.3); user-select: none; transition: 0.2s; flex-shrink: 0; }
+.drag-handle:hover { color: white; }
+.drag-handle:active { cursor: grabbing; }
+
+.icon-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); width: 35px; height: 35px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; font-size: 0.9em; flex-shrink: 0; color: white; }
+.icon-btn:hover:not(:disabled) { background: rgba(255,255,255,0.2); transform: scale(1.05); }
+.icon-btn:disabled { opacity: 0.3; cursor: not-allowed; border-color: transparent; }
+
+/* COLLAPSIBLE CONTENT */
+.category-content-wrapper { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
+.category-content-wrapper.collapsed { grid-template-rows: 0fr; }
+.category-content-inner { overflow: hidden; }
+.category-content { padding: 20px; }
+
+/* ITEMS */
+.add-item-row { display: flex; gap: 10px; margin-bottom: 20px; }
+.counter-item { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.06); margin-bottom: 10px; padding: 12px 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); transition: transform 0.3s ease, opacity 0.3s ease; }
+.counter-item.dragging { opacity: 0.5; background: rgba(255,255,255,0.2); }
+.counter-controls { display: flex; align-items: center; gap: 15px; position: relative; flex-shrink: 0; }
+.val-btn { width: 36px; height: 36px; border-radius: 10px; border: none; color: white; font-weight: 700; font-size: 1em; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;}
+.minus { background: rgba(255, 99, 71, 0.4); }
+.plus { background: rgba(144, 238, 144, 0.4); }
+.counter-value { font-weight: 700; min-width: 40px; text-align: center; font-size: 1.4em; display: inline-block; }
+.delete-item { background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 1.1em; transition: 0.2s; padding: 5px; flex-shrink: 0; }
+.delete-item:hover { color: #ff6347; }
+
+/* CUSTOM MODALS */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; backdrop-filter: blur(8px); }
+.dialog-box { background: rgba(20, 20, 35, 0.95); padding: 30px; border-radius: 25px; border: 1px solid var(--glass-border); text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.6); min-width: 320px; max-width: 90%; max-height: 90vh; display: flex; flex-direction: column;}
+.dialog-box h3 { margin-top: 0; color: #ffd89b; font-size: 1.4em; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.dialog-box p { opacity: 0.8; margin-bottom: 25px; line-height: 1.5; }
+.dialog-actions { display: flex; gap: 10px; justify-content: center; margin-top: 15px; flex-shrink: 0; }
+.dialog-actions button { flex: 1; }
+
+/* CHECKBOX & PREVIEW LISTS */
+.modal-list-container { text-align: left; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 10px;}
+.bulk-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; cursor: pointer; border-radius: 10px; transition: 0.2s; }
+.bulk-item:hover { background: rgba(255,255,255,0.05); }
+.bulk-item-left { display: flex; align-items: center; flex: 1; min-width: 0; }
+.bulk-item input[type="checkbox"] { margin-right: 12px; width: 18px; height: 18px; accent-color: #ff6347; cursor: pointer; flex-shrink: 0; }
+.sync-cb[type="checkbox"] { accent-color: #90ee90; }
+
+.live-sync-badge { background: rgba(144,238,144,0.2); color: #90ee90; font-size: 0.7em; padding: 3px 8px; border-radius: 8px; font-weight: bold; border: 1px solid rgba(144,238,144,0.3); display: flex; align-items: center; gap: 5px;}
+
+/* DRAG TO TRASH ZONE */
+#trashZone { position: fixed; top: 0; left: 0; width: 120px; height: 100vh; background: linear-gradient(to right, rgba(255, 60, 60, 0.9), rgba(255, 60, 60, 0)); display: flex; align-items: center; justify-content: center; padding-right: 40px; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s; z-index: 9999; }
+body.dragging-something #trashZone { transform: translateX(0); }
+#trashZone.drag-over { background: linear-gradient(to right, rgba(255, 0, 0, 1), rgba(255, 0, 0, 0.4)); width: 150px; }
+
+/* Custom CSS Trash Icon for Animation */
+.custom-trash { position: relative; width: 50px; height: 60px; pointer-events: none; transition: transform 0.2s; }
+/* Ensures children don't capture mouse events, fixing "flicker" */
+.custom-trash * { pointer-events: none; }
+
+.trash-lid {
+    position: absolute; top: 0; left: 0; width: 100%; height: 12px;
+    background: white; border-radius: 4px 4px 2px 2px;
+    transform-origin: 100% 100%; /* Pivot on bottom right */
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.trash-lid::before {
+    content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
+    width: 14px; height: 6px; background: white; border-radius: 4px 4px 0 0;
+}
+.trash-can {
+    position: absolute; bottom: 0; left: 5px; width: 40px; height: 46px;
+    background: white; border-radius: 0 0 8px 8px;
+    display: flex; justify-content: center; align-items: center; gap: 4px;
+}
+.trash-line { width: 4px; height: 30px; background: rgba(255,0,0,0.3); border-radius: 2px; }
+
+/* Hover Effect: Open Lid Correctly (Up and Out) */
+#trashZone.drag-over .custom-trash { transform: scale(1.1); }
+#trashZone.drag-over .trash-lid { 
+    transform: translateY(-5px) rotate(-45deg); 
+}
+
+/* FLYOUT ANIMATIONS */
+.flyout { position: fixed; font-size: 1.5rem; pointer-events: none; z-index: 10000; animation-duration: 0.6s; animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1); animation-fill-mode: forwards; text-shadow: 0 0 10px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
+.fly-plus { color: #90ee90; animation-name: flyoutPlusAnim; }
+.fly-minus { color: #ff6347; animation-name: flyoutMinusAnim; }
+@keyframes flyoutPlusAnim { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(35px, -45px) scale(0.4); } }
+@keyframes flyoutMinusAnim { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-35px, -45px) scale(0.4); } }
+
+/* TUTORIAL OVERLAY */
+#tutorialOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 10000; display: none; backdrop-filter: blur(3px); }
+.tutorial-highlight { position: relative !important; z-index: 10001 !important; box-shadow: 0 0 0 4px #ffd89b, 0 0 20px 10px rgba(255, 216, 155, 0.4) !important; border-radius: inherit; background: var(--glass); pointer-events: none;}
+#tutorialBox { position: absolute; z-index: 10002; background: #1e1b4b; border: 2px solid #ffd89b; padding: 20px; border-radius: 15px; color: white; width: 300px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); transition: top 0.4s ease, left 0.4s ease; display: none; }
+#tutorialBox p { margin: 0 0 15px 0; font-size: 1.1em; line-height: 1.4; font-weight: 600; color: #fff;}
+#tutorialBox .tut-actions { display: flex; justify-content: space-between; gap: 10px; }
+.tut-arrow-up { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 15px solid #ffd89b; }
+.tut-arrow-down { position: absolute; bottom: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 15px solid #ffd89b; }
+
+/* RESPONSIVE TOGGLES */
+@media (min-width: 901px) { .mobile-only { display: none !important; } }
+@media (max-width: 900px) { 
+    .desktop-only { display: none !important; }
+    .header { flex-direction: column; align-items: flex-start; gap: 20px; }
+    .header-controls { width: 100%; justify-content: space-between; }
+    .top-action-group { justify-content: space-between; width: 100%; }
+    .top-action-group button, .btn-outline { flex: 1; }
+    /* Force 1 column on mobile even if wide view is on */
+    #categoriesContainer.layout-2, 
+    #categoriesContainer.layout-3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+
+<body>
+
+<div id="trashZone">
+    <!-- Custom CSS Trash Icon for Animation -->
+    <div class="custom-trash">
+        <div class="trash-lid"></div>
+        <div class="trash-can">
+            <div class="trash-line"></div>
+            <div class="trash-line"></div>
+            <div class="trash-line"></div>
+        </div>
+    </div>
+</div>
+
+<div class="container animate-in" id="mainContainer">
+    <div class="header">
+        <div>
+            <h1><span id="titleText">Infinite Counters</span> <span class="version-tag">v3 Beta</span></h1>
+            <p class="credits">Made by Dawidolowid</p>
+            <p class="credits" style="color: #ffb4b4;">Beta Software, Moving physics broken on the 2x and 3x view</p>
+        </div>
+        <div class="header-controls">
+            <div class="header-actions">
+                <button class="icon-btn" onclick="undo()" id="btnUndo" title="Cofnij (Ctrl+Z)" disabled><i class="fa-solid fa-rotate-left"></i></button>
+                <button class="icon-btn" onclick="redo()" id="btnRedo" title="Ponów (Ctrl+Y)" disabled><i class="fa-solid fa-rotate-right"></i></button>
+            </div>
+            <select id="language" class="main-select" onchange="changeLanguage()">
+                <option value="pl">Polski</option>
+                <option value="en">English</option>
+            </select>
+            <a href="#" class="back-btn" id="backBtn"><i class="fa-solid fa-arrow-left"></i> <span id="backBtnText">Wróć</span></a>
+        </div>
+    </div>
+
+    <!-- ADD CATEGORY BOX & TOP TOOLS -->
+    <div class="add-category-box">
+        <!-- Rząd 1: Główne akcje operacyjne -->
+        <div class="add-row">
+            <input type="text" id="catNameInput" class="main-input" placeholder="Nowa kategoria...">
+            <div class="top-action-group">
+                <button class="btn-main" onclick="addCategory()" id="addCatBtn"><i class="fa-solid fa-plus"></i> Dodaj</button>
+                <button class="btn-outline primary" onclick="openMassDupConfigModal()" id="massDupBtnTooltip" title="Masowa Duplikacja"><i class="fa-solid fa-clone"></i></button>
+                <button class="btn-outline success" onclick="openSyncModal()" id="syncBtnTooltip" title="Zsynchronizowane Parametry"><i class="fa-solid fa-link"></i></button>
+                <button class="btn-outline danger" onclick="openBulkDeleteModal()" id="bulkBtnTooltip" title="Usuń wiele"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+        </div>
+        <!-- Rząd 2: Narzędzia ogólne (Zastępują stary footer) -->
+        <div class="add-row" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px; margin-top: 5px;">
+            <button class="btn-outline" onclick="exportData()" id="exportBtnText"><i class="fa-solid fa-download"></i> Eksportuj</button>
+            <button class="btn-outline" onclick="importData()" id="importBtnText"><i class="fa-solid fa-upload"></i> Importuj</button>
+            <button class="btn-outline danger" onclick="confirmResetAll()" id="resetBtnText"><i class="fa-solid fa-skull"></i> Wyczyść</button>
+            <!-- NEW TOGGLE VIEW BUTTON -->
+            <button class="btn-outline info" onclick="toggleLayout()" id="layoutBtnText" title="Przełącz widok"><i class="fa-solid fa-table-columns"></i> Widok</button>
+        </div>
+    </div>
+
+    <div id="categoriesContainer"></div>
+</div>
+
+<!-- TUTORIAL OVERLAY & BOX -->
+<div id="tutorialOverlay"></div>
+<div id="tutorialBox">
+    <div id="tutArrow"></div>
+    <p id="tutMessage">Tekst tutoriala...</p>
+    <div class="tut-actions">
+        <button class="btn-outline danger" style="padding: 8px; flex:0.4" onclick="endTutorial()" id="tutSkipBtn">Pomiń</button>
+        <button class="btn-main" style="padding: 8px; flex:1" onclick="nextTutorialStep()" id="tutNextBtn">Dalej <i class="fa-solid fa-arrow-right"></i></button>
+    </div>
+</div>
+
+<!-- Mass Duplication Modal -->
+<div id="massDupConfigModal" class="modal-overlay">
+    <div class="dialog-box" style="max-width: 450px;">
+        <h3 id="massDupTitle"><i class="fa-solid fa-clone" style="color: #8cb6ff; font-size: 1.5em;"></i> Masowa Duplikacja</h3>
+        
+        <div style="text-align: left; margin-bottom: 15px;">
+            <label id="massDupSourceLabel" style="font-size: 0.9em; opacity: 0.8;">Kategoria źródłowa:</label>
+            <select id="massDupSource" class="main-select" style="width: 100%; margin-top: 5px;" onchange="updateMassDupPreview()"></select>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px;">
+            <span id="massDupCountLabel">Liczba kopii:</span>
+            <div class="counter-controls">
+                <button class="val-btn minus" onclick="changeMassDupCount(-1)"><i class="fa-solid fa-minus"></i></button>
+                <span id="massDupCountDisplay" class="counter-value">1</span>
+                <button class="val-btn plus" onclick="changeMassDupCount(1)"><i class="fa-solid fa-plus"></i></button>
+            </div>
+        </div>
+
+        <div id="massDupPreviewList" class="modal-list-container"></div>
+
+        <div class="dialog-actions">
+            <button class="btn-secondary" id="massDupCancelBtn" onclick="closeMassDupConfig()">Anuluj</button>
+            <button class="btn-main" id="massDupConfirmBtn" style="background: rgba(100, 149, 237, 0.8);" onclick="confirmMassDupConfig()">Dalej <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+    </div>
+</div>
+
+<!-- Synced Parameters Modal -->
+<div id="syncModal" class="modal-overlay">
+    <div class="dialog-box" style="max-width: 450px;">
+        <h3 id="syncTitle"><i class="fa-solid fa-link" style="color: #90ee90; font-size: 1.5em;"></i> Zsynchronizowane Parametry</h3>
+        
+        <div style="text-align: left; margin-bottom: 15px;">
+            <label id="syncSourceLabel" style="font-size: 0.9em; opacity: 0.8;">Kategoria źródłowa (wzorzec):</label>
+            <select id="syncSource" class="main-select" style="width: 100%; margin-top: 5px;" onchange="updateSyncTargets()"></select>
+        </div>
+
+        <!-- Active Live Links list -->
+        <div id="activeSyncContainer" style="display:none; text-align: left; margin-bottom: 15px;">
+            <label id="activeSyncLabel" style="font-size: 0.8em; opacity: 0.7; text-transform: uppercase; letter-spacing: 1px;">Aktywne powiązania na żywo:</label>
+            <div id="activeSyncList" class="modal-list-container" style="max-height: 120px; margin-top: 5px; background: rgba(144,238,144,0.05); border-color: rgba(144,238,144,0.2);"></div>
+        </div>
+
+        <div style="text-align: left; margin-bottom: 15px;">
+            <label id="syncTargetsLabel" style="font-size: 0.9em; opacity: 0.8;">Kategorie docelowe:</label>
+            <div id="syncTargetList" class="modal-list-container" style="max-height: 150px; margin-top: 5px;"></div>
+        </div>
+
+        <div style="text-align: left; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px;">
+            <label style="font-size: 0.9em; opacity: 0.8; display: block; margin-bottom: 10px;" id="syncOptionsLabel">Co zsynchronizować?</label>
+            <label class="bulk-item" style="padding: 5px 10px;">
+                <div class="bulk-item-left">
+                    <input type="checkbox" id="syncOptValues" class="sync-cb" checked> <span id="syncOptValText">Wartości liczników</span>
+                </div>
+            </label>
+            <label class="bulk-item" style="padding: 5px 10px;">
+                <div class="bulk-item-left">
+                    <input type="checkbox" id="syncOptStructure" class="sync-cb"> <span id="syncOptStructText">Kolejność i nazwy elementów</span>
+                </div>
+            </label>
+            <label class="bulk-item" style="padding: 8px 10px; background: rgba(144, 238, 144, 0.1); border: 1px solid rgba(144,238,144,0.3); margin-top: 10px;">
+                <div class="bulk-item-left">
+                    <input type="checkbox" id="syncOptLive" class="sync-cb" checked> 
+                    <span id="syncOptLiveText" style="color: #90ee90; font-weight: 600;"><i class="fa-solid fa-satellite-dish"></i> Synchronizacja na żywo</span>
+                </div>
+            </label>
+        </div>
+
+        <div class="dialog-actions">
+            <button class="btn-secondary" id="syncCancelBtn" onclick="closeSyncModal()">Anuluj</button>
+            <button class="btn-main" id="syncConfirmBtn" style="background: rgba(144, 238, 144, 0.8); color: #000;" onclick="executeSync()">Synchronizuj</button>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Delete Modal -->
+<div id="bulkDeleteModal" class="modal-overlay">
+    <div class="dialog-box" style="max-width: 450px;">
+        <h3 id="bulkDeleteTitle"><i class="fa-solid fa-trash-can" style="color: #ff6347; font-size: 1.5em;"></i> Wybierz kategorie do usunięcia</h3>
+        <p id="bulkDeleteDesc" style="font-size: 0.9em; margin-bottom: 15px; margin-top:0;">Zaznacz elementy, które chcesz trwale usunąć.</p>
+        
+        <div id="bulkDeleteList" class="modal-list-container"></div>
+        
+        <div class="dialog-actions">
+            <button class="btn-secondary" id="bulkCancelBtn" onclick="closeBulkDeleteModal()">Anuluj</button>
+            <button class="btn-main" id="bulkConfirmBtn" style="background: rgba(255, 99, 71, 0.8);" onclick="executeBulkDelete()">Usuń zaznaczone</button>
+        </div>
+    </div>
+</div>
+
+<!-- Drag to Placement Modal -->
+<div id="dupModalOverlay" class="modal-overlay">
+    <h3 id="dupTitleText" style="color:#ffd89b; margin-bottom: 30px; font-size: 1.5em; text-align: center;"><i class="fa-solid fa-arrows-up-down-left-right" style="margin-bottom: 10px;"></i><br>Przeciągnij kartę w wybrane miejsce</h3>
+    <div id="dupDragCard" class="category-card" draggable="true" style="margin:0; width:90%; max-width:500px; text-align:center; cursor:grab; border: 2px dashed #ffd89b;">
+        <div class="category-header" style="justify-content:center; border-radius: 20px;">
+            <div class="drag-handle" style="margin-right: 15px; pointer-events: none;"><i class="fa-solid fa-grip-vertical"></i></div>
+            <span class="category-title" id="dupCardTitle" style="pointer-events:none; font-weight:700; font-size:1.3em; color:#ffd89b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80%;"></span>
+        </div>
+    </div>
+    <button onclick="closeDupModal()" class="btn-secondary" style="margin-top:30px; width: 200px; flex: none;" id="dupCancelBtn">Anuluj</button>
+</div>
+
+<!-- Universal Confirm/Alert Dialog -->
+<div id="customDialog" class="modal-overlay">
+    <div class="dialog-box" style="max-width: 400px;">
+        <h3 id="dialogTitle">Tytuł</h3>
+        <p id="dialogMessage"></p>
+        <div class="dialog-actions">
+            <button class="btn-secondary" id="dialogCancelBtn" onclick="closeDialog()">Anuluj</button>
+            <button class="btn-main" id="dialogConfirmBtn" style="background: rgba(255, 99, 71, 0.8);">Zatwierdź</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* --- UTILS & ID GENERATION --- */
+function generateId() { return Math.random().toString(36).substr(2, 9); }
+
+function ensureIds() {
+    data.forEach(c => {
+        if(!c.id) c.id = generateId();
+        if(!c.liveSyncTargets) c.liveSyncTargets = [];
+        if(c.items) c.items.forEach(i => { if(!i.id) i.id = generateId(); });
+    });
+}
+
+let data = JSON.parse(localStorage.getItem('infiniteCounters')) || [];
+ensureIds();
+
+let draggedItemInfo = null;
+let dialogCallback = null;
+let pendingDupDataArray = null; 
+
+// View state: 0=1col, 1=2cols, 2=3cols
+let layoutMode = parseInt(localStorage.getItem('infiniteCounters_layoutMode')) || 0;
+
+/* --- HISTORY SYSTEM (UNDO/REDO) --- */
+let stateHistory = [JSON.stringify(data)];
+let historyIndex = 0;
+
+function pushState() {
+    if (historyIndex < stateHistory.length - 1) stateHistory = stateHistory.slice(0, historyIndex + 1);
+    stateHistory.push(JSON.stringify(data));
+    if (stateHistory.length > 50) stateHistory.shift();
+    else historyIndex++;
+    updateUndoRedoUI();
+}
+
+function updateUndoRedoUI() {
+    document.getElementById('btnUndo').disabled = (historyIndex <= 0);
+    document.getElementById('btnRedo').disabled = (historyIndex >= stateHistory.length - 1);
+}
+
+function undo() {
+    if (historyIndex > 0) {
+        historyIndex--;
+        data = JSON.parse(stateHistory[historyIndex]);
+        localStorage.setItem('infiniteCounters', JSON.stringify(data));
+        updateUndoRedoUI(); render();
+    }
+}
+
+function redo() {
+    if (historyIndex < stateHistory.length - 1) {
+        historyIndex++;
+        data = JSON.parse(stateHistory[historyIndex]);
+        localStorage.setItem('infiniteCounters', JSON.stringify(data));
+        updateUndoRedoUI(); render();
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    if(document.getElementById('tutorialOverlay').style.display === 'block') return; // blokada podczas tutoriala
+    if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); } 
+    else if (e.ctrlKey && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); redo(); }
+});
+
+
+const translations = {
+    pl: { 
+        title: "Infinite Counters", addCatBtn: "Dodaj", catPlaceholder: "Nowa kategoria...", itemPlaceholder: "Nazwa...", addItemBtn: "Dodaj", backBtn: "Wróć", 
+        exportBtn: "Eksportuj", importBtn: "Importuj", resetBtn: "Wyczyść", layoutBtn: "Widok", tutBtn: "Samouczek", cancel: "Anuluj",
+        confirmDelete: "Na pewno usunąć ten licznik?", confirmDeleteCat: "Na pewno usunąć tę kategorię?", confirmReset: "Na pewno usunąć WSZYSTKO?", 
+        dupTitle: '<i class="fa-solid fa-arrows-up-down-left-right" style="margin-bottom: 10px;"></i><br>Przeciągnij kartę w wybrane miejsce', dupCancel: "Anuluj", copySuffix: " (Kopia)", 
+        dialogConfirm: "Potwierdź", dialogCancel: "Anuluj", errorTitle: "Błąd", errorFormat: "Nieprawidłowy plik JSON!", 
+        bulkTooltip: "Usuń wiele", bulkTitle: '<i class="fa-solid fa-trash-can" style="color: #ff6347; font-size: 1.5em;"></i> Wybierz kategorie do usunięcia', 
+        bulkDesc: "Zaznacz elementy, które chcesz trwale usunąć.", bulkCancel: "Anuluj", bulkConfirmBtn: "Usuń zaznaczone",
+        massDupTooltip: "Masowa Duplikacja", massDupTitle: '<i class="fa-solid fa-clone" style="color: #8cb6ff; font-size: 1.5em;"></i> Masowa Duplikacja',
+        massDupSource: "Kategoria źródłowa:", massDupCount: "Liczba kopii:", massDupNext: 'Dalej <i class="fa-solid fa-arrow-right"></i>',
+        syncTooltip: "Zsynchronizowane Parametry", syncTitle: '<i class="fa-solid fa-link" style="color: #90ee90; font-size: 1.5em;"></i> Zsynchronizowane Parametry',
+        syncSource: "Kategoria źródłowa (wzorzec):", syncTargets: "Kategorie docelowe:", syncOptLabel: "Co zsynchronizować?",
+        syncOptVal: "Wartości liczników", syncOptStruct: "Kolejność i nazwy elementów", syncBtn: "Synchronizuj",
+        syncLive: '<i class="fa-solid fa-satellite-dish"></i> Synchronizacja na żywo', syncActiveLabel: "Aktywne powiązania na żywo:",
+        noCatAlert: "Brak kategorii do wykonania tej akcji.", undo: "Cofnij (Ctrl+Z)", redo: "Ponów (Ctrl+Y)",
+        tutSkip: "Pomiń", tutFinish: "Zakończ"
+    },
+    en: { 
+        title: "Infinite Counters", addCatBtn: "Add", catPlaceholder: "New category...", itemPlaceholder: "Name...", addItemBtn: "Add", backBtn: "Back", 
+        exportBtn: "Export", importBtn: "Import", resetBtn: "Clear All", layoutBtn: "View", tutBtn: "Tutorial", cancel: "Cancel",
+        confirmDelete: "Delete this counter?", confirmDeleteCat: "Delete this category?", confirmReset: "Delete EVERYTHING?", 
+        dupTitle: '<i class="fa-solid fa-arrows-up-down-left-right" style="margin-bottom: 10px;"></i><br>Drag the card to place it', dupCancel: "Cancel", copySuffix: " (Copy)", 
+        dialogConfirm: "Confirm", dialogCancel: "Cancel", errorTitle: "Error", errorFormat: "Invalid JSON file!", 
+        bulkTooltip: "Bulk Delete", bulkTitle: '<i class="fa-solid fa-trash-can" style="color: #ff6347; font-size: 1.5em;"></i> Select categories to remove', 
+        bulkDesc: "Check the items you want to permanently delete.", bulkCancel: "Cancel", bulkConfirmBtn: "Delete selected",
+        massDupTooltip: "Mass Duplication", massDupTitle: '<i class="fa-solid fa-clone" style="color: #8cb6ff; font-size: 1.5em;"></i> Mass Duplication',
+        massDupSource: "Source category:", massDupCount: "Number of copies:", massDupNext: 'Next <i class="fa-solid fa-arrow-right"></i>',
+        syncTooltip: "Synced Parameters", syncTitle: '<i class="fa-solid fa-link" style="color: #90ee90; font-size: 1.5em;"></i> Synced Parameters',
+        syncSource: "Source category (master):", syncTargets: "Target categories:", syncOptLabel: "What to synchronize?",
+        syncOptVal: "Counter values", syncOptStruct: "Item order and names", syncBtn: "Synchronize",
+        syncLive: '<i class="fa-solid fa-satellite-dish"></i> Live Syncing', syncActiveLabel: "Active Live Syncs:",
+        noCatAlert: "No categories available for this action.", undo: "Undo (Ctrl+Z)", redo: "Redo (Ctrl+Y)",
+        tutSkip: "Skip", tutFinish: "Finish"
+    }
+};
+
+/* --- TUTORIAL SYSTEM --- */
+const tutorialSteps = [
+    { target: ".add-category-box", arrow: "up",
+      pl: "Witaj w Infinite Counters! Tutaj możesz stworzyć własną kategorię do śledzenia czegokolwiek zechcesz. Na potrzeby tego samouczka wygenerowaliśmy przykładowe dane.",
+      en: "Welcome to Infinite Counters! Here you can create a custom category to track anything you want. We generated some sample data for this tutorial." },
+    { target: ".counter-controls", arrow: "down",
+      pl: "Używaj przycisków <b>+</b> i <b>-</b>, aby zmieniać wartości liczników. Będą towarzyszyć Ci przyjemne animacje i kolory!",
+      en: "Use the <b>+</b> and <b>-</b> buttons to change counter values. Nice animations and colors will assist you!" },
+    { target: ".cat-handle", arrow: "up",
+      pl: "Złap tutaj (ikona kropek), aby przesuwać i zmieniać kolejność elementów. <b>Wskazówka:</b> Przeciągnięcie do lewej krawędzi ekranu spowoduje szybkie <b>usunięcie</b>!",
+      en: "Grab here (dots icon) to move and reorder items. <b>Tip:</b> Dragging to the left edge of the screen will quickly <b>delete</b> them!" },
+    { target: "#massDupBtnTooltip", arrow: "down",
+      pl: "Narzędzie <b>Masowej Duplikacji</b>. Pozwala w kilka sekund stworzyć nawet kilkadziesiąt kopii danej kategorii, zmieniając im od razu nazwy.",
+      en: "<b>Mass Duplication</b> tool. Allows you to create dozens of copies of a category in seconds, renaming them instantly." },
+    { target: "#syncBtnTooltip", arrow: "down",
+      pl: "<b>Synchronizacja Parametrów</b>. Wyjątkowe narzędzie, które pozwala powiązać wiele kategorii na raz! Możesz kopiować wartości, ułożenie liczników, a także uruchomić <b>Live Sync</b>, dzięki któremu kliknięcie w jednym miejscu zaktualizuje powiązane kopie!",
+      en: "<b>Synced Parameters</b>. A unique tool that lets you link multiple categories! You can copy values, order, and enable <b>Live Sync</b> so a click in one place updates all linked copies!" },
+    { target: ".header-actions", arrow: "up",
+      pl: "Cofnij (Ctrl+Z) i Ponów (Ctrl+Y). Jeśli zrobisz coś przez przypadek, nie martw się, zawsze możesz bezpiecznie wrócić do poprzedniego kroku.",
+      en: "Undo (Ctrl+Z) and Redo (Ctrl+Y). If you make a mistake, don't worry, you can safely revert to the previous step." }
+];
+
+let currentTutStep = 0;
+
+function startTutorial() {
+    // Inject dummy data for tutorial purposes
+    data = [
+        { id: generateId(), name: "Wiedźmin 3 - Ekwipunek", isCollapsed: false, liveSyncTargets: [], items: [
+            { id: generateId(), name: "Srebrne miecze", value: 2 },
+            { id: generateId(), name: "Eliksiry", value: 14 }
+        ]},
+        { id: generateId(), name: "GTA V - Statystyki", isCollapsed: false, liveSyncTargets: [], items: [
+            { id: generateId(), name: "Zakończone misje", value: 69 },
+            { id: generateId(), name: "Ukradzione auta", value: 420 }
+        ]}
+    ];
+    save(); render();
+    
+    currentTutStep = 0;
+    document.getElementById('tutorialOverlay').style.display = 'block';
+    
+    // Auto-scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(showTutorialStep, 300);
+}
+
+function showTutorialStep() {
+    const lang = document.getElementById("language").value;
+    document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+    
+    if (currentTutStep >= tutorialSteps.length) { endTutorial(); return; }
+    
+    const step = tutorialSteps[currentTutStep];
+    const targetEl = document.querySelector(step.target);
+    const box = document.getElementById('tutorialBox');
+    const arrow = document.getElementById('tutArrow');
+    
+    // Dynamic text logic
+    document.getElementById('tutMessage').innerHTML = lang === 'pl' ? step.pl : step.en;
+    document.getElementById('tutSkipBtn').textContent = translations[lang].tutSkip;
+    if(currentTutStep === tutorialSteps.length - 1) {
+        document.getElementById('tutNextBtn').innerHTML = `<i class="fa-solid fa-check"></i> ` + translations[lang].tutFinish;
+    } else {
+        document.getElementById('tutNextBtn').innerHTML = (lang === 'pl' ? "Dalej" : "Next") + ` <i class="fa-solid fa-arrow-right"></i>`;
+    }
+
+    if(targetEl) {
+        targetEl.classList.add('tutorial-highlight');
+        const rect = targetEl.getBoundingClientRect();
+        box.style.display = 'block';
+
+        let top, left;
+        // Position Box logic
+        if (step.arrow === "up") {
+            arrow.className = "tut-arrow-up";
+            top = rect.bottom + 25;
+            left = rect.left + (rect.width / 2) - 150;
+        } else {
+            arrow.className = "tut-arrow-down";
+            top = rect.top - box.offsetHeight - 25;
+            left = rect.left + (rect.width / 2) - 150;
+        }
+
+        // Keep inside bounds horizontally
+        if (left < 10) left = 10;
+        if (left + 300 > window.innerWidth) left = window.innerWidth - 310;
+        
+        box.style.top = top + "px";
+        box.style.left = left + "px";
+    } else {
+        // Fallback if element not found (e.g. mobile vs desktop views)
+        currentTutStep++; showTutorialStep();
+    }
+}
+
+function nextTutorialStep() { currentTutStep++; showTutorialStep(); }
+
+function endTutorial() {
+    document.getElementById('tutorialOverlay').style.display = 'none';
+    document.getElementById('tutorialBox').style.display = 'none';
+    document.querySelectorAll('.tutorial-highlight').forEach(e => e.classList.remove('tutorial-highlight'));
+}
+
+
+function playFlyoutAnimation(rect, delta) {
+    const fly = document.createElement('div');
+    fly.className = `flyout ${delta > 0 ? 'fly-plus' : 'fly-minus'}`;
+    fly.innerHTML = delta > 0 ? '<i class="fa-solid fa-plus"></i>' : '<i class="fa-solid fa-minus"></i>';
+    fly.style.left = `${rect.left + rect.width / 2}px`;
+    fly.style.top = `${rect.top + rect.height / 2}px`;
+    document.body.appendChild(fly);
+    setTimeout(() => fly.remove(), 600);
+}
+
+/* --- MODALS LOGIC --- */
+function showConfirm(iconHtml, message, onConfirm) {
+    const lang = document.getElementById("language").value;
+    document.getElementById('dialogTitle').innerHTML = iconHtml;
+    document.getElementById('dialogMessage').textContent = message;
+    document.getElementById('dialogCancelBtn').textContent = translations[lang].dialogCancel;
+    document.getElementById('dialogConfirmBtn').textContent = translations[lang].dialogConfirm;
+    document.getElementById('dialogCancelBtn').style.display = 'block';
+    document.getElementById('customDialog').style.display = 'flex';
+    dialogCallback = onConfirm;
+}
+
+function showAlert(iconHtml, message) {
+    document.getElementById('dialogTitle').innerHTML = iconHtml;
+    document.getElementById('dialogMessage').textContent = message;
+    document.getElementById('dialogCancelBtn').style.display = 'none';
+    document.getElementById('dialogConfirmBtn').textContent = "OK";
+    document.getElementById('customDialog').style.display = 'flex';
+    dialogCallback = null;
+}
+
+function closeDialog() { document.getElementById('customDialog').style.display = 'none'; dialogCallback = null; }
+document.getElementById('dialogConfirmBtn').addEventListener('click', () => { if (dialogCallback) dialogCallback(); closeDialog(); });
+
+/* --- LIVE SYNC PROCESSORS --- */
+function processLiveSyncValue(sourceCat, itemIdx, delta) {
+    if(!sourceCat.liveSyncTargets || sourceCat.liveSyncTargets.length === 0) return false;
+    let sItem = sourceCat.items[itemIdx];
+    let madeChanges = false;
+    
+    sourceCat.liveSyncTargets.forEach(link => {
+        if(link.syncValues) {
+            let tCatIdx = data.findIndex(c => c.id === link.targetId);
+            if(tCatIdx === -1) return;
+            let tCat = data[tCatIdx];
+            let tItemIdx = tCat.items.findIndex(i => i.id === sItem.id || i.name === sItem.name);
+            
+            if(tItemIdx !== -1) {
+                tCat.items[tItemIdx].value = sItem.value;
+                madeChanges = true;
+                
+                // Real-time DOM Update & Animation for Targets
+                let tRow = document.querySelector(`.counter-item[data-cat-index="${tCatIdx}"][data-item-index="${tItemIdx}"]`);
+                if(tRow) {
+                    let valEl = tRow.querySelector('.counter-value');
+                    valEl.textContent = sItem.value;
+                    tRow.classList.remove('flash-up', 'flash-down');
+                    void tRow.offsetWidth;
+                    tRow.classList.add(delta > 0 ? 'flash-up' : 'flash-down');
+                    playFlyoutAnimation(valEl.getBoundingClientRect(), delta);
+                }
+            }
+        }
+    });
+    return madeChanges;
+}
+
+function processLiveSyncStructure(sourceCat) {
+    if(!sourceCat.liveSyncTargets || sourceCat.liveSyncTargets.length === 0) return;
+    sourceCat.liveSyncTargets.forEach(link => {
+        if(link.syncStructure) {
+            let targetCat = data.find(c => c.id === link.targetId);
+            if(!targetCat) return;
+            
+            let newItems = [];
+            sourceCat.items.forEach(sItem => {
+                let match = targetCat.items.find(tItem => tItem.id === sItem.id || tItem.name === sItem.name);
+                newItems.push({
+                    id: sItem.id, 
+                    name: sItem.name,
+                    value: match && !link.syncValues ? match.value : sItem.value
+                });
+            });
+            targetCat.items = newItems;
+        }
+    });
+}
+
+/* --- SYNC PARAMETERS LOGIC --- */
+function openSyncModal() {
+    const lang = document.getElementById("language").value;
+    if(data.length < 2) {
+        showAlert('<i class="fa-solid fa-circle-exclamation" style="color:#ff6347; font-size:1.5em;"></i>', translations[lang].noCatAlert);
+        return;
+    }
+    const sel = document.getElementById('syncSource');
+    sel.innerHTML = '';
+    data.forEach((c, i) => {
+        const opt = document.createElement('option');
+        opt.value = i; opt.textContent = c.name;
+        sel.appendChild(opt);
+    });
+    updateSyncTargets();
+    document.getElementById('syncModal').style.display = 'flex';
+}
+
+function closeSyncModal() { document.getElementById('syncModal').style.display = 'none'; }
+
+function removeLiveSync(sourceCatId, targetId) {
+    let sCat = data.find(c => c.id === sourceCatId);
+    if(sCat && sCat.liveSyncTargets) {
+        sCat.liveSyncTargets = sCat.liveSyncTargets.filter(t => t.targetId !== targetId);
+        save(); updateSyncTargets();
+        render(); // Force UI update to remove "LIVE" badge if empty
+    }
+}
+
+function updateSyncTargets() {
+    const sourceIdx = parseInt(document.getElementById('syncSource').value);
+    const sourceCat = data[sourceIdx];
+    const lang = document.getElementById('language').value;
+    
+    // 1. Render Active Links
+    const activeCont = document.getElementById('activeSyncContainer');
+    const activeList = document.getElementById('activeSyncList');
+    activeList.innerHTML = '';
+    if(sourceCat.liveSyncTargets && sourceCat.liveSyncTargets.length > 0) {
+        activeCont.style.display = 'block';
+        sourceCat.liveSyncTargets.forEach(link => {
+            let tCat = data.find(c => c.id === link.targetId);
+            if(tCat) {
+                let text = `${tCat.name} (`;
+                if(link.syncValues) text += (lang === 'pl' ? "Wartości" : "Values");
+                if(link.syncValues && link.syncStructure) text += " & ";
+                if(link.syncStructure) text += (lang === 'pl' ? "Struktura" : "Structure");
+                text += ")";
+                activeList.innerHTML += `
+                    <div class="bulk-item" style="padding: 5px 10px;">
+                        <div class="bulk-item-left"><span class="live-sync-badge"><i class="fa-solid fa-circle" style="font-size: 0.6em;"></i> LIVE</span> <span style="margin-left:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${text}</span></div>
+                        <button class="icon-btn" style="background: rgba(255,99,71,0.2); color:#ff6347; width:28px; height:28px;" title="Odłącz" onclick="removeLiveSync('${sourceCat.id}', '${link.targetId}')"><i class="fa-solid fa-link-slash"></i></button>
+                    </div>`;
+            }
+        });
+    } else { activeCont.style.display = 'none'; }
+
+    // 2. Render Checkbox Targets
+    const list = document.getElementById('syncTargetList');
+    list.innerHTML = '';
+    data.forEach((cat, idx) => {
+        if (idx !== sourceIdx) {
+            const isAlreadyLinked = sourceCat.liveSyncTargets && sourceCat.liveSyncTargets.find(l => l.targetId === cat.id);
+            if(!isAlreadyLinked) {
+                const label = document.createElement('label');
+                label.className = "bulk-item";
+                label.innerHTML = `<div class="bulk-item-left"><input type="checkbox" value="${idx}" class="sync-target-cb"> <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cat.name}</span></div>`;
+                list.appendChild(label);
+            }
+        }
+    });
+    
+    if(list.innerHTML === '') {
+        list.innerHTML = `<p style="opacity:0.5; text-align:center; margin:10px 0; font-size:0.9em;">`+ (lang === 'pl' ? "Wszystkie kategorie są już połączone." : "All categories are already linked.") +`</p>`;
+    }
+}
+
+function executeSync() {
+    const sourceIdx = parseInt(document.getElementById('syncSource').value);
+    const source = data[sourceIdx];
+    const targets = Array.from(document.querySelectorAll('.sync-target-cb:checked')).map(cb => parseInt(cb.value));
+    
+    if (targets.length === 0) return closeSyncModal();
+
+    const syncValues = document.getElementById('syncOptValues').checked;
+    const syncStruct = document.getElementById('syncOptStructure').checked;
+    const isLive = document.getElementById('syncOptLive').checked;
+    
+    if (!syncValues && !syncStruct) return closeSyncModal();
+
+    targets.forEach(tIdx => {
+        let target = data[tIdx];
+
+        // One-time execution
+        if (syncStruct && syncValues) { target.items = JSON.parse(JSON.stringify(source.items)); } 
+        else if (syncStruct && !syncValues) {
+            let newItems = [];
+            source.items.forEach(sItem => {
+                let existing = target.items.find(ti => ti.id === sItem.id || ti.name === sItem.name);
+                newItems.push({ id: sItem.id, name: sItem.name, value: existing ? existing.value : 0 });
+            });
+            target.items = newItems;
+        } else if (!syncStruct && syncValues) {
+            target.items.forEach(tItem => {
+                let match = source.items.find(si => si.id === tItem.id || si.name === tItem.name);
+                if (match) tItem.value = match.value;
+            });
+        }
+
+        // Setup Live Link
+        if(isLive) {
+            source.liveSyncTargets = source.liveSyncTargets || [];
+            source.liveSyncTargets.push({ targetId: target.id, syncValues: syncValues, syncStructure: syncStruct });
+        }
+    });
+
+    closeSyncModal();
+    save(); render();
+}
+
+/* --- MASS DUPLICATION LOGIC --- */
+let massDupCount = 1;
+
+function openMassDupConfigModal() {
+    const lang = document.getElementById("language").value;
+    if(data.length === 0) { showAlert('<i class="fa-solid fa-circle-exclamation" style="color:#ff6347; font-size:1.5em;"></i>', translations[lang].noCatAlert); return; }
+
+    const sel = document.getElementById('massDupSource');
+    sel.innerHTML = '';
+    data.forEach((c, i) => {
+        const opt = document.createElement('option');
+        opt.value = i; opt.textContent = c.name;
+        sel.appendChild(opt);
+    });
+
+    massDupCount = 1;
+    document.getElementById('massDupCountDisplay').textContent = massDupCount;
+    updateMassDupPreview();
+    document.getElementById('massDupConfigModal').style.display = 'flex';
+}
+
+function changeMassDupCount(delta) {
+    massDupCount += delta;
+    if(massDupCount < 1) massDupCount = 1;
+    if(massDupCount > 30) massDupCount = 30;
+
+    const display = document.getElementById('massDupCountDisplay');
+    const oldVal = parseInt(display.textContent);
+
+    if (massDupCount !== oldVal) {
+        display.textContent = massDupCount;
+        playFlyoutAnimation(display.getBoundingClientRect(), delta);
+        updateMassDupPreview();
+    }
+}
+
+function updateMassDupPreview() {
+    const list = document.getElementById('massDupPreviewList');
+    list.innerHTML = '';
+    const sourceName = data[document.getElementById('massDupSource').value].name;
+    const suffix = translations[document.getElementById("language").value].copySuffix;
+
+    for(let i=0; i<massDupCount; i++) {
+        const inp = document.createElement('input');
+        inp.type = 'text'; inp.className = 'main-input mass-dup-name-input';
+        inp.value = massDupCount === 1 ? `${sourceName}${suffix}` : `${sourceName}${suffix} ${i+1}`;
+        list.appendChild(inp);
+    }
+}
+
+function closeMassDupConfig() { document.getElementById('massDupConfigModal').style.display = 'none'; }
+
+function confirmMassDupConfig() {
+    const inputs = document.querySelectorAll('.mass-dup-name-input');
+    const sourceIdx = document.getElementById('massDupSource').value;
+    const sourceCat = data[sourceIdx];
+
+    pendingDupDataArray = [];
+    inputs.forEach(input => {
+        let newCat = JSON.parse(JSON.stringify(sourceCat));
+        newCat.name = input.value.trim() || sourceCat.name;
+        newCat.id = generateId(); 
+        newCat.liveSyncTargets = []; 
+        newCat.items = newCat.items.map(i => ({...i, id: generateId()}));
+        pendingDupDataArray.push(newCat);
+    });
+
+    closeMassDupConfig();
+    document.getElementById('dupCardTitle').innerText = pendingDupDataArray.length === 1 ? pendingDupDataArray[0].name : `${pendingDupDataArray.length}x ${sourceCat.name}`;
+    document.getElementById('dupModalOverlay').style.display = 'flex';
+}
+
+/* --- BULK DELETE LOGIC --- */
+function openBulkDeleteModal() {
+    const lang = document.getElementById("language").value;
+    const list = document.getElementById('bulkDeleteList');
+    list.innerHTML = '';
+    
+    if(data.length === 0) {
+        const p = document.createElement('p');
+        p.textContent = translations[lang].noCatAlert;
+        p.style.textAlign = 'center'; p.style.opacity = '0.5';
+        list.appendChild(p);
+    }
+
+    data.forEach((cat, idx) => {
+        const label = document.createElement('label');
+        label.className = "bulk-item";
+        label.innerHTML = `<div class="bulk-item-left"><input type="checkbox" value="${idx}" class="bulk-cb"> <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cat.name}</span></div>`;
+        list.appendChild(label);
+    });
+    
+    document.getElementById('bulkDeleteModal').style.display = 'flex';
+}
+
+function closeBulkDeleteModal() { document.getElementById('bulkDeleteModal').style.display = 'none'; }
+
+function executeBulkDelete() {
+    const checkboxes = document.querySelectorAll('.bulk-cb:checked');
+    if (checkboxes.length === 0) return closeBulkDeleteModal();
+
+    const checkedIndices = Array.from(checkboxes).map(cb => parseInt(cb.value));
+    closeBulkDeleteModal();
+
+    checkedIndices.forEach(idx => {
+        const card = document.querySelector(`.category-card[data-cat-index="${idx}"]`);
+        if(card) card.classList.add('deleting');
+    });
+
+    setTimeout(() => {
+        data = data.filter((_, idx) => !checkedIndices.includes(idx));
+        save(); render();
+    }, 300);
+}
+
+/* --- LAYOUT TOGGLE LOGIC (CYCLE 1 -> 2 -> 3 -> 1) --- */
+function toggleLayout() {
+    layoutMode = (layoutMode + 1) % 3;
+    localStorage.setItem('infiniteCounters_layoutMode', layoutMode);
+    applyLayout();
+    updateLayoutBtnText();
+}
+
+function applyLayout() {
+    const container = document.getElementById('categoriesContainer');
+    const mainContainer = document.getElementById('mainContainer');
+    
+    // Reset Classes
+    container.classList.remove('layout-2', 'layout-3');
+    mainContainer.classList.remove('layout-mode-2', 'layout-mode-3');
+
+    if (layoutMode === 1) {
+        container.classList.add('layout-2');
+        mainContainer.classList.add('layout-mode-2');
+    } else if (layoutMode === 2) {
+        container.classList.add('layout-3');
+        mainContainer.classList.add('layout-mode-3');
+    }
+}
+
+function updateLayoutBtnText() {
+    const lang = document.getElementById("language").value;
+    const btn = document.getElementById("layoutBtnText");
+    let icon = "fa-table-columns";
+    let suffix = "";
+    
+    if (layoutMode === 1) suffix = " (2x)";
+    else if (layoutMode === 2) { suffix = " (3x)"; icon = "fa-table-cells"; }
+    
+    btn.innerHTML = `<i class="fa-solid ${icon}"></i> ${translations[lang].layoutBtn}${suffix}`;
+}
+
+/* --- ACTIONS (WITH HISTORY & LIVE SYNC INTEGRATION) --- */
+function save(recordHistory = true) { 
+    localStorage.setItem('infiniteCounters', JSON.stringify(data)); 
+    if(recordHistory) pushState();
+}
+
+function addCategory() {
+    const input = document.getElementById("catNameInput");
+    if (input.value.trim()) {
+        data.push({ id: generateId(), name: input.value.trim(), isCollapsed: false, items: [], liveSyncTargets: [] });
+        input.value = "";
+        save(); render();
+    }
+}
+
+function addItem(catIdx) {
+    const input = document.getElementById(`itemInput-${catIdx}`);
+    if (input.value.trim()) {
+        data[catIdx].items.push({ id: generateId(), name: input.value.trim(), value: 0 });
+        input.value = "";
+        processLiveSyncStructure(data[catIdx]);
+        save(); render();
+    }
+}
+
+function updateCategoryName(catIdx, newName) { if (newName.trim()) { data[catIdx].name = newName.trim(); save(); } }
+function updateItemName(catIdx, itemIdx, newName) { 
+    if (newName.trim()) { 
+        data[catIdx].items[itemIdx].name = newName.trim(); 
+        processLiveSyncStructure(data[catIdx]);
+        save(); render();
+    } 
+}
+
+function toggleCollapse(btn, catIdx) {
+    data[catIdx].isCollapsed = !data[catIdx].isCollapsed;
+    save(false); 
+    
+    const card = btn.closest('.category-card');
+    const wrapper = card.querySelector('.category-content-wrapper');
+    
+    if (data[catIdx].isCollapsed) {
+        wrapper.classList.add('collapsed'); card.classList.add('collapsed');
+        btn.innerHTML = '<i class="fa-solid fa-chevron-down"></i>'; 
+    } else {
+        wrapper.classList.remove('collapsed'); card.classList.remove('collapsed');
+        btn.innerHTML = '<i class="fa-solid fa-chevron-up"></i>'; 
+    }
+}
+
+function updateValue(btn, catIdx, itemIdx, delta) {
+    data[catIdx].items[itemIdx].value += delta;
+    if (data[catIdx].items[itemIdx].value < 0) data[catIdx].items[itemIdx].value = 0;
+    
+    const row = btn.closest('.counter-item');
+    const valElem = row.querySelector('.counter-value');
+    valElem.textContent = data[catIdx].items[itemIdx].value;
+    
+    const flashClass = delta > 0 ? 'flash-up' : 'flash-down';
+    row.classList.remove('flash-up', 'flash-down');
+    void row.offsetWidth;
+    row.classList.add(flashClass);
+    playFlyoutAnimation(valElem.getBoundingClientRect(), delta);
+
+    processLiveSyncValue(data[catIdx], itemIdx, delta);
+    save(); 
+}
+
+function animateAndExecuteDelete(selector, spliceAction) {
+    const element = document.querySelector(selector);
+    if(element) element.classList.add('deleting');
+    setTimeout(() => { spliceAction(); save(); render(); }, 300);
+}
+
+function confirmDeleteItem(catIdx, itemIdx) {
+    const lang = document.getElementById("language").value;
+    showConfirm('<i class="fa-solid fa-trash-can" style="color: #ff6347; font-size: 1.5em;"></i>', translations[lang].confirmDelete, () => {
+        animateAndExecuteDelete(`.counter-item[data-cat-index="${catIdx}"][data-item-index="${itemIdx}"]`, () => {
+            data[catIdx].items.splice(itemIdx, 1);
+            processLiveSyncStructure(data[catIdx]);
+        });
+    });
+}
+
+function confirmDeleteCategory(catIdx) {
+    const lang = document.getElementById("language").value;
+    showConfirm('<i class="fa-solid fa-trash-can" style="color: #ff6347; font-size: 1.5em;"></i>', translations[lang].confirmDeleteCat, () => {
+        animateAndExecuteDelete(`.category-card[data-cat-index="${catIdx}"]`, () => data.splice(catIdx, 1));
+    });
+}
+
+function confirmResetAll() {
+    const lang = document.getElementById("language").value;
+    showConfirm('<i class="fa-solid fa-triangle-exclamation" style="color: #ffb3b3; font-size: 1.5em;"></i>', translations[lang].confirmReset, () => {
+        data = []; save(); render();
+    });
+}
+
+/* --- SINGLE DUPLICATE LOGIC --- */
+function openDuplicateModal(catIdx) {
+    let pendingCat = JSON.parse(JSON.stringify(data[catIdx]));
+    pendingCat.name += translations[document.getElementById("language").value].copySuffix;
+    pendingCat.id = generateId(); 
+    pendingCat.liveSyncTargets = [];
+    pendingCat.items = pendingCat.items.map(i => ({...i, id: generateId()}));
+    
+    pendingDupDataArray = [pendingCat];
+    document.getElementById('dupCardTitle').innerText = pendingCat.name;
+    document.getElementById('dupModalOverlay').style.display = 'flex';
+}
+
+function closeDupModal() {
+    document.getElementById('dupModalOverlay').style.display = 'none';
+    pendingDupDataArray = null;
+    document.getElementById('dupModalOverlay').insertBefore(document.getElementById('dupDragCard'), document.getElementById('dupCancelBtn'));
+}
+
+const dupCard = document.getElementById('dupDragCard');
+dupCard.addEventListener('dragstart', (e) => {
+    dupCard.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'copyMove';
+    setTimeout(() => { document.getElementById('dupModalOverlay').style.display = 'none'; }, 0);
+});
+
+dupCard.addEventListener('dragend', (e) => {
+    dupCard.classList.remove('dragging');
+    const container = document.getElementById('categoriesContainer');
+    if (dupCard.parentElement === container && pendingDupDataArray) {
+        const cards = Array.from(container.children);
+        const newOrder = [];
+        cards.forEach(child => {
+            if (child === dupCard) newOrder.push(...pendingDupDataArray);
+            else if (child.dataset.catIndex !== undefined) newOrder.push(data[child.dataset.catIndex]);
+        });
+        data = newOrder;
+    }
+    document.getElementById('dupModalOverlay').insertBefore(dupCard, document.getElementById('dupCancelBtn'));
+    save(); render(); closeDupModal();
+});
+
+/* --- RENDEROWANIE --- */
+function render() {
+    const container = document.getElementById("categoriesContainer");
+    const lang = document.getElementById("language").value;
+    container.innerHTML = "";
+    
+    // Apply layout on render
+    applyLayout();
+    updateLayoutBtnText();
+
+    data.forEach((cat, catIdx) => {
+        const isCol = cat.isCollapsed ? true : false;
+        const catDiv = document.createElement("div");
+        catDiv.className = `category-card ${isCol ? 'collapsed' : ''}`;
+        catDiv.dataset.catIndex = catIdx;
+
+        let liveBadge = (cat.liveSyncTargets && cat.liveSyncTargets.length > 0) ? `<span class="live-sync-badge" title="Nadaje Live Sync do innych kategorii"><i class="fa-solid fa-circle" style="font-size: 0.6em;"></i> LIVE</span>` : '';
+
+        let itemsHtml = cat.items.map((item, itemIdx) => `
+            <div class="counter-item" data-item-index="${itemIdx}" data-cat-index="${catIdx}">
+                <div class="item-left">
+                    <div class="drag-handle item-handle" title="Przeciągnij"><i class="fa-solid fa-grip-vertical"></i></div>
+                    <input type="text" class="item-name-input" value="${item.name}" onchange="updateItemName(${catIdx}, ${itemIdx}, this.value)">
+                </div>
+                <div class="counter-controls">
+                    <button class="val-btn minus" onclick="updateValue(this, ${catIdx}, ${itemIdx}, -1)"><i class="fa-solid fa-minus"></i></button>
+                    <span class="counter-value">${item.value}</span>
+                    <button class="val-btn plus" onclick="updateValue(this, ${catIdx}, ${itemIdx}, 1)"><i class="fa-solid fa-plus"></i></button>
+                    <button class="delete-item mobile-only" onclick="confirmDeleteItem(${catIdx}, ${itemIdx})"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+            </div>
+        `).join("");
+
+        catDiv.innerHTML = `
+            <div class="category-header">
+                <div class="drag-handle cat-handle" title="Przeciągnij"><i class="fa-solid fa-grip-vertical"></i></div>
+                <div class="category-input-wrapper" style="display:flex; align-items:center; gap:10px;">
+                    <input type="text" id="catTitle-${catIdx}" class="category-title-input" value="${cat.name}" onchange="updateCategoryName(${catIdx}, this.value)">
+                    ${liveBadge}
+                </div>
+                <div class="category-actions">
+                    <button class="icon-btn" onclick="toggleCollapse(this, ${catIdx})" style="color:white; font-size:14px;" title="Zwiń / Rozwiń">${isCol ? '<i class="fa-solid fa-chevron-down"></i>' : '<i class="fa-solid fa-chevron-up"></i>'}</button>
+                    <button class="icon-btn desktop-only" onclick="document.getElementById('catTitle-${catIdx}').focus()" style="color:#a8d0e6" title="Edytuj nazwę"><i class="fa-solid fa-pen"></i></button>
+                    <button class="icon-btn" onclick="openDuplicateModal(${catIdx})" style="color:#ffd89b" title="Kopiuj"><i class="fa-solid fa-copy"></i></button>
+                    <button class="icon-btn mobile-only" onclick="confirmDeleteCategory(${catIdx})" style="color:#ff6347" title="Usuń"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+            </div>
+            
+            <div class="category-content-wrapper ${isCol ? 'collapsed' : ''}">
+                <div class="category-content-inner">
+                    <div class="category-content">
+                        <div class="add-item-row">
+                            <input type="text" id="itemInput-${catIdx}" class="main-input" placeholder="${translations[lang].itemPlaceholder}">
+                            <button class="btn-main" onclick="addItem(${catIdx})"><i class="fa-solid fa-plus" style="margin-right:5px;"></i> ${translations[lang].addItemBtn}</button>
+                        </div>
+                        <div class="items-list" data-cat-index="${catIdx}">${itemsHtml}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        setupCategoryDrag(catDiv);
+        setupItemsListDropZone(catDiv.querySelector('.items-list'));
+        catDiv.querySelectorAll('.counter-item').forEach(item => setupItemDrag(item));
+        container.appendChild(catDiv);
+    });
+}
+
+/* --- DRAG & DROP LOGIC (FIXED PHYSICS FOR GRID & DUP) --- */
+const container = document.getElementById('categoriesContainer');
+const trashZone = document.getElementById('trashZone');
+
+function setupCategoryDrag(card) {
+    const handle = card.querySelector('.cat-handle');
+    handle.addEventListener('mousedown', () => card.setAttribute('draggable', 'true'));
+    handle.addEventListener('mouseup', () => card.removeAttribute('draggable'));
+    handle.addEventListener('mouseleave', () => card.removeAttribute('draggable'));
+
+    card.addEventListener('dragstart', (e) => {
+        if(e.target.classList.contains('counter-item')) return;
+        card.classList.add('dragging');
+        document.body.classList.add('dragging-something');
+        draggedItemInfo = { type: 'category', catIdx: card.dataset.catIndex };
+        e.dataTransfer.effectAllowed = 'move';
+    });
+
+    card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        card.removeAttribute('draggable');
+        document.body.classList.remove('dragging-something');
+        setTimeout(() => { updateCategoryOrder(); save(); }, 50);
+    });
+}
+
+// MAIN CONTAINER DROPPING
+container.addEventListener('dragover', e => {
+    e.preventDefault();
+    const draggable = document.querySelector('.category-card.dragging');
+    if (!draggable) return;
+    
+    // Choose logic based on layout mode
+    let afterElement;
+    if (layoutMode === 0) {
+        // Vertical Logic (1x)
+        afterElement = getDragAfterElementVertical(container, e.clientY, '.category-card:not(.dragging)');
+    } else {
+        // Grid Logic (2x / 3x) - FIXED: Uses distance
+        afterElement = getDragAfterElementGrid(container, e.clientX, e.clientY, '.category-card:not(.dragging)');
+    }
+    
+    if (afterElement == null) {
+        container.appendChild(draggable);
+    } else {
+        container.insertBefore(draggable, afterElement);
+    }
+});
+
+function updateCategoryOrder() {
+    const newOrder = [];
+    document.querySelectorAll('#categoriesContainer > .category-card').forEach(card => {
+        if (card.dataset.catIndex !== undefined) newOrder.push(data[card.dataset.catIndex]);
+    });
+    data = newOrder;
+    render();
+}
+
+function setupItemDrag(item) {
+    const handle = item.querySelector('.item-handle');
+    handle.addEventListener('mousedown', () => item.setAttribute('draggable', 'true'));
+    handle.addEventListener('mouseup', () => item.removeAttribute('draggable'));
+    handle.addEventListener('mouseleave', () => item.removeAttribute('draggable'));
+
+    item.addEventListener('dragstart', (e) => {
+        e.stopPropagation(); 
+        item.classList.add('dragging');
+        document.body.classList.add('dragging-something');
+        
+        const catIdx = item.closest('.items-list').dataset.catIndex;
+        const itemIdx = item.dataset.itemIndex;
+        draggedItemInfo = { type: 'item', catIdx: catIdx, itemIdx: itemIdx };
+        
+        e.dataTransfer.effectAllowed = 'move';
+    });
+
+    item.addEventListener('dragend', (e) => {
+        e.stopPropagation();
+        item.classList.remove('dragging');
+        item.removeAttribute('draggable');
+        document.body.classList.remove('dragging-something');
+        
+        const catIdx = item.closest('.items-list').dataset.catIndex;
+        setTimeout(() => { 
+            updateItemsOrder(catIdx); 
+            processLiveSyncStructure(data[catIdx]);
+            save(); 
+        }, 50);
+    });
+}
+
+function setupItemsListDropZone(list) {
+    list.addEventListener('dragover', e => {
+        e.preventDefault();
+        const draggable = list.querySelector('.counter-item.dragging');
+        if (!draggable) return; 
+        
+        // Items list is always vertical
+        const afterElement = getDragAfterElementVertical(list, e.clientY, '.counter-item:not(.dragging)');
+        if (afterElement == null) list.appendChild(draggable);
+        else list.insertBefore(draggable, afterElement);
+    });
+}
+
+function updateItemsOrder(catIdx) {
+    const list = document.querySelector(`.items-list[data-cat-index="${catIdx}"]`);
+    if(!list) return;
+    const newItems = [];
+    list.querySelectorAll('.counter-item').forEach(itemRow => {
+        const oldItemIdx = itemRow.dataset.itemIndex;
+        if(data[catIdx].items[oldItemIdx]) newItems.push(data[catIdx].items[oldItemIdx]); 
+    });
+    data[catIdx].items = newItems;
+    render();
+}
+
+// Logic 1: Standard Vertical (1x View & Items List)
+function getDragAfterElementVertical(container, y, selector) {
+    const draggableElements = [...container.querySelectorAll(selector)];
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// Logic 2: Robust Grid Logic (2x / 3x View) - Based on Distance
+function getDragAfterElementGrid(container, x, y, selector) {
+    const draggableElements = [...container.querySelectorAll(selector)];
+
+    // Calculate distance to every element center
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const boxCenterX = box.left + box.width / 2;
+        const boxCenterY = box.top + box.height / 2;
+        
+        // Euclidean distance
+        const dist = Math.hypot(x - boxCenterX, y - boxCenterY);
+        
+        if (dist < closest.distance) {
+            return { distance: dist, element: child };
+        } else {
+            return closest;
+        }
+    }, { distance: Number.POSITIVE_INFINITY }).element;
+}
+
+// TRASH DROP ZONE LOGIC
+trashZone.addEventListener('dragover', e => {
+    e.preventDefault(); // Necessary to allow dropping
+});
+trashZone.addEventListener('dragenter', e => trashZone.classList.add('drag-over'));
+trashZone.addEventListener('dragleave', e => trashZone.classList.remove('drag-over'));
+trashZone.addEventListener('drop', e => {
+    e.preventDefault();
+    trashZone.classList.remove('drag-over');
+    
+    if (draggedItemInfo) {
+        if (draggedItemInfo.type === 'category') confirmDeleteCategory(draggedItemInfo.catIdx);
+        else if (draggedItemInfo.type === 'item') confirmDeleteItem(draggedItemInfo.catIdx, draggedItemInfo.itemIdx);
+    }
+});
+
+/* --- INITIALIZATION & TRANSLATIONS --- */
+function changeLanguage() {
+    const lang = document.getElementById("language").value;
+    const t = translations[lang];
+    
+    document.getElementById("titleText").textContent = t.title;
+    document.getElementById("addCatBtn").innerHTML = `<i class="fa-solid fa-plus" style="margin-right: 5px;"></i> ${t.addCatBtn}`;
+    document.getElementById("catNameInput").placeholder = t.catPlaceholder;
+    document.getElementById("backBtnText").textContent = t.backBtn;
+    
+    document.getElementById("exportBtnText").innerHTML = `<i class="fa-solid fa-download"></i> ${t.exportBtn}`;
+    document.getElementById("importBtnText").innerHTML = `<i class="fa-solid fa-upload"></i> ${t.importBtn}`;
+    document.getElementById("resetBtnText").innerHTML = `<i class="fa-solid fa-skull"></i> ${t.resetBtn}`;
+    updateLayoutBtnText();
+    
+    document.getElementById("dupTitleText").innerHTML = t.dupTitle;
+    
+    document.getElementById("bulkBtnTooltip").title = t.bulkTooltip;
+    document.getElementById("bulkDeleteTitle").innerHTML = t.bulkTitle;
+    document.getElementById("bulkDeleteDesc").textContent = t.bulkDesc;
+    document.getElementById("bulkConfirmBtn").textContent = t.bulkConfirmBtn;
+
+    document.getElementById("massDupBtnTooltip").title = t.massDupTooltip;
+    document.getElementById("massDupTitle").innerHTML = t.massDupTitle;
+    document.getElementById("massDupSourceLabel").textContent = t.massDupSource;
+    document.getElementById("massDupCountLabel").textContent = t.massDupCount;
+    document.getElementById("massDupConfirmBtn").innerHTML = t.massDupNext;
+    
+    document.getElementById("syncBtnTooltip").title = t.syncTooltip;
+    document.getElementById("syncTitle").innerHTML = t.syncTitle;
+    document.getElementById("syncSourceLabel").textContent = t.syncSource;
+    document.getElementById("syncTargetsLabel").textContent = t.syncTargets;
+    document.getElementById("syncOptionsLabel").textContent = t.syncOptLabel;
+    document.getElementById("syncOptValText").textContent = t.syncOptVal;
+    document.getElementById("syncOptStructText").textContent = t.syncOptStruct;
+    document.getElementById("syncOptLiveText").innerHTML = t.syncLive;
+    document.getElementById("activeSyncLabel").textContent = t.syncActiveLabel;
+    document.getElementById("syncConfirmBtn").textContent = t.syncBtn;
+
+    document.getElementById("btnUndo").title = t.undo;
+    document.getElementById("btnRedo").title = t.redo;
+
+    // NAPRAWA WSZYSTKICH PRZYCISKÓW "ANULUJ" Z JEDNEGO MIEJSCA
+    const cancelButtons = [
+        "massDupCancelBtn", "syncCancelBtn", "bulkCancelBtn", 
+        "dupCancelBtn", "dialogCancelBtn"
+    ];
+    cancelButtons.forEach(id => {
+        const btn = document.getElementById(id);
+        if(btn) btn.textContent = t.cancel;
+    });
+
+    render();
+}
+
+function exportData() {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "counters.json"; a.click();
+}
+
+function importData() {
+    const input = document.createElement("input");
+    input.type = "file"; input.accept = ".json";
+    input.onchange = (e) => {
+        const reader = new FileReader();
+        const lang = document.getElementById("language").value;
+        reader.onload = (event) => {
+            try { 
+                data = JSON.parse(event.target.result); 
+                ensureIds();
+                stateHistory = [JSON.stringify(data)];
+                historyIndex = 0;
+                updateUndoRedoUI();
+                save(false); render(); 
+            } 
+            catch(err) { showAlert('<i class="fa-solid fa-circle-exclamation" style="color:#ff6347; font-size:1.5em;"></i>', translations[lang].errorFormat); }
+        };
+        reader.readAsText(e.target.files[0]);
+    };
+    input.click();
+}
+
+document.getElementById("catNameInput").addEventListener("keypress", (e) => { if (e.key === "Enter") addCategory(); });
+
+// Initialize Layout View
+applyLayout();
+
+updateUndoRedoUI();
+render();
+</script>
+
+</body>
+</html>
