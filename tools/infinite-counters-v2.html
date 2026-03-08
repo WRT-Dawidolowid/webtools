@@ -78,7 +78,7 @@ input[type="text"].main-input { flex: 1; padding: 14px; border-radius: 12px; bor
 .btn-main { padding: 12px 25px; background: var(--accent); border: none; border-radius: 12px; color: white; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; justify-content: center;}
 .top-action-group { display: flex; gap: 8px; flex-wrap: wrap; }
 
-/* Outline Buttons */
+/* Buttons */
 .btn-outline { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; height: auto; padding: 12px 18px; border-radius: 12px; cursor: pointer; transition: 0.3s; font-size: 1em; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600;}
 .btn-outline:hover { background: rgba(255,255,255,0.2); }
 .btn-outline.danger { background: rgba(255,99,71,0.15); border-color: rgba(255,99,71,0.4); color: #ff6347; }
@@ -89,6 +89,23 @@ input[type="text"].main-input { flex: 1; padding: 14px; border-radius: 12px; bor
 .btn-outline.success:hover { background: rgba(144,238,144,0.3); }
 .btn-outline.info { background: rgba(255,216,155,0.15); border-color: rgba(255,216,155,0.4); color: #ffd89b; }
 .btn-outline.info:hover { background: rgba(255,216,155,0.3); }
+
+/* NAPRAWIONE PRZYCISKI ANULUJ */
+.btn-secondary {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 12px 25px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-weight: 600;
+    font-size: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.2); }
 
 /* CATEGORY CARD */
 .category-card { background: var(--glass); border-radius: 22px; margin-bottom: 25px; border: 1px solid var(--glass-border); transition: transform 0.3s ease, opacity 0.3s ease, margin 0.3s ease; position: relative;}
@@ -193,7 +210,7 @@ body.dragging-something #trashZone { transform: translateX(0); pointer-events: a
 <div class="container animate-in">
     <div class="header">
         <div>
-            <h1><span id="titleText">Infinite Counters</span> <span class="version-tag">v2</span></h1>
+            <h1><span id="titleText">Infinite Counters</span> <span class="version-tag">v2.1</span></h1>
             <p class="credits">Made by Dawidolowid</p>
         </div>
         <div class="header-controls">
@@ -205,7 +222,7 @@ body.dragging-something #trashZone { transform: translateX(0); pointer-events: a
                 <option value="pl">Polski</option>
                 <option value="en">English</option>
             </select>
-            <a href="/webtools/" class="back-btn" id="backBtn"><i class="fa-solid fa-arrow-left"></i> <span id="backBtnText">Wróć</span></a>
+            <a href="#" class="back-btn" id="backBtn"><i class="fa-solid fa-arrow-left"></i> <span id="backBtnText">Wróć</span></a>
         </div>
     </div>
 
@@ -422,7 +439,7 @@ document.addEventListener('keydown', function(e) {
 const translations = {
     pl: { 
         title: "Infinite Counters", addCatBtn: "Dodaj", catPlaceholder: "Nowa kategoria...", itemPlaceholder: "Nazwa...", addItemBtn: "Dodaj", backBtn: "Wróć", 
-        exportBtn: "Eksportuj", importBtn: "Importuj", resetBtn: "Wyczyść", tutBtn: "Samouczek",
+        exportBtn: "Eksportuj", importBtn: "Importuj", resetBtn: "Wyczyść", tutBtn: "Samouczek", cancel: "Anuluj",
         confirmDelete: "Na pewno usunąć ten licznik?", confirmDeleteCat: "Na pewno usunąć tę kategorię?", confirmReset: "Na pewno usunąć WSZYSTKO?", 
         dupTitle: '<i class="fa-solid fa-arrows-up-down-left-right" style="margin-bottom: 10px;"></i><br>Przeciągnij kartę w wybrane miejsce', dupCancel: "Anuluj", copySuffix: " (Kopia)", 
         dialogConfirm: "Potwierdź", dialogCancel: "Anuluj", errorTitle: "Błąd", errorFormat: "Nieprawidłowy plik JSON!", 
@@ -439,7 +456,7 @@ const translations = {
     },
     en: { 
         title: "Infinite Counters", addCatBtn: "Add", catPlaceholder: "New category...", itemPlaceholder: "Name...", addItemBtn: "Add", backBtn: "Back", 
-        exportBtn: "Export", importBtn: "Import", resetBtn: "Clear All", tutBtn: "Tutorial",
+        exportBtn: "Export", importBtn: "Import", resetBtn: "Clear All", tutBtn: "Tutorial", cancel: "Cancel",
         confirmDelete: "Delete this counter?", confirmDeleteCat: "Delete this category?", confirmReset: "Delete EVERYTHING?", 
         dupTitle: '<i class="fa-solid fa-arrows-up-down-left-right" style="margin-bottom: 10px;"></i><br>Drag the card to place it', dupCancel: "Cancel", copySuffix: " (Copy)", 
         dialogConfirm: "Confirm", dialogCancel: "Cancel", errorTitle: "Error", errorFormat: "Invalid JSON file!", 
@@ -1221,27 +1238,21 @@ function changeLanguage() {
     document.getElementById("catNameInput").placeholder = t.catPlaceholder;
     document.getElementById("backBtnText").textContent = t.backBtn;
     
-    document.getElementById("tutBtnText").innerHTML = `<i class="fa-solid fa-graduation-cap"></i> ${t.tutBtn}`;
     document.getElementById("exportBtnText").innerHTML = `<i class="fa-solid fa-download"></i> ${t.exportBtn}`;
     document.getElementById("importBtnText").innerHTML = `<i class="fa-solid fa-upload"></i> ${t.importBtn}`;
     document.getElementById("resetBtnText").innerHTML = `<i class="fa-solid fa-skull"></i> ${t.resetBtn}`;
     
     document.getElementById("dupTitleText").innerHTML = t.dupTitle;
-    document.getElementById("dupCancelBtn").textContent = t.dupCancel;
     
-    document.getElementById("tipText").textContent = t.dragTip;
     document.getElementById("bulkBtnTooltip").title = t.bulkTooltip;
-    
     document.getElementById("bulkDeleteTitle").innerHTML = t.bulkTitle;
     document.getElementById("bulkDeleteDesc").textContent = t.bulkDesc;
-    document.getElementById("bulkCancelBtn").textContent = t.bulkCancel;
     document.getElementById("bulkConfirmBtn").textContent = t.bulkConfirmBtn;
 
     document.getElementById("massDupBtnTooltip").title = t.massDupTooltip;
     document.getElementById("massDupTitle").innerHTML = t.massDupTitle;
     document.getElementById("massDupSourceLabel").textContent = t.massDupSource;
     document.getElementById("massDupCountLabel").textContent = t.massDupCount;
-    document.getElementById("massDupCancelBtn").textContent = t.bulkCancel;
     document.getElementById("massDupConfirmBtn").innerHTML = t.massDupNext;
     
     document.getElementById("syncBtnTooltip").title = t.syncTooltip;
@@ -1253,11 +1264,20 @@ function changeLanguage() {
     document.getElementById("syncOptStructText").textContent = t.syncOptStruct;
     document.getElementById("syncOptLiveText").innerHTML = t.syncLive;
     document.getElementById("activeSyncLabel").textContent = t.syncActiveLabel;
-    document.getElementById("syncCancelBtn").textContent = t.bulkCancel;
     document.getElementById("syncConfirmBtn").textContent = t.syncBtn;
 
     document.getElementById("btnUndo").title = t.undo;
     document.getElementById("btnRedo").title = t.redo;
+
+    // NAPRAWA WSZYSTKICH PRZYCISKÓW "ANULUJ" Z JEDNEGO MIEJSCA
+    const cancelButtons = [
+        "massDupCancelBtn", "syncCancelBtn", "bulkCancelBtn", 
+        "dupCancelBtn", "dialogCancelBtn"
+    ];
+    cancelButtons.forEach(id => {
+        const btn = document.getElementById(id);
+        if(btn) btn.textContent = t.cancel;
+    });
 
     render();
 }
