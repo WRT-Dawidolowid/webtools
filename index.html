@@ -109,7 +109,7 @@
             line-height: 1.4;
         }
 
-        .tool-link, .unlock-btn {
+        .tool-link, .unlock-btn, .version-trigger {
             display: inline-block;
             background: #667eea;
             color: white;
@@ -122,10 +122,56 @@
             border: none;
             cursor: pointer;
             font-family: 'Outfit', sans-serif;
+            text-align: center;
         }
 
-        .tool-link:hover, .unlock-btn:hover { background: #764ba2; }
-        .unlocked-btn { background: #10b981 !important; }
+        .tool-link:hover, .unlock-btn:hover, .version-trigger:hover { background: #764ba2; }
+
+        /* Version Selector Styling */
+        .version-selector-container {
+            width: 100%;
+            display: none;
+            margin-top: auto;
+            animation: slideIn 0.3s ease;
+        }
+
+        .version-grid {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .v-btn {
+            flex: 1;
+            background: #f3f4f6;
+            color: #4b5563;
+            text-decoration: none;
+            padding: 12px 5px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9em;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .v-btn:hover {
+            background: #eef2ff;
+            color: #667eea;
+            border-color: #667eea;
+        }
+
+        .v-cancel {
+            display: block;
+            width: 100%;
+            background: none;
+            border: none;
+            color: #9ca3af;
+            font-size: 0.75em;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 5px;
+        }
 
         /* Beta Auth */
         .beta-auth-area {
@@ -213,20 +259,33 @@
             <div class="tool-group">
                 <div class="group-badge">✨ Data Visualization Suite</div>
                 
-                <div class="tool-card">
-                    <h3>Infinite Counters <span class="beta-pill">v1</span></h3>
+                <!-- Infinite Counters Card with Version Selector -->
+                <div class="tool-card" id="counterCard">
+                    <h3>Infinite Counters</h3>
                     <p>Track logic and category counts to generate raw data for reports.</p>
-                    <a href="/webtools/tools/infinite-counters.html" class="tool-link">Open Tool</a>
-                    <div class="copy-url" onclick="copyUrl('/webtools/tools/infinite-counters.html')">📋 Copy Link</div>
+                    
+                    <!-- Main Action Button -->
+                    <button id="counterMainBtn" class="version-trigger" onclick="toggleCounterVersions(true)">Open Tool</button>
+
+                    <!-- Version Selector (Hidden by default) -->
+                    <div id="counterVersions" class="version-selector-container">
+                        <div class="version-grid">
+                            <a href="/webtools/tools/infinite-counters-v1.html" class="v-btn">V1</a>
+                            <a href="/webtools/tools/infinite-counters-v2.html" class="v-btn">V2</a>
+                            <!-- To add V3, just add: <a href="..." class="v-btn">V3</a> -->
+                        </div>
+                        <button class="v-cancel" onclick="toggleCounterVersions(false)">Go back</button>
+                    </div>
+
+                    <div class="copy-url" onclick="copyUrl('/webtools/tools/infinite-counters-v2.html')">📋 Copy Link (Latest)</div>
                 </div>
 
                 <div class="tool-card" id="chartCard">
-                    <h3>ChartStudio <span class="beta-pill">Beta v1</span></h3>
+                    <h3>ChartStudio <span class="beta-pill">Beta</span></h3>
                     <p>Input your counter data to create impressive circle or pillar charts.</p>
                     
                     <button id="unlockBtn" class="unlock-btn" onclick="toggleBeta(true)">Unlock Beta</button>
-                    <!-- Encrypted Link target: /webtools/tools/chartstudio.html -->
-                    <a href="#" id="openToolBtn" class="tool-link unlocked-btn" style="display: none;">Open Tool</a>
+                    <a href="#" id="openToolBtn" class="tool-link" style="display: none; background: #10b981;">Open Tool</a>
 
                     <div id="betaAuth" class="beta-auth-area">
                         <div class="beta-input-wrapper">
@@ -246,10 +305,25 @@
     </div>
 
     <script>
-        // Encrypted Assets (Base64)
+        // Encrypted Assets
         const E_PASS = "Y2hhcnRzdHVkaW9iZXRhMjAyNg==";
         const E_URL = "L3dlYnRvb2xzL3Rvb2xzL2NoYXJ0c3R1ZGlvYmV0YWJ5ZGF3aWRvbG93aWQuaHRtbA==";
 
+        // Infinite Counters Logic
+        function toggleCounterVersions(show) {
+            const mainBtn = document.getElementById('counterMainBtn');
+            const selector = document.getElementById('counterVersions');
+            
+            if (show) {
+                mainBtn.style.display = 'none';
+                selector.style.display = 'block';
+            } else {
+                mainBtn.style.display = 'inline-block';
+                selector.style.display = 'none';
+            }
+        }
+
+        // Beta Auth Logic
         function toggleBeta(show) {
             document.getElementById('unlockBtn').style.display = show ? 'none' : 'block';
             document.getElementById('betaAuth').style.display = show ? 'block' : 'none';
@@ -265,14 +339,11 @@
             if (btoa(input.value) === E_PASS) {
                 const clearUrl = atob(E_URL);
                 card.style.background = "#f0fff4";
-                
-                // Transform UI
                 document.getElementById('betaAuth').style.display = 'none';
                 const openBtn = document.getElementById('openToolBtn');
                 openBtn.style.display = 'inline-block';
                 openBtn.href = clearUrl;
                 
-                // Unlock Copy Link
                 const copyEl = document.getElementById('copyChartLink');
                 copyEl.classList.remove('copy-locked');
                 copyEl.innerHTML = "📋 Copy Link";
@@ -298,6 +369,7 @@
         function copyUrl(url) {
             const fullUrl = window.location.origin + url;
             navigator.clipboard.writeText(fullUrl);
+            alert("Link copied to clipboard!");
         }
     </script>
 </body>
