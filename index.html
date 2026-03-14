@@ -256,13 +256,24 @@
 
             <div class="tool-card" style="grid-column: span 3;">
                 <div>
-                    <h3><i class="fa-solid fa-futbol"></i> Velocity <span class="badge badge-cs">Comming Soon</span></h3>
+                    <h3><i class="fa-solid fa-futbol"></i> Velocity <span class="badge badge-beta">Beta</span><span class="badge badge-new">New</span></h3>
                     <p>Schedule, analyze, and visualize your sports match with ease.</p>
                 </div>
-                <div class="card-actions action-row">
-                    <!-- href="/webtools/tools/velocity-beta-v1.html" -->
-                    <a class="btn-cs" style="color: gainsboro;">Comming Soon</a>
-                    <!-- <button class="btn-icon" onclick="copyUrl('/webtools/tools/velocity-beta-v1.html')" title="Copy Link"><i class="fa-solid fa-link"></i></button> -->
+
+                <div class="card-actions">
+                    <div class="action-row" id="velocityMainBtn">
+                        <button class="btn-main" onclick="toggleVersions('velocity', true)">Select Version</button>
+                        <button class="btn-icon" onclick="copyUrl('/webtools/tools/velocity-beta-v1.html')" title="Copy Link (Latest)"><i class="fa-solid fa-link"></i></button>
+                    </div>
+
+                    <div id="velocityVersions" class="version-selector-container">
+                        <div class="version-grid">
+                            <a href="/webtools/tools/velocity-beta-v1.html" class="v-btn">Beta 1 <span class="badge badge-beta">Beta</span></a>
+                        </div>
+                        <div class="action-row" style="margin-top: 5px;">
+                            <button class="btn-text flex-1" onclick="toggleVersions('velocity', false)"><i class="fa-solid fa-arrow-left"></i> Go Back</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
