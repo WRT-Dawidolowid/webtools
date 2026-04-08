@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RedTracker - Period & Cycle Tracker</title>
+    
+    <!-- External Fonts and Libraries -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js & Plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        /* --- STANDARD / GLASS UI VARIABLES --- */
+        :root {
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --accent: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            --sidebar-bg: rgba(0, 0, 0, 0.45);
+            --default-navy: #1e1b4b;
+        }
+
+        body, input, button, select, textarea { font-family: "Outfit", sans-serif; box-sizing: border-box; }
+        *, *::before, *::after { box-sizing: inherit; }
+
+        body {
+            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+            color: white; margin: 0; padding: 20px;
+            min-height: 100vh; overflow-x: hidden;
+            transition: background 0.4s ease, color 0.4s ease;
+        }
+
+        .container {
+            max-width: 1350px; margin: 0 auto; padding: 30px;
+            background: rgba(255, 255, 255, 0.07); border-radius: 35px;
+            backdrop-filter: blur(25px); box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+            border: 1px solid var(--glass-border);
+            transition: all 0.4s ease; overflow: hidden;
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; transition: all 0.4s; }
+        .header h1 { margin: 0; font-size: 2.2em; letter-spacing: -1px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;}
+        .version-tag { font-size: 0.4em; opacity: 0.7; font-weight: 600; background: rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 7px; color: #ffe4e6; white-space: nowrap;}
+        .credits { margin: 0; font-size: 0.9em; opacity: 0.8; font-weight: 400; }
+
+        .toggles-container { display: flex; gap: 15px; align-items: center; flex-wrap: wrap;}
+        .header-center { display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); padding: 10px 20px; border-radius: 20px; border: 1px solid var(--glass-border); transition: all 0.4s; }
+        .ui-switch-label { display: flex; align-items: center; gap: 12px; cursor: pointer; margin: 0; }
+        .ui-switch { position: relative; width: 46px; height: 24px; flex-shrink: 0;}
+        .ui-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); transition: .4s; border-radius: 34px; border: 1px solid var(--glass-border); }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: #ffd89b; transition: .4s; border-radius: 50%; }
+        .ui-switch input:checked + .slider { background-color: rgba(255, 154, 158, 0.5); border-color: #ff9a9e; }
+        .ui-switch input:checked + .slider:before { transform: translateX(22px); background-color: #fff; }
+
+        .lang-select { background: rgba(0,0,0,0.2); color: white; border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 12px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; outline: none; }
+        .lang-select option { background: #1e1b4b; color: white; }
+
+        /* --- BACK BUTTON --- */
+        .back-btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            text-decoration: none; padding: 10px 20px;
+            background: rgba(0,0,0,0.3); color: white;
+            border: 1px solid var(--glass-border); border-radius: 20px;
+            font-size: 13px; font-weight: 700; text-transform: uppercase;
+            transition: 0.3s; cursor: pointer;
+        }
+        .back-btn:hover { background: rgba(0,0,0,0.5); transform: translateX(3px); }
+
+        .layout { display: grid; grid-template-columns: 380px 1fr; gap: 30px; transition: all 0.4s ease; align-items: start; }
+
+        .sidebar { background: var(--sidebar-bg); padding: 25px; border-radius: 25px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 20px; height: fit-content; transition: all 0.4s ease; }
+        .section-label { color: #ffb6b9; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; display: block; margin-bottom: 8px; transition: all 0.3s; }
+
+        .btn-main { width: 100%; padding: 15px; background: var(--accent); border: none; border-radius: 12px; color: #333; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 14px;}
+        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255, 154, 158, 0.4); }
+        
+        .btn-small { background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;}
+        .btn-small:hover { background: rgba(255,255,255,0.2); }
+
+        .chart-toggle { display: flex; flex-wrap: wrap; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 12px; gap: 4px; transition: all 0.3s; }
+        .toggle-btn { flex: 1 1 30%; padding: 10px; border: none; background: transparent; color: white; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 13px; }
+        .toggle-btn.active { background: rgba(255,255,255,0.15); }
+
+        .config-row { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; transition: all 0.3s;}
+        
+        .custom-color-picker { position: relative; width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--glass-border); overflow: hidden; cursor: pointer; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .custom-color-picker input[type="color"] { position: absolute; top: -10px; left: -10px; width: 50px; height: 50px; cursor: pointer; opacity: 0; }
+        .custom-color-picker .color-preview { width: 100%; height: 100%; pointer-events: none; }
+
+        input[type="range"], input[type="number"] { accent-color: #ff9a9e; cursor: pointer; }
+        input[type="checkbox"], input[type="radio"] { width: 16px; height: 16px; accent-color: #ff9a9e; cursor: pointer; flex-shrink: 0;}
+        
+        .metric-dropdown { width: 100%; background: rgba(0, 0, 0, 0.4); color: white; border: 1px solid var(--glass-border); padding: 12px; border-radius: 12px; outline: none; cursor: pointer; font-family: inherit; transition: all 0.3s;}
+        .metric-dropdown option { background: #1e1b4b; color: white; }
+        
+        .text-input { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: white; font-family: inherit; font-size: 14px; outline:none; }
+        .text-input::placeholder { color: rgba(255,255,255,0.4); }
+        textarea.text-input { resize: vertical; min-height: 80px; }
+        
+        .date-input { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: white; font-family: inherit; font-size: 14px; outline:none; color-scheme: dark;}
+        .date-group { margin-bottom: 10px; }
+        .date-group label { display: block; font-size: 11px; opacity: 0.8; margin-bottom: 4px; font-weight: 600;}
+        
+        .date-list { max-height: 180px; overflow-y: auto; background: rgba(255,255,255,0.02); border-radius: 10px; padding: 10px; margin-top: 10px; border: 1px solid var(--glass-border); }
+        .date-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 6px; margin-bottom: 5px; font-size: 13px; }
+        .date-item button { background: transparent; border: none; color: #ff6b6b; cursor: pointer; padding: 5px;}
+        .date-details { display: flex; flex-direction: column; }
+        .date-sub { font-size: 10px; opacity: 0.6; }
+
+        /* --- WORKSPACE --- */
+        .chart-card {
+            background: rgba(0,0,0,0.2); border-radius: 35px; padding: 35px;
+            border: 1px solid var(--glass-border); display: flex; flex-direction: column;
+            position: relative; min-height: 750px; justify-content: flex-start; align-items: center;
+            transition: all 0.4s ease; overflow: hidden; gap: 20px;
+        }
+
+        .dashboard-stats { display: flex; gap: 15px; width: 100%; order: 1; flex-wrap: wrap; margin-bottom: 10px; }
+        .stat-box { flex: 1 1 20%; min-width: 140px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 20px; border-radius: 20px; text-align: center; backdrop-filter: blur(10px); }
+        .stat-box h3 { margin: 0 0 10px 0; font-size: 11px; text-transform: uppercase; opacity: 0.7; letter-spacing: 1px; color: #ffb6b9;}
+        .stat-box p { margin: 0; font-size: 22px; font-weight: 700; }
+        .stat-box .subtext { font-size: 11px; opacity: 0.6; margin-top: 5px; }
+
+        .export-frame {
+            background: var(--default-navy); border-radius: 25px; padding: 30px;
+            width: 100%; height: 450px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5); position: relative; overflow: hidden;
+            transition: all 0.4s ease; order: 2;
+        }
+
+        .chart-wrapper { flex: 1; width: 100%; position: relative; display: flex; align-items: center; justify-content: center; }
+        .canvas-sizer { width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center; }
+
+        .action-buttons { 
+            display: flex; align-items: center; gap: 15px; flex-wrap: wrap;
+            justify-content: center; width: 100%; order: 3; transition: all 0.4s ease;
+        }
+        .btn-action { background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white; padding: 14px 28px; border-radius: 14px; cursor: pointer; font-weight: 600; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-action:hover { background: rgba(255,255,255,0.2); }
+
+        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(15, 15, 35, 0.98); padding: 30px; border-radius: 25px; border: 1px solid #ff9a9e; z-index: 1000; display: none; text-align: center; box-shadow: 0 0 60px rgba(0,0,0,0.9); backdrop-filter: blur(15px); width: 90%; max-width: 380px; max-height: 90vh; overflow-y: auto;}
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 999; display: none; }
+        .modal-btn { display: flex; justify-content: center; align-items: center; gap: 8px; flex: 1; padding: 14px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; cursor: pointer; font-weight: 600; transition: 0.2s;}
+        .modal-btn:hover { background: var(--accent); color:#333; }
+        .modal-input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: white; font-size: 16px; margin-bottom: 20px; outline: none; box-sizing: border-box; }
+        .modal-input:focus { border-color: #ff9a9e; }
+        .modal-input::placeholder { color: rgba(255,255,255,0.4); }
+
+        /* --- MOBILE RESPONSIVENESS --- */
+        @media (max-width: 992px) {
+            .layout { grid-template-columns: 1fr; }
+            .header { flex-direction: column; text-align: center; gap: 20px; }
+            .header h1 { justify-content: center; }
+            .toggles-container { width: 100%; justify-content: center; }
+            .chart-card { padding: 25px; min-height: auto; }
+            .export-frame { height: 380px; padding: 15px; }
+            .stat-box { min-width: 45%; }
+        }
+
+        @media (max-width: 576px) {
+            body { padding: 10px; }
+            .container { padding: 15px; border-radius: 20px; }
+            .sidebar { padding: 20px; }
+            .header h1 { font-size: 1.8em; }
+            .toggles-container { flex-direction: column; gap: 10px; }
+            .header-center { width: 100%; justify-content: space-between; }
+            .lang-select, .back-btn { width: 100%; text-align: center; justify-content: center;}
+            .stat-box { min-width: 100%; } 
+            .export-frame { height: 320px; padding: 10px; }
+            .action-buttons { flex-direction: column; width: 100%; }
+            .btn-action { width: 100%; }
+            .modal-box { padding: 20px; width: 95%; }
+        }
+
+        /* --- MODERN UI OVERRIDES --- */
+        body.modern-ui { background: #fdf2f8; color: #0f172a; }
+        body.modern-ui .back-btn { background: #f8fafc; color: #0f172a; border-color: #e2e8f0; }
+        body.modern-ui .back-btn:hover { background: #e2e8f0; }
+        body.modern-ui .container { background: #ffffff; border: 1px solid #fce7f3; box-shadow: 0 20px 40px rgba(236,72,153,0.05); backdrop-filter: none; }
+        body.modern-ui .header-center { background: #f8fafc; border-color: #e2e8f0; }
+        body.modern-ui .lang-select { background: #f8fafc; color: #0f172a; border-color: #e2e8f0; }
+        body.modern-ui .lang-select option { background: #fff; color: #0f172a; }
+        body.modern-ui .sidebar { background: #ffffff; border-color: #fce7f3; box-shadow: 0 5px 20px rgba(0,0,0,0.02); }
+        body.modern-ui .chart-card { background: transparent; border: none; padding: 0; }
+        body.modern-ui .stat-box { background: #ffffff; border-color: #fce7f3; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
+        body.modern-ui .stat-box h3 { color: #db2777; }
+        body.modern-ui .export-frame { border: 1px solid #e2e8f0; box-shadow: none; }
+        body.modern-ui .metric-dropdown, body.modern-ui .date-input, body.modern-ui .text-input { background: #ffffff; border-color: #e2e8f0; color: #0f172a; }
+        body.modern-ui .metric-dropdown option { background: #ffffff; color: #0f172a; }
+        body.modern-ui .text-input::placeholder { color: #94a3b8; }
+        body.modern-ui .date-list { background: #f8fafc; border-color: #e2e8f0; color: #0f172a; }
+        body.modern-ui .date-item { background: #ffffff; border-color: #e2e8f0; border: 1px solid #e2e8f0;}
+        body.modern-ui .btn-action { background: #ffffff; border-color: #e2e8f0; color: #0f172a; }
+        body.modern-ui .config-row { border: 1px solid #e2e8f0; background: #fafafa;}
+        body.modern-ui .chart-toggle { background: #f1f5f9; border: 1px solid #e2e8f0;}
+        body.modern-ui .toggle-btn { color: #64748b;}
+        body.modern-ui .toggle-btn.active { background: #fff; color: #0f172a; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
+        body.modern-ui .btn-small { color: #0f172a; border-color: #e2e8f0; background: #f8fafc;}
+        body.modern-ui .modal-box { background: #ffffff; color: #0f172a; border-color:#e2e8f0; }
+        body.modern-ui .modal-input { background: #f8fafc; color: #0f172a; border-color:#e2e8f0;}
+        body.modern-ui .modal-input::placeholder { color: #94a3b8; }
+
+        /* --- PRINT STYLES --- */
+        #printArea { display: none; }
+        @media print {
+            body { background: white; color: black; margin: 0; padding: 0; font-family: "Outfit", sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .container, .modal-box, .modal-overlay, #printModal { display: none !important; }
+            #printArea { display: block; }
+            
+            .page-break { page-break-after: always; break-after: page; }
+            .print-patient-container { padding: 20px; }
+
+            .print-web-header { display: flex; align-items: baseline; gap: 10px; font-size: 2.2em; letter-spacing: -1px; font-weight: 700; margin-bottom: 2px; color: black; }
+            .print-version-tag { font-size: 0.4em; opacity: 0.8; font-weight: 600; background: #eee; padding: 3px 10px; border-radius: 7px; color: #333; vertical-align: middle; }
+            .print-credits { margin: 0 0 20px 0; font-size: 0.9em; opacity: 0.7; font-weight: 400; border-bottom: 2px solid #000; padding-bottom: 10px; }
+
+            .print-info-block { margin-bottom: 25px; font-size: 14px; }
+            .print-info-block h2 { margin: 0 0 10px 0; font-size: 22px; }
+            .print-info-block p { margin: 5px 0; }
+
+            .print-stats { display: flex; justify-content: space-between; margin-bottom: 30px; gap: 15px;}
+            .print-stat-box { border: 2px solid #000; padding: 15px; flex: 1; text-align: center; border-radius: 8px; background-color: #fcfcfc;}
+            .print-stat-box strong { display: block; margin-bottom: 8px; font-size: 13px; text-transform: uppercase; color: #555; }
+            
+            .print-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; border: 2px solid #000; }
+            .print-table th, .print-table td { border: 1px solid #000 !important; padding: 10px; text-align: left; }
+            .print-table th { background-color: #eee; font-weight: bold; }
+            
+            .print-notes { margin-top: 30px; }
+            .print-note-line { border-bottom: 1px dashed #666; height: 35px; width: 100%; margin-bottom: 10px; }
+            
+            .saved-notes-box { border: 1px solid #000; padding: 15px; border-radius: 8px; font-size: 14px; background: #fafafa; min-height: 50px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeAllModals()"></div>
+
+<!-- Profile Modal (Add / Edit) -->
+<div id="profileModal" class="modal-box" style="z-index: 2000;">
+    <h3 id="profileModalTitle" style="margin-top:0; font-size: 1.5em; color: #ff9a9e;"><i class="fa-solid fa-user"></i> <span id="mTitleTxt">Profile</span></h3>
+    <input type="text" id="personNameInput" class="modal-input" placeholder="Name (Required)" autocomplete="off">
+    <div id="personCodeWrapper">
+        <input type="text" id="personCodeInput" class="modal-input" placeholder="Patient Code / ID (Optional)" autocomplete="off">
+    </div>
+    <div style="display:flex; gap:10px; justify-content: center;">
+        <button class="modal-btn" onclick="saveProfile()" style="background: var(--accent); color: #333; border: none;" id="btnSaveTxt">Save</button>
+        <button class="modal-btn" onclick="closeAllModals()" style="opacity:0.4; border:none; background: transparent;" id="btnCancelTxt">Cancel</button>
+    </div>
+</div>
+
+<!-- Print Settings Modal -->
+<div id="printModal" class="modal-box" style="z-index: 2000; text-align: left;">
+    <h3 style="margin-top:0; font-size: 1.5em; color: #ff9a9e; text-align: center;"><i class="fa-solid fa-print"></i> <span id="prTitleTxt">Print Settings</span></h3>
+    
+    <div style="margin-bottom: 15px;">
+        <strong style="font-size: 13px; color: #ffb6b9; display:block; margin-bottom: 8px;" id="prLangLabelTxt">Print Language</strong>
+        <select id="prLangSelect" class="metric-dropdown" style="padding: 8px;">
+            <option value="en">English</option>
+            <option value="pl">Polski</option>
+        </select>
+    </div>
+
+    <div style="margin-bottom: 15px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
+        <strong style="font-size: 13px; color: #ffb6b9; display:block; margin-bottom: 8px;" id="prWhatToPrintTxt">What to Print?</strong>
+        <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom:6px;"><input type="checkbox" id="prShowName" checked> <span id="prOptNameTxt">Profile Name</span></label>
+        <label id="prShowCodeWrapper" style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom:6px;"><input type="checkbox" id="prShowCode" checked> <span id="prOptCodeTxt">Patient Code / ID</span></label>
+        <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom:6px;"><input type="checkbox" id="prShowStats" checked> <span id="prOptStatsTxt">Statistics (Averages)</span></label>
+        <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom:6px;"><input type="checkbox" id="prShowTable" checked> <span id="prOptTableTxt">History Table</span></label>
+        <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom:6px;"><input type="checkbox" id="prShowPredictions" checked> <span id="prOptPredTxt">Future Predictions</span></label>
+        <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom:6px;"><input type="checkbox" id="prShowSavedNotes" checked> <span id="prOptSavedNotesTxt">Saved Notes</span></label>
+        
+        <div style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-top:10px; flex-wrap: wrap;">
+            <input type="checkbox" id="prShowNotes" checked onchange="document.getElementById('notesLinesWrapper').style.opacity = this.checked ? '1' : '0.4'; document.getElementById('prNotesLines').disabled = !this.checked;">
+            <span id="prOptEmptyLinesTxt" style="flex:1;">Empty lined space for handwritten notes</span>
+            <span id="notesLinesWrapper" style="display:flex; align-items:center; gap:5px;">
+                <span id="prLinesTxt">Lines:</span> <input type="number" id="prNotesLines" value="4" min="1" max="30" class="modal-input" style="width: 50px; padding: 4px; margin: 0; min-height: unset; height: auto; text-align: center;">
+            </span>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 20px;" id="prScopeWrapper">
+        <strong style="font-size: 13px; color: #ffb6b9; display:block; margin-bottom: 8px;" id="prScopeTxt">Print Scope</strong>
+        <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom:6px;"><input type="radio" name="printScope" value="current" checked> <span id="prScpCurrentTxt">Current Profile Only</span></label>
+        <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom:6px;"><input type="radio" name="printScope" value="all_sep"> <span id="prScpSepTxt">All Profiles (Separate Pages)</span></label>
+        <label style="display:flex; align-items:center; gap:8px; font-size: 14px;"><input type="radio" name="printScope" value="all_cont"> <span id="prScpContTxt">All Profiles (Continuous List)</span></label>
+    </div>
+    
+    <div style="display:flex; gap:10px; justify-content: center;">
+        <button class="modal-btn" onclick="executePrint()" style="background: var(--accent); color: #333; border: none;"><i class="fa-solid fa-check"></i> <span id="btnPrintTxt">Print</span></button>
+        <button class="modal-btn" onclick="closeAllModals()" style="opacity:0.4; border:none; background: transparent;" id="btnCancelPrintTxt">Cancel</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="header">
+        <div>
+            <h1>RedTracker <span class="version-tag">Beta v1</span></h1>
+            <p class="credits" id="madeByTxt">Made by Dawidolowid</p>
+        </div>
+        
+        <div class="toggles-container">
+            <select id="appLangSelect" class="lang-select" onchange="changeAppLanguage(this.value)">
+                <option value="en">EN</option>
+                <option value="pl">PL</option>
+            </select>
+            
+            <div class="header-center">
+                <label class="ui-switch-label">
+                    <span style="font-size: 12px; font-weight: 700; text-transform: uppercase;"><i class="fa-solid fa-wand-magic-sparkles"></i> <span id="lightModernTxt">Light / Modern</span></span>
+                    <div class="ui-switch">
+                        <input type="checkbox" id="uiToggle" onchange="toggleModernUI()">
+                        <span class="slider"></span>
+                    </div>
+                </label>
+            </div>
+            
+            <!-- Max Top Right Back Button inside grid -->
+            <a href="javascript:history.back()" class="back-btn">
+                <i class="fa-solid fa-arrow-left"></i> <span id="btnBackTxt">Back to App</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="layout">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div>
+                <span class="section-label" id="secProfileTxt">1. Profile Management</span>
+                <select id="profileSelect" class="metric-dropdown" onchange="changeProfile()"></select>
+                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                    <button class="btn-main" onclick="openProfileModal(false)" style="padding: 10px; flex:2;"><i class="fa-solid fa-plus"></i> <span id="btnAddTxt">Add</span></button>
+                    <button class="btn-small" onclick="openProfileModal(true)" style="padding: 10px; flex:1;" title="Edit Profile"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-small" onclick="deleteCurrentProfile()" style="padding: 10px; flex:1; color: #ff6b6b; border-color: rgba(255,107,107,0.3);" title="Delete Profile"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>
+
+            <div id="settingsSection" style="display: none;">
+                <span class="section-label" id="secCalibTxt">2. Cycle Calibration</span>
+                <div class="config-row">
+                    <span style="font-size: 11px; font-weight: 600;" id="autoCalcTxtLabel">Auto-Calculate Cycle</span>
+                    <input type="checkbox" id="autoCalibrateCheck" onchange="toggleCalibration()">
+                </div>
+                <div class="config-row" id="manualCycleDiv" style="margin-top: 8px;">
+                    <span style="font-size: 11px; font-weight: 600;" id="manualCycleTxt">Manual Cycle Length</span>
+                    <input type="number" id="manualCycleInput" value="28" min="15" max="60" style="width: 60px; border-radius: 5px; border: none; padding: 4px; text-align: center;" onchange="updateManualCycle()">
+                </div>
+            </div>
+
+            <div id="dataSection" style="display: none;">
+                <span class="section-label" id="secLogTxt">3. Log New Period</span>
+                <div class="date-group">
+                    <label id="startDateTxt">Start Date</label>
+                    <input type="date" id="startDateInput" class="date-input">
+                </div>
+                <div class="date-group">
+                    <label id="endDateTxt">End Date (Optional)</label>
+                    <input type="date" id="endDateInput" class="date-input">
+                </div>
+                <button class="btn-main" onclick="logPeriodData()"><i class="fa-solid fa-calendar-check"></i> <span id="btnSaveEntryTxt">Save Entry</span></button>
+                
+                <div class="date-list" id="dateList"></div>
+            </div>
+
+            <div id="visualSection" style="display: none;">
+                <span class="section-label" id="secViewTxt">4. View Options</span>
+                <div class="chart-toggle">
+                    <button class="toggle-btn active" id="btn-bar" onclick="setChartType('bar')" id="btnBarTxt">Bar</button>
+                    <button class="toggle-btn" id="btn-line" onclick="setChartType('line')" id="btnLineTxt">Line</button>
+                </div>
+                <div class="config-row" style="margin-top:8px;">
+                    <span style="font-size: 11px; font-weight: 600;" id="bgColorTxt">Background Color</span>
+                    <div class="custom-color-picker">
+                        <div class="color-preview" id="bgColorPreview" style="background: #1e1b4b"></div>
+                        <input type="color" id="bgColorPicker" value="#1e1b4b" onchange="document.getElementById('bgColorPreview').style.background = this.value; renderDashboard()">
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 8px; margin-top: 15px;">
+                    <input type="file" id="importInput" style="display:none" accept=".json" onchange="importData(event)">
+                    <button class="btn-small" style="flex:1" onclick="document.getElementById('importInput').click()"><i class="fa-solid fa-file-import"></i> <span id="btnImportTxt">Import</span></button>
+                    <button class="btn-small" style="flex:1" onclick="exportData()"><i class="fa-solid fa-file-export"></i> <span id="btnExportTxt">Export</span></button>
+                </div>
+            </div>
+
+            <div id="notesSection" style="display: none;">
+                <span class="section-label" id="secNotesTxt">5. Personal Notes</span>
+                <textarea id="patientNotesInput" class="text-input" placeholder="Add personal notes here..." onchange="updatePatientNotes()"></textarea>
+            </div>
+
+            <div>
+                <span class="section-label" id="secGlobalTxt">6. Global Settings</span>
+                
+                <!-- APP MODE TOGGLE -->
+                <div class="config-row" style="margin-bottom: 10px; flex-direction: column; align-items: flex-start; gap: 8px;">
+                    <strong style="font-size: 12px; color: #ffb6b9;" id="appModeTxt">App Mode</strong>
+                    <label style="display:flex; align-items:center; gap:8px; font-size: 13px; cursor: pointer;">
+                        <input type="radio" name="appModeRadio" value="self" onchange="changeAppMode(this.value)"> 
+                        <span id="modeSelfTxt">Self-Tracking (Personal)</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; font-size: 13px; cursor: pointer;">
+                        <input type="radio" name="appModeRadio" value="clinical" onchange="changeAppMode(this.value)"> 
+                        <span id="modeClinicTxt">Clinical (Doctor/Clinic)</span>
+                    </label>
+                </div>
+
+                <div class="date-group" id="globalProviderWrapper" style="display: none;">
+                    <label id="defProviderTxt">Default Attending Provider</label>
+                    <input type="text" id="globalProviderInput" class="text-input" placeholder="e.g. Dr. Smith" onchange="updateGlobalProvider()">
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Workspace -->
+        <div class="chart-card" id="workspaceCard" style="display: none;">
+            
+            <div class="dashboard-stats">
+                <div class="stat-box">
+                    <h3 id="statLastTxt">Last Period Started</h3>
+                    <p id="statLastPeriod">--</p>
+                    <div class="subtext" id="statDaysAgo">---</div>
+                </div>
+                <div class="stat-box">
+                    <h3 id="statAvgDurTxt">Avg Period Duration</h3>
+                    <p id="statAvgPeriod">--</p>
+                    <div class="subtext" id="statDurSubTxt">Bleeding length</div>
+                </div>
+                <div class="stat-box">
+                    <h3 id="statAvgCycTxt">Avg Cycle Length</h3>
+                    <p id="statAvgCycle">--</p>
+                    <div class="subtext" id="statCalibrated">---</div>
+                </div>
+                <div class="stat-box">
+                    <h3 id="statNextTxt">Expected Next</h3>
+                    <p id="statNextPeriod" style="color: #ff9a9e;">--</p>
+                    <div class="subtext" id="statDaysLeft">---</div>
+                </div>
+            </div>
+
+            <div id="exportFrame" class="export-frame">
+                <h2 style="margin-top: 0; color: white; z-index: 10;" id="chartTitleText">Cycle & Period History</h2>
+                <div class="chart-wrapper">
+                    <div class="canvas-sizer">
+                        <canvas id="mainChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn-action" onclick="exportToPng()"><i class="fa-solid fa-image"></i> <span id="btnSavePngTxt">Save as PNG</span></button>
+                <button class="btn-action" onclick="openPrintModal()" style="background: var(--accent); border: none; color: #333;"><i class="fa-solid fa-print"></i> <span id="btnPrintDataTxt">Print Data</span></button>
+            </div>
+        </div>
+        
+        <!-- Welcome state -->
+        <div class="chart-card" id="welcomeCard" style="justify-content: center;">
+            <div style="text-align: center; opacity: 0.7;">
+                <i class="fa-solid fa-heart-pulse" style="font-size: 5em; margin-bottom: 20px; color: #ff9a9e;"></i>
+                <h2 id="welcomeTitleTxt">Welcome to RedTracker</h2>
+                <p id="welcomeDescTxt">Add a profile from the left menu to start tracking.</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Hidden Print Area -->
+<div id="printArea"></div>
+
+<script>
+    Chart.register(ChartDataLabels);
+
+    // --- TRANSLATIONS DICTIONARY ---
+    const i18n = {
+        en: {
+            btnBack: "Back to App", madeBy: "Made by Dawidolowid", lightModern: "Light / Modern",
+            secProfile: "1. Profile Management", btnAdd: "Add",
+            secCalib: "2. Cycle Calibration", autoCalc: "Auto-Calculate Cycle", manualCycle: "Manual Cycle Length",
+            secLog: "3. Log New Period", startDate: "Start Date", endDate: "End Date (Optional)", btnSaveEntry: "Save Entry",
+            secView: "4. View Options", btnBar: "Bar", btnLine: "Line", bgColor: "Background Color", btnImport: "Import", btnExport: "Export",
+            
+            // App Mode Specific
+            appMode: "App Mode", modeSelf: "Self-Tracking (Personal)", modeClinic: "Clinical (Doctor/Clinic)",
+            secGlobal: "6. Global Settings", defProvider: "Default Attending Provider",
+            secNotesSelf: "5. Personal Notes", secNotesClinic: "5. Patient Notes",
+            notesPlaceholderSelf: "Add personal notes here...", notesPlaceholderClinic: "Add medical or personal notes for this patient here...",
+            modalProfileTitleSelf: "My Profile", modalProfileTitleClinic: "Patient Profile",
+            nameReqSelf: "Profile Name (Required)", nameReqClinic: "Patient Name (Required)",
+            codeOpt: "Patient Code / ID (Optional)",
+            prOptNameSelf: "Profile Name", prOptNameClinic: "Patient Name",
+            prOptSavedNotesSelf: "Saved Personal Notes", prOptSavedNotesClinic: "Saved Patient Notes",
+            prScpCurrentSelf: "Current Profile Only", prScpCurrentClinic: "Current Patient Only",
+            prScpSepSelf: "All Profiles (Separate Pages)", prScpSepClinic: "All Patients (Separate Pages)",
+            prScpContSelf: "All Profiles (Continuous List)", prScpContClinic: "All Patients (Continuous List)",
+            prPatNameSelf: "Profile:", prPatNameClinic: "Patient:",
+            prSavedNotesSelf: "Saved Personal Notes:", prSavedNotesClinic: "Saved Patient Notes:",
+            prHandNotesSelf: "Additional Notes:", prHandNotesClinic: "Doctor / Personal Notes:",
+            
+            statLast: "Last Period Started", statAvgDur: "Avg Period Duration", statDurSub: "Bleeding length",
+            statAvgCyc: "Avg Cycle Length", statNext: "Expected Next", chartTitle: "Cycle & Period History",
+            btnSavePng: "Save as PNG", btnPrintData: "Print Data",
+            welcomeTitle: "Welcome to RedTracker", welcomeDesc: "Add a profile from the left menu to start tracking.",
+            btnSave: "Save", btnCancel: "Cancel", btnPrint: "Print",
+            prTitle: "Print Settings", prLangLabel: "Print Language", prWhatToPrint: "What to Print?",
+            prOptCode: "Patient Code / ID", prOptStats: "Statistics (Averages)", prOptTable: "History Table",
+            prOptPred: "Future Predictions", prOptEmptyLines: "Empty lined space for handwritten notes", prLines: "Lines:",
+            prScope: "Print Scope", 
+            // Dynamic text
+            noProfiles: "No profiles", providerPlaceholder: "e.g. Dr. Smith", 
+            days: "days", autoCalcTxt: "(Auto-calculated)", needDataTxt: "(Need more data)", manualSetTxt: "(Manual setting)",
+            noData: "No Data", startedToday: "Started Today!", daysAgo: "%s days ago", expectedToday: "Expected Today",
+            daysLate: "%s days late", inDays: "In %s days", logStartMsg: "Log a start date",
+            alertNameReq: "Name is required!", alertStartReq: "Start Date is required.", alertEndBefore: "End date cannot be before start date.",
+            alertExists: "Entry with this start date already exists!", confirmDelete: "Are you sure you want to delete this profile and all its data?",
+            alertImportOk: "Data imported successfully!", alertImportFail: "Invalid backup file.", alertImportErr: "Error reading file.",
+            // Print specifics
+            prGenOn: "Generated on:", prPatCode: "Patient Code / ID:", prAttProvider: "Attending Provider:",
+            prTotEntries: "Total Entries", prAvgCycle: "Avg Cycle Length", prAvgBleed: "Avg Bleeding Duration",
+            prHistTitle: "Period History", thNum: "#", thStart: "Start Date", thEnd: "End Date", thDur: "Duration",
+            prNoEntries: "No entries logged", prPredTitle: "Predicted Upcoming Periods", thPred: "Prediction", thExpStart: "Expected Start", thExpEnd: "Expected End",
+            prCycPlus: "Cycle +"
+        },
+        pl: {
+            btnBack: "Wróć do aplikacji", madeBy: "Stworzone przez Dawidolowid", lightModern: "Jasny / Modern",
+            secProfile: "1. Zarządzanie Profilami", btnAdd: "Dodaj",
+            secCalib: "2. Kalibracja Cyklu", autoCalc: "Auto-Kalkulacja Cyklu", manualCycle: "Ręczna dł. cyklu",
+            secLog: "3. Dodaj Miesiączkę", startDate: "Data Rozpoczęcia", endDate: "Data Zakończenia (Opcjonalne)", btnSaveEntry: "Zapisz",
+            secView: "4. Wygląd", btnBar: "Słupki", btnLine: "Linia", bgColor: "Kolor Tła", btnImport: "Import", btnExport: "Eksport",
+            
+            // App Mode Specific
+            appMode: "Tryb Aplikacji", modeSelf: "Osobisty (Dla siebie)", modeClinic: "Kliniczny (Dla lekarzy)",
+            secGlobal: "6. Ustawienia Globalne", defProvider: "Domyślny Lekarz Prowadzący",
+            secNotesSelf: "5. Osobiste Notatki", secNotesClinic: "5. Notatki Pacjentki",
+            notesPlaceholderSelf: "Dodaj swoje osobiste notatki tutaj...", notesPlaceholderClinic: "Dodaj medyczne lub osobiste notatki dla tej pacjentki...",
+            modalProfileTitleSelf: "Mój Profil", modalProfileTitleClinic: "Profil Pacjentki",
+            nameReqSelf: "Nazwa Profilu (Wymagane)", nameReqClinic: "Imię Pacjentki (Wymagane)",
+            codeOpt: "Kod / ID Pacjentki (Opcjonalne)",
+            prOptNameSelf: "Nazwa Profilu", prOptNameClinic: "Imię Pacjentki",
+            prOptSavedNotesSelf: "Zapisane Notatki Osobiste", prOptSavedNotesClinic: "Zapisane Notatki Pacjentki",
+            prScpCurrentSelf: "Tylko obecny profil", prScpCurrentClinic: "Tylko obecna pacjentka",
+            prScpSepSelf: "Wszystkie profile (Osobne strony)", prScpSepClinic: "Wszyscy pacjenci (Osobne strony)",
+            prScpContSelf: "Wszystkie profile (Ciągła lista)", prScpContClinic: "Wszyscy pacjenci (Ciągła lista)",
+            prPatNameSelf: "Profil:", prPatNameClinic: "Pacjentka:",
+            prSavedNotesSelf: "Osobiste Notatki:", prSavedNotesClinic: "Notatki Pacjentki:",
+            prHandNotesSelf: "Dodatkowe Notatki:", prHandNotesClinic: "Notatki Lekarza / Dodatkowe:",
+
+            statLast: "Ostatnia Miesiączka", statAvgDur: "Średnia Dł. Miesiączki", statDurSub: "Dni krwawienia",
+            statAvgCyc: "Średnia Dł. Cyklu", statNext: "Spodziewana Następna", chartTitle: "Historia Cykli i Miesiączek",
+            btnSavePng: "Zapisz PNG", btnPrintData: "Drukuj Raport",
+            welcomeTitle: "Witaj w RedTracker", welcomeDesc: "Dodaj profil z menu po lewej stronie, aby zacząć.",
+            btnSave: "Zapisz", btnCancel: "Anuluj", btnPrint: "Drukuj",
+            prTitle: "Ustawienia Druku", prLangLabel: "Język Wydruku", prWhatToPrint: "Co wydrukować?",
+            prOptCode: "Kod / ID Pacjentki", prOptStats: "Statystyki (Średnie)", prOptTable: "Tabela Historii",
+            prOptPred: "Przewidywania", prOptEmptyLines: "Puste linie na notatki odręczne", prLines: "Linie:",
+            prScope: "Zakres Druku", 
+            // Dynamic text
+            noProfiles: "Brak profili", providerPlaceholder: "np. Dr. Kowalski", 
+            days: "dni", autoCalcTxt: "(Obliczono automatycznie)", needDataTxt: "(Potrzeba więcej danych)", manualSetTxt: "(Ustawienie ręczne)",
+            noData: "Brak Danych", startedToday: "Rozpoczął się dzisiaj!", daysAgo: "%s dni temu", expectedToday: "Oczekiwany dzisiaj",
+            daysLate: "Spóźnia się o %s dni", inDays: "Za %s dni", logStartMsg: "Podaj datę startu",
+            alertNameReq: "Imię jest wymagane!", alertStartReq: "Data rozpoczęcia jest wymagana.", alertEndBefore: "Data zakończenia nie może być przed datą startu.",
+            alertExists: "Wpis z tą datą startu już istnieje!", confirmDelete: "Czy na pewno chcesz usunąć ten profil i jego dane?",
+            alertImportOk: "Dane pomyślnie zaimportowane!", alertImportFail: "Nieprawidłowy plik kopii zapasowej.", alertImportErr: "Błąd odczytu pliku.",
+            // Print specifics
+            prGenOn: "Wygenerowano:", prPatCode: "Kod / ID Pacjentki:", prAttProvider: "Lekarz Prowadzący:",
+            prTotEntries: "Ilość wpisów", prAvgCycle: "Średni Cykl", prAvgBleed: "Średnie Krwawienie",
+            prHistTitle: "Historia Cykli", thNum: "Nr", thStart: "Początek", thEnd: "Koniec", thDur: "Trwanie",
+            prNoEntries: "Brak zapisanych wpisów", prPredTitle: "Przewidywane Miesiączki", thPred: "Przewidywanie", thExpStart: "Spodziewany Start", thExpEnd: "Spodziewany Koniec",
+            prCycPlus: "Cykl +"
+        }
+    };
+
+    let currentLang = 'en';
+
+    function t(key, lang = currentLang) {
+        return i18n[lang][key] || key;
+    }
+
+    function setStaticText(id, key) {
+        const el = document.getElementById(id);
+        if(el) el.innerText = t(key);
+    }
+
+    function updateAppTranslationUI() {
+        const isSelf = appData.appMode === 'self';
+
+        // Headers & Basic
+        setStaticText('btnBackTxt', 'btnBack');
+        setStaticText('madeByTxt', 'madeBy'); setStaticText('lightModernTxt', 'lightModern');
+        setStaticText('secProfileTxt', 'secProfile'); setStaticText('btnAddTxt', 'btnAdd');
+        setStaticText('secCalibTxt', 'secCalib'); setStaticText('autoCalcTxtLabel', 'autoCalc'); setStaticText('manualCycleTxt', 'manualCycle');
+        setStaticText('secLogTxt', 'secLog'); setStaticText('startDateTxt', 'startDate'); setStaticText('endDateTxt', 'endDate'); setStaticText('btnSaveEntryTxt', 'btnSaveEntry');
+        setStaticText('secViewTxt', 'secView'); setStaticText('btnBarTxt', 'btnBar'); setStaticText('btnLineTxt', 'btnLine'); setStaticText('bgColorTxt', 'bgColor');
+        setStaticText('btnImportTxt', 'btnImport'); setStaticText('btnExportTxt', 'btnExport');
+        setStaticText('secGlobalTxt', 'secGlobal'); setStaticText('defProviderTxt', 'defProvider');
+        
+        // Mode Specific App
+        setStaticText('appModeTxt', 'appMode'); setStaticText('modeSelfTxt', 'modeSelf'); setStaticText('modeClinicTxt', 'modeClinic');
+        setStaticText('secNotesTxt', isSelf ? 'secNotesSelf' : 'secNotesClinic');
+        const notesInput = document.getElementById('patientNotesInput');
+        if(notesInput) notesInput.placeholder = isSelf ? t('notesPlaceholderSelf') : t('notesPlaceholderClinic');
+        
+        const nameInput = document.getElementById('personNameInput');
+        if(nameInput) nameInput.placeholder = isSelf ? t('nameReqSelf') : t('nameReqClinic');
+        const codeInput = document.getElementById('personCodeInput');
+        if(codeInput) codeInput.placeholder = t('codeOpt');
+        const provInput = document.getElementById('globalProviderInput');
+        if(provInput) provInput.placeholder = t('providerPlaceholder');
+
+        // Stats & Dashboard
+        setStaticText('statLastTxt', 'statLast'); setStaticText('statAvgDurTxt', 'statAvgDur'); setStaticText('statDurSubTxt', 'statDurSub');
+        setStaticText('statAvgCycTxt', 'statAvgCyc'); setStaticText('statNextTxt', 'statNext'); setStaticText('chartTitleText', 'chartTitle');
+        setStaticText('btnSavePngTxt', 'btnSavePng'); setStaticText('btnPrintDataTxt', 'btnPrintData');
+        setStaticText('welcomeTitleTxt', 'welcomeTitle'); setStaticText('welcomeDescTxt', 'welcomeDesc');
+        
+        // Modals
+        setStaticText('btnSaveTxt', 'btnSave'); setStaticText('btnCancelTxt', 'btnCancel'); setStaticText('btnCancelPrintTxt', 'btnCancel'); setStaticText('btnPrintTxt', 'btnPrint');
+        setStaticText('prTitleTxt', 'prTitle'); setStaticText('prLangLabelTxt', 'prLangLabel'); setStaticText('prWhatToPrintTxt', 'prWhatToPrint');
+        
+        // Print Settings (Mode Specific)
+        setStaticText('prOptNameTxt', isSelf ? 'prOptNameSelf' : 'prOptNameClinic');
+        setStaticText('prOptCodeTxt', 'prOptCode');
+        setStaticText('prOptStatsTxt', 'prOptStats'); setStaticText('prOptTableTxt', 'prOptTable'); setStaticText('prOptPredTxt', 'prOptPred');
+        setStaticText('prOptSavedNotesTxt', isSelf ? 'prOptSavedNotesSelf' : 'prOptSavedNotesClinic');
+        setStaticText('prOptEmptyLinesTxt', 'prOptEmptyLines'); setStaticText('prLinesTxt', 'prLines');
+        
+        setStaticText('prScopeTxt', 'prScope');
+        setStaticText('prScpCurrentTxt', isSelf ? 'prScpCurrentSelf' : 'prScpCurrentClinic');
+        setStaticText('prScpSepTxt', isSelf ? 'prScpSepSelf' : 'prScpSepClinic');
+        setStaticText('prScpContTxt', isSelf ? 'prScpContSelf' : 'prScpContClinic');
+
+        // Trigger updates in UI logic
+        renderDashboard();
+    }
+
+    function changeAppLanguage(lang) {
+        currentLang = lang;
+        localStorage.setItem('redTracker_lang', lang);
+        document.getElementById('prLangSelect').value = lang;
+        updateAppTranslationUI();
+        updateProfileDropdown(); 
+    }
+
+    // --- STATE MANAGEMENT ---
+    let appData = {
+        appMode: 'self', // 'self' or 'clinical'
+        globalProvider: "",
+        profiles: [], // { id, name, code, notes, periods: [{id, start, end}], autoCalibrate: true, manualCycle: 28 }
+        activeProfileId: null
+    };
+
+    let myChart = null;
+    let currentChartType = 'bar';
+    let isEditingProfile = false;
+
+    // --- INITIALIZATION ---
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedLang = localStorage.getItem('redTracker_lang');
+        if (savedLang && (savedLang === 'en' || savedLang === 'pl')) { currentLang = savedLang; }
+        document.getElementById('appLangSelect').value = currentLang;
+        document.getElementById('prLangSelect').value = currentLang;
+        
+        loadData();
+        
+        // UI Toggles init
+        const savedUI = localStorage.getItem('redTracker_modernUI');
+        if (savedUI === 'true') {
+            document.getElementById('uiToggle').checked = true;
+            document.body.classList.add('modern-ui');
+        }
+        
+        document.getElementById('startDateInput').valueAsDate = new Date();
+    });
+
+    function loadData() {
+        const saved = localStorage.getItem('redTrackerData');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                parsed.profiles.forEach(p => {
+                    if (p.dates && !p.periods) { p.periods = p.dates.map((d, i) => ({ id: 'old_'+i, start: d, end: null })); delete p.dates; }
+                    if (p.code === undefined) p.code = "";
+                    if (p.notes === undefined) p.notes = "";
+                });
+                if(parsed.globalProvider === undefined) parsed.globalProvider = "";
+                if(parsed.appMode === undefined) parsed.appMode = "self";
+                
+                appData = parsed;
+            } catch(e) { console.error("Error loading data", e); }
+        }
+        
+        // Apply Mode Logic
+        const modeRadios = document.getElementsByName('appModeRadio');
+        for(let r of modeRadios) { if(r.value === appData.appMode) r.checked = true; }
+        applyAppModeUI();
+        
+        document.getElementById('globalProviderInput').value = appData.globalProvider;
+        updateProfileDropdown();
+        updateAppTranslationUI();
+    }
+
+    function saveData() {
+        localStorage.setItem('redTrackerData', JSON.stringify(appData));
+        renderDashboard();
+    }
+
+    // --- APP MODE LOGIC ---
+    function changeAppMode(mode) {
+        appData.appMode = mode;
+        saveData();
+        applyAppModeUI();
+        updateAppTranslationUI();
+    }
+
+    function applyAppModeUI() {
+        const isSelf = appData.appMode === 'self';
+        document.getElementById('personCodeWrapper').style.display = isSelf ? 'none' : 'block';
+        document.getElementById('globalProviderWrapper').style.display = isSelf ? 'none' : 'block';
+        document.getElementById('prShowCodeWrapper').style.display = isSelf ? 'none' : 'flex';
+    }
+
+    function updateGlobalProvider() {
+        appData.globalProvider = document.getElementById('globalProviderInput').value.trim();
+        saveData();
+    }
+
+    function updatePatientNotes() {
+        const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
+        if(profile) {
+            profile.notes = document.getElementById('patientNotesInput').value;
+            saveData();
+        }
+    }
+
+    // --- IMPORT / EXPORT DATA ---
+    function exportData() {
+        const dataStr = JSON.stringify(appData, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = `RedTracker_Backup_${new Date().toISOString().split('T')[0]}.json`;
+        link.href = url;
+        link.click();
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const parsed = JSON.parse(e.target.result);
+                if(parsed && parsed.profiles) {
+                    appData = parsed;
+                    if(appData.appMode === undefined) appData.appMode = "self";
+                    saveData();
+                    const modeRadios = document.getElementsByName('appModeRadio');
+                    for(let r of modeRadios) { if(r.value === appData.appMode) r.checked = true; }
+                    applyAppModeUI();
+                    
+                    document.getElementById('globalProviderInput').value = appData.globalProvider || "";
+                    updateProfileDropdown();
+                    updateAppTranslationUI();
+                    alert(t('alertImportOk'));
+                } else { alert(t('alertImportFail')); }
+            } catch(err) { alert(t('alertImportErr')); }
+        };
+        reader.readAsText(file);
+        event.target.value = ''; 
+    }
+
+    // --- PROFILE MANAGEMENT ---
+    function openProfileModal(editMode) {
+        isEditingProfile = editMode;
+        
+        if (editMode) {
+            const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
+            if(!profile) return;
+            document.getElementById('personNameInput').value = profile.name;
+            document.getElementById('personCodeInput').value = profile.code;
+            const titleKey = appData.appMode === 'self' ? 'modalProfileTitleSelf' : 'modalProfileTitleClinic';
+            document.getElementById('mTitleTxt').innerText = t(titleKey); 
+        } else {
+            document.getElementById('personNameInput').value = '';
+            document.getElementById('personCodeInput').value = '';
+            const titleKey = appData.appMode === 'self' ? 'modalProfileTitleSelf' : 'modalProfileTitleClinic';
+            document.getElementById('mTitleTxt').innerText = t(titleKey);
+        }
+        
+        document.getElementById('profileModal').style.display = 'block';
+        document.getElementById('modalOverlay').style.display = 'block';
+    }
+
+    function closeAllModals() {
+        document.getElementById('profileModal').style.display = 'none';
+        document.getElementById('printModal').style.display = 'none';
+        document.getElementById('modalOverlay').style.display = 'none';
+    }
+
+    function saveProfile() {
+        const name = document.getElementById('personNameInput').value.trim();
+        const code = document.getElementById('personCodeInput').value.trim();
+        if(!name) { alert(t('alertNameReq')); return; }
+        
+        if (isEditingProfile) {
+            const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
+            if(profile) { profile.name = name; profile.code = code; }
+        } else {
+            const newProfile = {
+                id: Date.now().toString(),
+                name: name, code: code, notes: "", periods: [],
+                autoCalibrate: true, manualCycle: 28
+            };
+            appData.profiles.push(newProfile);
+            appData.activeProfileId = newProfile.id;
+        }
+        
+        closeAllModals();
+        saveData();
+        updateProfileDropdown();
+    }
+
+    function deleteCurrentProfile() {
+        if(!appData.activeProfileId) return;
+        if(confirm(t('confirmDelete'))) {
+            appData.profiles = appData.profiles.filter(p => p.id !== appData.activeProfileId);
+            appData.activeProfileId = appData.profiles.length > 0 ? appData.profiles[0].id : null;
+            saveData();
+            updateProfileDropdown();
+        }
+    }
+
+    function updateProfileDropdown() {
+        const select = document.getElementById('profileSelect');
+        select.innerHTML = '';
+        
+        if (appData.profiles.length === 0) {
+            select.innerHTML = `<option disabled selected>${t('noProfiles')}</option>`;
+            document.getElementById('dataSection').style.display = 'none';
+            document.getElementById('settingsSection').style.display = 'none';
+            document.getElementById('visualSection').style.display = 'none';
+            document.getElementById('notesSection').style.display = 'none';
+            document.getElementById('workspaceCard').style.display = 'none';
+            document.getElementById('welcomeCard').style.display = 'flex';
+            return;
+        }
+
+        appData.profiles.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.innerText = p.name;
+            if (p.id === appData.activeProfileId) opt.selected = true;
+            select.appendChild(opt);
+        });
+
+        document.getElementById('dataSection').style.display = 'block';
+        document.getElementById('settingsSection').style.display = 'block';
+        document.getElementById('visualSection').style.display = 'block';
+        document.getElementById('notesSection').style.display = 'block';
+        document.getElementById('welcomeCard').style.display = 'none';
+        document.getElementById('workspaceCard').style.display = 'flex';
+        
+        loadProfileSettings();
+        renderDashboard();
+    }
+
+    function changeProfile() {
+        appData.activeProfileId = document.getElementById('profileSelect').value;
+        loadProfileSettings();
+        renderDashboard();
+    }
+
+    function loadProfileSettings() {
+        const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
+        if(!profile) return;
+        document.getElementById('autoCalibrateCheck').checked = profile.autoCalibrate;
+        document.getElementById('manualCycleInput').value = profile.manualCycle;
+        document.getElementById('patientNotesInput').value = profile.notes || "";
+        toggleCalibrationUI();
+    }
+
+    // --- SETTINGS LOGIC ---
+    function toggleCalibration() {
+        const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
+        profile.autoCalibrate = document.getElementById('autoCalibrateCheck').checked;
+        saveData();
+        toggleCalibrationUI();
+    }
+
+    function toggleCalibrationUI() {
+        const isAuto = document.getElementById('autoCalibrateCheck').checked;
+        document.getElementById('manualCycleDiv').style.opacity = isAuto ? '0.3' : '1';
+        document.getElementById('manualCycleInput').disabled = isAuto;
+    }
+
+    function updateManualCycle() {
+        const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
+        profile.manualCycle = parseInt(document.getElementById('manualCycleInput').value) || 28;
+        saveData();
+    }
+
+    // --- DATA ENTRY LOGIC ---
+    function logPeriodData() {
+        const startVal = document.getElementById('startDateInput').value;
+        const endVal = document.getElementById('endDateInput').value;
+        
+        if(!startVal) { alert(t('alertStartReq')); return; }
+        if(endVal && new Date(endVal) < new Date(startVal)) { alert(t('alertEndBefore')); return; }
+        
+        const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
+        
+        if(profile.periods.some(p => p.start === startVal)) { alert(t('alertExists')); return; }
+        
+        profile.periods.push({
+            id: Date.now().toString(),
+            start: startVal,
+            end: endVal || null
+        });
+        
+        profile.periods.sort((a,b) => new Date(a.start) - new Date(b.start));
+        document.getElementById('endDateInput').value = ''; 
+        saveData();
+    }
+
+    function removeEntry(id) {
+        const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
+        profile.periods = profile.periods.filter(p => p.id !== id);
+        saveData();
+    }
+
+    // --- MATH & CALCULATIONS ---
+    function calculateCycles(periods) {
+        let lengths = [];
+        for(let i=1; i < periods.length; i++) {
+            let d1 = new Date(periods[i-1].start);
+            let d2 = new Date(periods[i].start);
+            let diffDays = Math.ceil(Math.abs(d2 - d1) / (1000 * 60 * 60 * 24));
+            lengths.push(diffDays);
+        }
+        return lengths;
+    }
+
+    function calculateDurations(periods) {
+        let durations = [];
+        periods.forEach(p => {
+            if(p.start && p.end) {
+                let d1 = new Date(p.start);
+                let d2 = new Date(p.end);
+                let diffDays = Math.ceil(Math.abs(d2 - d1) / (1000 * 60 * 60 * 24)) + 1; 
+                durations.push(diffDays);
+            } else {
+                durations.push(null); 
+            }
+        });
+        return durations;
+    }
+
+    function getAverage(arr) {
+        const valid = arr.filter(n => n !== null && !isNaN(n));
+        if(valid.length === 0) return 0;
+        const sum = valid.reduce((a, b) => a + b, 0);
+        return Math.round(sum / valid.length);
+    }
+
+    function formatDate(dateStr, lang = currentLang) {
+        if(!dateStr) return '';
+        const d = new Date(dateStr);
+        const locale = lang === 'pl' ? 'pl-PL' : 'en-US';
+        return d.toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    // --- DASHBOARD RENDERING ---
+    function renderDashboard() {
+        const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
+        if(!profile) return;
+
+        const durations = calculateDurations(profile.periods);
+
+        const dateList = document.getElementById('dateList');
+        dateList.innerHTML = '';
+        [...profile.periods].reverse().forEach((p, idx) => {
+            const revIdx = profile.periods.length - 1 - idx;
+            const dur = durations[revIdx];
+            
+            const div = document.createElement('div');
+            div.className = 'date-item';
+            
+            let textHtml = `<span>${formatDate(p.start)}</span>`;
+            if(p.end) textHtml = `<div class="date-details"><span>${formatDate(p.start)} <i class="fa-solid fa-arrow-right" style="font-size:10px; opacity:0.5;"></i> ${formatDate(p.end)}</span><span class="date-sub">Duration: ${dur} ${t('days')}</span></div>`;
+            
+            div.innerHTML = `${textHtml} <button onclick="removeEntry('${p.id}')"><i class="fa-solid fa-xmark"></i></button>`;
+            dateList.appendChild(div);
+        });
+
+        const cycleLengths = calculateCycles(profile.periods);
+        
+        let avgCycle = profile.manualCycle;
+        let avgPeriod = getAverage(durations);
+
+        if (profile.autoCalibrate && cycleLengths.length > 0) {
+            avgCycle = getAverage(cycleLengths);
+        }
+
+        const lastEntry = profile.periods[profile.periods.length - 1];
+        if (lastEntry) {
+            document.getElementById('statLastPeriod').innerText = formatDate(lastEntry.start);
+            
+            const today = new Date(); today.setHours(0,0,0,0);
+            const lastDate = new Date(lastEntry.start);
+            const diffDays = Math.ceil((today - lastDate) / (1000 * 60 * 60 * 24));
+            
+            if(diffDays === 0) document.getElementById('statDaysAgo').innerText = t('startedToday');
+            else document.getElementById('statDaysAgo').innerText = t('daysAgo').replace('%s', diffDays);
+
+            const nextDate = new Date(lastDate);
+            nextDate.setDate(nextDate.getDate() + avgCycle);
+            document.getElementById('statNextPeriod').innerText = formatDate(nextDate.toISOString());
+            
+            const daysLeft = Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24));
+            if(daysLeft < 0) {
+                document.getElementById('statDaysLeft').innerText = t('daysLate').replace('%s', Math.abs(daysLeft));
+                document.getElementById('statDaysLeft').style.color = '#ff6b6b';
+            } else if (daysLeft === 0) {
+                document.getElementById('statDaysLeft').innerText = t('expectedToday');
+                document.getElementById('statDaysLeft').style.color = 'inherit';
+            } else {
+                document.getElementById('statDaysLeft').innerText = t('inDays').replace('%s', daysLeft);
+                document.getElementById('statDaysLeft').style.color = 'inherit';
+            }
+        } else {
+            document.getElementById('statLastPeriod').innerText = t('noData');
+            document.getElementById('statDaysAgo').innerText = t('logStartMsg');
+            document.getElementById('statNextPeriod').innerText = t('noData');
+            document.getElementById('statDaysLeft').innerText = '---';
+        }
+
+        document.getElementById('statAvgCycle').innerText = `${avgCycle} ${t('days')}`;
+        document.getElementById('statAvgPeriod').innerText = avgPeriod > 0 ? `${avgPeriod} ${t('days')}` : `-- ${t('days')}`;
+        
+        if (profile.autoCalibrate) {
+            document.getElementById('statCalibrated').innerText = cycleLengths.length > 0 ? t('autoCalcTxt') : t('needDataTxt');
+        } else {
+            document.getElementById('statCalibrated').innerText = t('manualSetTxt');
+        }
+
+        updateChart(profile, cycleLengths, durations);
+    }
+
+    // --- CHARTING ---
+    function setChartType(type) {
+        currentChartType = type;
+        document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('btn-' + type).classList.add('active');
+        renderDashboard();
+    }
+
+    function getContrastColor(color) {
+        let r, g, b;
+        if (color.startsWith('rgba') || color.startsWith('rgb')) {
+            const parts = color.match(/[\d.]+/g); r = parseInt(parts[0]); g = parseInt(parts[1]); b = parseInt(parts[2]);
+        } else {
+            let hex = color.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i, (m, r, g, b) => r+r+g+g+b+b);
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            if(!result) return '#ffffff';
+            r = parseInt(result[1], 16); g = parseInt(result[2], 16); b = parseInt(result[3], 16);
+        }
+        const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+        return (yiq >= 128) ? '#000000' : '#ffffff';
+    }
+
+    function updateChart(profile, cycleLengths, durations) {
+        const canvas = document.getElementById('mainChart'); 
+        const ctx = canvas.getContext('2d');
+        const exportFrame = document.getElementById('exportFrame');
+        
+        const bgHex = document.getElementById('bgColorPicker').value; 
+        const frameTextColor = getContrastColor(bgHex);
+        
+        exportFrame.style.background = bgHex; 
+        document.getElementById('chartTitleText').style.color = frameTextColor;
+
+        if (myChart) myChart.destroy();
+
+        if (profile.periods.length === 0) {
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+            return;
+        }
+
+        const labels = cycleLengths.map((_, i) => `Cycle ${i+1}`);
+        const plotDurations = durations.slice(0, durations.length - 1); 
+
+        const chartOptions = {
+            responsive: true, maintainAspectRatio: false, layout: { padding: 20 },
+            plugins: {
+                legend: { display: true, position: 'bottom', labels: { color: frameTextColor, font: {family: 'Outfit'} } },
+                datalabels: {
+                    display: true, color: currentChartType === 'bar' ? '#fff' : frameTextColor,
+                    font: { weight: 'bold', family: 'Outfit', size: 12 },
+                    formatter: val => val ? val : ''
+                }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: frameTextColor } },
+                x: { grid: { display: false }, ticks: { color: frameTextColor } }
+            }
+        };
+
+        const datasets = [
+            {
+                label: t('statAvgCyc').replace('Avg ', '').replace('Średnia ', ''),
+                data: cycleLengths,
+                backgroundColor: currentChartType === 'bar' ? '#ff9a9e' : 'rgba(255,154,158,0.2)',
+                borderColor: '#ff9a9e',
+                borderWidth: 2,
+                borderRadius: currentChartType === 'bar' ? 6 : 0,
+                fill: currentChartType === 'line',
+                tension: 0.3
+            },
+            {
+                label: t('statDurSub'),
+                data: plotDurations,
+                backgroundColor: currentChartType === 'bar' ? '#a18cd1' : 'transparent',
+                borderColor: '#a18cd1',
+                borderWidth: 2,
+                borderRadius: currentChartType === 'bar' ? 6 : 0,
+                type: currentChartType,
+                tension: 0.3
+            }
+        ];
+
+        myChart = new Chart(ctx, { 
+            type: currentChartType, 
+            data: { labels: labels, datasets: datasets }, 
+            plugins: [ChartDataLabels], 
+            options: chartOptions 
+        });
+    }
+
+    // --- UI TOGGLES & EXPORTS ---
+    function toggleModernUI() {
+        const isChecked = document.getElementById('uiToggle').checked;
+        if (isChecked) { document.body.classList.add('modern-ui'); } 
+        else { document.body.classList.remove('modern-ui'); }
+        localStorage.setItem('redTracker_modernUI', isChecked);
+        setTimeout(() => { if (myChart) myChart.resize(); }, 450); 
+    }
+
+    async function exportToPng() {
+        const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
+        const name = profile ? profile.name : "Chart";
+        const canvas = await html2canvas(document.getElementById('exportFrame'), { scale: 2, backgroundColor: null });
+        const link = document.createElement('a'); 
+        link.download = `RedTracker_${name}.png`; 
+        link.href = canvas.toDataURL('image/png', 1.0); 
+        link.click();
+    }
+
+    // --- PRINTING LOGIC ---
+    function openPrintModal() {
+        if(appData.profiles.length === 0) return;
+        document.getElementById('printModal').style.display = 'block';
+        document.getElementById('modalOverlay').style.display = 'block';
+    }
+
+    function buildPrintHTMLForProfile(profile, options, isLast) {
+        const prLang = options.lang; 
+        const isSelf = appData.appMode === 'self';
+        
+        const durations = calculateDurations(profile.periods);
+        const cycleLengths = calculateCycles(profile.periods);
+        
+        let avgCycle = profile.manualCycle;
+        let avgPeriod = getAverage(durations);
+        if (profile.autoCalibrate && cycleLengths.length > 0) { avgCycle = getAverage(cycleLengths); }
+
+        let rowsHtml = '';
+        profile.periods.forEach((p, idx) => {
+            const dur = durations[idx] ? durations[idx] + ' ' + t('days', prLang) : '-';
+            rowsHtml += `<tr>
+                <td>${idx + 1}</td>
+                <td>${formatDate(p.start, prLang)}</td>
+                <td>${p.end ? formatDate(p.end, prLang) : '-'}</td>
+                <td>${dur}</td>
+            </tr>`;
+        });
+
+        let predictionsHtml = '';
+        if(options.showPredictions && profile.periods.length > 0) {
+            const lastEntry = profile.periods[profile.periods.length - 1];
+            let lastDate = new Date(lastEntry.start);
+            let predCycle = avgCycle || 28;
+            let predPeriod = (avgPeriod && avgPeriod > 0) ? avgPeriod : 5;
+
+            let predRows = '';
+            for(let i=1; i<=3; i++) {
+                lastDate.setDate(lastDate.getDate() + predCycle);
+                let endDate = new Date(lastDate);
+                endDate.setDate(endDate.getDate() + predPeriod - 1);
+
+                predRows += `<tr>
+                    <td>${t('prCycPlus', prLang)}${i}</td>
+                    <td>${formatDate(lastDate.toISOString(), prLang)}</td>
+                    <td>${formatDate(endDate.toISOString(), prLang)}</td>
+                </tr>`;
+            }
+            predictionsHtml = `
+            <h3>${t('prPredTitle', prLang)}</h3>
+            <table class="print-table" style="width: 100%;">
+                <thead>
+                    <tr><th>${t('thPred', prLang)}</th><th>${t('thExpStart', prLang)}</th><th>${t('thExpEnd', prLang)}</th></tr>
+                </thead>
+                <tbody>
+                    ${predRows}
+                </tbody>
+            </table>`;
+        }
+
+        let html = `<div class="print-patient-container">`;
+        
+        html += `
+            <div class="print-web-header">
+                RedTracker <span class="print-version-tag">Beta v1</span>
+            </div>
+            <p class="print-credits">${t('madeBy', prLang)}</p>
+        `;
+
+        if(options.showName || (options.showCode && !isSelf) || (!isSelf && appData.globalProvider)) {
+            html += `<div class="print-info-block">`;
+            
+            const nameLabel = isSelf ? t('prPatNameSelf', prLang) : t('prPatNameClinic', prLang);
+            if(options.showName) html += `<h2>${nameLabel} <b>${profile.name}</b></h2>`;
+            
+            if(!isSelf) {
+                if(options.showCode && profile.code) html += `<p>${t('prPatCode', prLang)} <b>${profile.code}</b></p>`;
+                if(appData.globalProvider) html += `<p>${t('prAttProvider', prLang)} <b>${appData.globalProvider}</b></p>`;
+            }
+            
+            html += `<p style="color: #666; margin-top: 10px;">${t('prGenOn', prLang)} ${new Date().toLocaleDateString(prLang === 'pl' ? 'pl-PL' : 'en-US')}</p>
+            </div>`;
+        }
+
+        if(options.showStats) {
+            html += `
+            <div class="print-stats">
+                <div class="print-stat-box">
+                    <strong>${t('prTotEntries', prLang)}</strong>
+                    <span style="font-size:24px;">${profile.periods.length}</span>
+                </div>
+                <div class="print-stat-box">
+                    <strong>${t('prAvgCycle', prLang)}</strong>
+                    <span style="font-size:24px;">${avgCycle} ${t('days', prLang)}</span>
+                </div>
+                <div class="print-stat-box">
+                    <strong>${t('prAvgBleed', prLang)}</strong>
+                    <span style="font-size:24px;">${avgPeriod > 0 ? avgPeriod + ' ' + t('days', prLang) : '-'}</span>
+                </div>
+            </div>`;
+        }
+
+        if(options.showTable) {
+            html += `
+            <h3>${t('prHistTitle', prLang)}</h3>
+            <table class="print-table">
+                <thead>
+                    <tr>
+                        <th>${t('thNum', prLang)}</th>
+                        <th>${t('thStart', prLang)}</th>
+                        <th>${t('thEnd', prLang)}</th>
+                        <th>${t('thDur', prLang)}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rowsHtml || `<tr><td colspan="4" style="text-align:center;">${t('prNoEntries', prLang)}</td></tr>`}
+                </tbody>
+            </table>`;
+        }
+
+        if(options.showPredictions) {
+            html += predictionsHtml;
+        }
+        
+        if(options.showSavedNotes && profile.notes) {
+            const formattedNotes = profile.notes.replace(/\n/g, '<br>');
+            const savedNotesTitle = isSelf ? t('prSavedNotesSelf', prLang) : t('prSavedNotesClinic', prLang);
+            html += `
+            <div class="print-notes" style="margin-top: 30px;">
+                <h3>${savedNotesTitle}</h3>
+                <div class="saved-notes-box">
+                    ${formattedNotes}
+                </div>
+            </div>`;
+        }
+
+        if(options.showNotes) {
+            let noteLinesHTML = '';
+            for(let i=0; i < options.noteLines; i++) {
+                noteLinesHTML += `<div class="print-note-line"></div>`;
+            }
+            
+            const handNotesTitle = isSelf ? t('prHandNotesSelf', prLang) : t('prHandNotesClinic', prLang);
+            html += `
+            <div class="print-notes">
+                <h3>${handNotesTitle}</h3>
+                ${noteLinesHTML}
+            </div>`;
+        }
+
+        html += `</div>`;
+
+        if (!isLast && options.separatePages) {
+            html += `<div class="page-break"></div>`;
+        } else if (!isLast && !options.separatePages) {
+            html += `<hr style="margin: 40px 0; border: 1px dashed #ccc;">`;
+        }
+
+        return html;
+    }
+
+    function executePrint() {
+        closeAllModals();
+
+        let numLines = parseInt(document.getElementById('prNotesLines').value);
+        if(isNaN(numLines) || numLines < 1) numLines = 1;
+
+        const options = {
+            lang: document.getElementById('prLangSelect').value,
+            showName: document.getElementById('prShowName').checked,
+            showCode: document.getElementById('prShowCode').checked,
+            showStats: document.getElementById('prShowStats').checked,
+            showTable: document.getElementById('prShowTable').checked,
+            showPredictions: document.getElementById('prShowPredictions').checked,
+            showSavedNotes: document.getElementById('prShowSavedNotes').checked,
+            showNotes: document.getElementById('prShowNotes').checked,
+            noteLines: numLines,
+            separatePages: false
+        };
+
+        const scope = document.querySelector('input[name="printScope"]:checked').value;
+        let profilesToPrint = [];
+
+        if (scope === 'current') {
+            const p = appData.profiles.find(p => p.id === appData.activeProfileId);
+            if(p) profilesToPrint.push(p);
+        } else {
+            profilesToPrint = [...appData.profiles];
+            if(scope === 'all_sep') options.separatePages = true;
+        }
+
+        let fullHtml = '';
+        profilesToPrint.forEach((profile, index) => {
+            const isLast = (index === profilesToPrint.length - 1);
+            fullHtml += buildPrintHTMLForProfile(profile, options, isLast);
+        });
+
+        document.getElementById('printArea').innerHTML = fullHtml;
+        window.print();
+    }
+</script>
+
+</body>
+  </html>
