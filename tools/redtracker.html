@@ -47,7 +47,7 @@
         .version-tag { font-size: 0.4em; opacity: 0.7; font-weight: 600; background: rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 7px; color: #ffe4e6; white-space: nowrap;}
         .credits { margin: 0; font-size: 0.9em; opacity: 0.8; font-weight: 400; }
 
-        .toggles-container { display: flex; gap: 15px; align-items: center; flex-wrap: wrap;}
+        .toggles-container { display: flex; gap: 15px; align-items: stretch; flex-wrap: wrap;}
         .header-center { display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); padding: 10px 20px; border-radius: 20px; border: 1px solid var(--glass-border); transition: all 0.4s; }
         .ui-switch-label { display: flex; align-items: center; gap: 12px; cursor: pointer; margin: 0; }
         .ui-switch { position: relative; width: 46px; height: 24px; flex-shrink: 0;}
@@ -57,7 +57,7 @@
         .ui-switch input:checked + .slider { background-color: rgba(255, 154, 158, 0.5); border-color: #ff9a9e; }
         .ui-switch input:checked + .slider:before { transform: translateX(22px); background-color: #fff; }
 
-        .lang-select { background: rgba(0,0,0,0.2); color: white; border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 12px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; outline: none; }
+        .lang-select { background: rgba(0,0,0,0.2); color: white; border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 20px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; outline: none; }
         .lang-select option { background: #1e1b4b; color: white; }
 
         /* --- BACK BUTTON --- */
@@ -69,9 +69,10 @@
             font-size: 13px; font-weight: 700; text-transform: uppercase;
             transition: 0.3s; cursor: pointer;
         }
-        .back-btn:hover { background: rgba(0,0,0,0.5); transform: translateX(3px); }
+        .back-btn:hover { background: rgba(0,0,0,0.5); border-color: #ff9a9e; }
 
         .layout { display: grid; grid-template-columns: 380px 1fr; gap: 30px; transition: all 0.4s ease; align-items: start; }
+        .main-content { display: flex; flex-direction: column; gap: 15px; }
 
         .sidebar { background: var(--sidebar-bg); padding: 25px; border-radius: 25px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 20px; height: fit-content; transition: all 0.4s ease; }
         .section-label { color: #ffb6b9; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; display: block; margin-bottom: 8px; transition: all 0.3s; }
@@ -102,6 +103,8 @@
         .text-input::placeholder { color: rgba(255,255,255,0.4); }
         textarea.text-input { resize: vertical; min-height: 80px; }
         
+        .quick-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px; }
+
         .date-input { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: white; font-family: inherit; font-size: 14px; outline:none; color-scheme: dark;}
         .date-group { margin-bottom: 10px; }
         .date-group label { display: block; font-size: 11px; opacity: 0.8; margin-bottom: 4px; font-weight: 600;}
@@ -121,9 +124,9 @@
         }
 
         .dashboard-stats { display: flex; gap: 15px; width: 100%; order: 1; flex-wrap: wrap; margin-bottom: 10px; }
-        .stat-box { flex: 1 1 20%; min-width: 140px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 20px; border-radius: 20px; text-align: center; backdrop-filter: blur(10px); }
-        .stat-box h3 { margin: 0 0 10px 0; font-size: 11px; text-transform: uppercase; opacity: 0.7; letter-spacing: 1px; color: #ffb6b9;}
-        .stat-box p { margin: 0; font-size: 22px; font-weight: 700; }
+        .stat-box { flex: 1 1 15%; min-width: 130px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 20px; border-radius: 20px; text-align: center; backdrop-filter: blur(10px); }
+        .stat-box h3 { margin: 0 0 10px 0; font-size: 10px; text-transform: uppercase; opacity: 0.7; letter-spacing: 1px; color: #ffb6b9;}
+        .stat-box p { margin: 0; font-size: 20px; font-weight: 700; }
         .stat-box .subtext { font-size: 11px; opacity: 0.6; margin-top: 5px; }
 
         .export-frame {
@@ -167,10 +170,11 @@
             .container { padding: 15px; border-radius: 20px; }
             .sidebar { padding: 20px; }
             .header h1 { font-size: 1.8em; }
-            .toggles-container { flex-direction: column; gap: 10px; }
+            .toggles-container { flex-direction: column; gap: 10px; width: 100%; }
             .header-center { width: 100%; justify-content: space-between; }
             .lang-select, .back-btn { width: 100%; text-align: center; justify-content: center;}
             .stat-box { min-width: 100%; } 
+            .quick-actions-grid { grid-template-columns: 1fr; gap: 8px; }
             .export-frame { height: 320px; padding: 10px; }
             .action-buttons { flex-direction: column; width: 100%; }
             .btn-action { width: 100%; }
@@ -209,7 +213,7 @@
         #printArea { display: none; }
         @media print {
             body { background: white; color: black; margin: 0; padding: 0; font-family: "Outfit", sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .container, .modal-box, .modal-overlay, #printModal { display: none !important; }
+            .back-btn, .container, .modal-box, .modal-overlay, #printModal { display: none !important; }
             #printArea { display: block; }
             
             .page-break { page-break-after: always; break-after: page; }
@@ -242,6 +246,16 @@
 
 <div class="modal-overlay" id="modalOverlay" onclick="closeAllModals()"></div>
 
+<!-- Universal Alert / Confirm Dialog -->
+<div id="unifiedDialog" class="modal-box" style="z-index: 3000;">
+    <h3 id="dialogTitle" style="margin-top:0; font-size: 1.5em; color: #ff9a9e;"></h3>
+    <p id="dialogMessage" style="font-size: 1em; margin-bottom: 20px; opacity: 0.9;"></p>
+    <div style="display:flex; gap:10px; justify-content: center;">
+        <button id="dialogBtnOk" class="modal-btn" style="background: var(--accent); color: #333; border: none;" onclick="closeDialog(true)" data-i18n="btnOk">OK</button>
+        <button id="dialogBtnCancel" class="modal-btn" style="opacity:0.4; border:none; background: transparent;" onclick="closeDialog(false)" data-i18n="btnCancel">Cancel</button>
+    </div>
+</div>
+
 <!-- Profile Modal (Add / Edit) -->
 <div id="profileModal" class="modal-box" style="z-index: 2000;">
     <h3 id="profileModalTitle" style="margin-top:0; font-size: 1.5em; color: #ff9a9e;"><i class="fa-solid fa-user"></i> <span id="mTitleTxt">Profile</span></h3>
@@ -252,6 +266,26 @@
     <div style="display:flex; gap:10px; justify-content: center;">
         <button class="modal-btn" onclick="saveProfile()" style="background: var(--accent); color: #333; border: none;" id="btnSaveTxt">Save</button>
         <button class="modal-btn" onclick="closeAllModals()" style="opacity:0.4; border:none; background: transparent;" id="btnCancelTxt">Cancel</button>
+    </div>
+</div>
+
+<!-- Edit Existing Period Modal -->
+<div id="editEntryModal" class="modal-box" style="z-index: 2000;">
+    <h3 style="margin-top:0; font-size: 1.5em; color: #ff9a9e;" id="editEntryTitleTxt"><i class="fa-solid fa-pen"></i> Edit Period</h3>
+    <input type="hidden" id="editEntryId">
+    
+    <div class="date-group" style="text-align: left;">
+        <label id="editStartTxt">Start Date</label>
+        <input type="date" id="editStartDate" class="modal-input" style="margin-bottom:15px;">
+    </div>
+    <div class="date-group" style="text-align: left;">
+        <label id="editEndTxt">End Date</label>
+        <input type="date" id="editEndDate" class="modal-input" style="margin-bottom:15px;">
+    </div>
+    
+    <div style="display:flex; gap:10px; justify-content: center;">
+        <button class="modal-btn" onclick="saveEntryEdit()" style="background: var(--accent); color: #333; border: none;" id="btnSaveEntryEditTxt">Save</button>
+        <button class="modal-btn" onclick="closeAllModals()" style="opacity:0.4; border:none; background: transparent;" id="btnCancelEntryEditTxt">Cancel</button>
     </div>
 </div>
 
@@ -301,7 +335,7 @@
 <div class="container">
     <div class="header">
         <div>
-            <h1>RedTracker <span class="version-tag">Beta v1</span></h1>
+            <h1>RedTracker <span class="version-tag">v1</span></h1>
             <p class="credits" id="madeByTxt">Made by Dawidolowid</p>
         </div>
         
@@ -321,7 +355,6 @@
                 </label>
             </div>
             
-            <!-- Max Top Right Back Button inside grid -->
             <a href="javascript:history.back()" class="back-btn">
                 <i class="fa-solid fa-arrow-left"></i> <span id="btnBackTxt">Back to App</span>
             </a>
@@ -355,6 +388,13 @@
 
             <div id="dataSection" style="display: none;">
                 <span class="section-label" id="secLogTxt">3. Log New Period</span>
+                
+                <!-- Quick Action Buttons -->
+                <div class="quick-actions-grid">
+                    <button id="qaTodayBtn" class="btn-main" style="padding: 15px; border-radius: 12px;"></button>
+                    <button id="qaYestBtn" class="btn-small" style="padding: 15px; border-radius: 12px; font-size: 13px;"></button>
+                </div>
+
                 <div class="date-group">
                     <label id="startDateTxt">Start Date</label>
                     <input type="date" id="startDateInput" class="date-input">
@@ -418,56 +458,63 @@
 
         </div>
 
-        <!-- Workspace -->
-        <div class="chart-card" id="workspaceCard" style="display: none;">
+        <!-- Workspace Content Wrapper -->
+        <div class="main-content">
             
-            <div class="dashboard-stats">
-                <div class="stat-box">
-                    <h3 id="statLastTxt">Last Period Started</h3>
-                    <p id="statLastPeriod">--</p>
-                    <div class="subtext" id="statDaysAgo">---</div>
-                </div>
-                <div class="stat-box">
-                    <h3 id="statAvgDurTxt">Avg Period Duration</h3>
-                    <p id="statAvgPeriod">--</p>
-                    <div class="subtext" id="statDurSubTxt">Bleeding length</div>
-                </div>
-                <div class="stat-box">
-                    <h3 id="statAvgCycTxt">Avg Cycle Length</h3>
-                    <p id="statAvgCycle">--</p>
-                    <div class="subtext" id="statCalibrated">---</div>
-                </div>
-                <div class="stat-box">
-                    <h3 id="statNextTxt">Expected Next</h3>
-                    <p id="statNextPeriod" style="color: #ff9a9e;">--</p>
-                    <div class="subtext" id="statDaysLeft">---</div>
-                </div>
-            </div>
-
-            <div id="exportFrame" class="export-frame">
-                <h2 style="margin-top: 0; color: white; z-index: 10;" id="chartTitleText">Cycle & Period History</h2>
-                <div class="chart-wrapper">
-                    <div class="canvas-sizer">
-                        <canvas id="mainChart"></canvas>
+            <div class="chart-card" id="workspaceCard" style="display: none;">
+                <div class="dashboard-stats">
+                    <div class="stat-box">
+                        <h3 id="statLastTxt">Last Period Started</h3>
+                        <p id="statLastPeriod">--</p>
+                        <div class="subtext" id="statDaysAgo">---</div>
+                    </div>
+                    <div class="stat-box">
+                        <h3 id="statAvgDurTxt">Avg Period Duration</h3>
+                        <p id="statAvgPeriod">--</p>
+                        <div class="subtext" id="statDurSubTxt">Bleeding length</div>
+                    </div>
+                    <div class="stat-box">
+                        <h3 id="statAvgCycTxt">Avg Cycle Length</h3>
+                        <p id="statAvgCycle">--</p>
+                        <div class="subtext" id="statCalibrated">---</div>
+                    </div>
+                    <div class="stat-box">
+                        <h3 id="statNextTxt">Expected Next</h3>
+                        <p id="statNextPeriod" style="color: #ff9a9e;">--</p>
+                        <div class="subtext" id="statDaysLeft">---</div>
+                    </div>
+                    <div class="stat-box">
+                        <h3 id="statOvuTxt">Expected Ovulation</h3>
+                        <p id="statOvulation" style="color: #a18cd1;">--</p>
+                        <div class="subtext" id="statOvuDaysLeft">---</div>
                     </div>
                 </div>
+
+                <div id="exportFrame" class="export-frame">
+                    <h2 style="margin-top: 0; color: white; z-index: 10;" id="chartTitleText">Cycle & Period History</h2>
+                    <div class="chart-wrapper">
+                        <div class="canvas-sizer">
+                            <canvas id="mainChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-action" onclick="exportToPng()"><i class="fa-solid fa-image"></i> <span id="btnSavePngTxt">Save as PNG</span></button>
+                    <button class="btn-action" onclick="openPrintModal()" style="background: var(--accent); border: none; color: #333;"><i class="fa-solid fa-print"></i> <span id="btnPrintDataTxt">Print Data</span></button>
+                </div>
+            </div>
+            
+            <!-- Welcome state -->
+            <div class="chart-card" id="welcomeCard" style="justify-content: center;">
+                <div style="text-align: center; opacity: 0.7;">
+                    <i class="fa-solid fa-heart-pulse" style="font-size: 5em; margin-bottom: 20px; color: #ff9a9e;"></i>
+                    <h2 id="welcomeTitleTxt">Welcome to RedTracker</h2>
+                    <p id="welcomeDescTxt">Add a profile from the left menu to start tracking.</p>
+                </div>
             </div>
 
-            <div class="action-buttons">
-                <button class="btn-action" onclick="exportToPng()"><i class="fa-solid fa-image"></i> <span id="btnSavePngTxt">Save as PNG</span></button>
-                <button class="btn-action" onclick="openPrintModal()" style="background: var(--accent); border: none; color: #333;"><i class="fa-solid fa-print"></i> <span id="btnPrintDataTxt">Print Data</span></button>
-            </div>
-        </div>
-        
-        <!-- Welcome state -->
-        <div class="chart-card" id="welcomeCard" style="justify-content: center;">
-            <div style="text-align: center; opacity: 0.7;">
-                <i class="fa-solid fa-heart-pulse" style="font-size: 5em; margin-bottom: 20px; color: #ff9a9e;"></i>
-                <h2 id="welcomeTitleTxt">Welcome to RedTracker</h2>
-                <p id="welcomeDescTxt">Add a profile from the left menu to start tracking.</p>
-            </div>
-        </div>
-
+        </div> <!-- End Main Content -->
     </div>
 </div>
 
@@ -486,7 +533,6 @@
             secLog: "3. Log New Period", startDate: "Start Date", endDate: "End Date (Optional)", btnSaveEntry: "Save Entry",
             secView: "4. View Options", btnBar: "Bar", btnLine: "Line", bgColor: "Background Color", btnImport: "Import", btnExport: "Export",
             
-            // App Mode Specific
             appMode: "App Mode", modeSelf: "Self-Tracking (Personal)", modeClinic: "Clinical (Doctor/Clinic)",
             secGlobal: "6. Global Settings", defProvider: "Default Attending Provider",
             secNotesSelf: "5. Personal Notes", secNotesClinic: "5. Patient Notes",
@@ -505,6 +551,7 @@
             
             statLast: "Last Period Started", statAvgDur: "Avg Period Duration", statDurSub: "Bleeding length",
             statAvgCyc: "Avg Cycle Length", statNext: "Expected Next", chartTitle: "Cycle & Period History",
+            statOvu: "Expected Ovulation", thOvulation: "Ovulation",
             btnSavePng: "Save as PNG", btnPrintData: "Print Data",
             welcomeTitle: "Welcome to RedTracker", welcomeDesc: "Add a profile from the left menu to start tracking.",
             btnSave: "Save", btnCancel: "Cancel", btnPrint: "Print",
@@ -512,15 +559,21 @@
             prOptCode: "Patient Code / ID", prOptStats: "Statistics (Averages)", prOptTable: "History Table",
             prOptPred: "Future Predictions", prOptEmptyLines: "Empty lined space for handwritten notes", prLines: "Lines:",
             prScope: "Print Scope", 
-            // Dynamic text
+            
             noProfiles: "No profiles", providerPlaceholder: "e.g. Dr. Smith", 
             days: "days", autoCalcTxt: "(Auto-calculated)", needDataTxt: "(Need more data)", manualSetTxt: "(Manual setting)",
             noData: "No Data", startedToday: "Started Today!", daysAgo: "%s days ago", expectedToday: "Expected Today",
             daysLate: "%s days late", inDays: "In %s days", logStartMsg: "Log a start date",
+            
+            alertError: "Error", alertSuccess: "Success", alertConfirm: "Confirmation", btnOk: "OK",
             alertNameReq: "Name is required!", alertStartReq: "Start Date is required.", alertEndBefore: "End date cannot be before start date.",
             alertExists: "Entry with this start date already exists!", confirmDelete: "Are you sure you want to delete this profile and all its data?",
             alertImportOk: "Data imported successfully!", alertImportFail: "Invalid backup file.", alertImportErr: "Error reading file.",
-            // Print specifics
+            cannotEndFuture: "Cannot end period today because it started in the future.",
+            
+            quickStart: "Start (Today)", quickStartYest: "Start (Yesterday)", 
+            quickEnd: "End (Today)", quickEndYest: "End (Yesterday)", editPeriodTitle: "Edit Period",
+            
             prGenOn: "Generated on:", prPatCode: "Patient Code / ID:", prAttProvider: "Attending Provider:",
             prTotEntries: "Total Entries", prAvgCycle: "Avg Cycle Length", prAvgBleed: "Avg Bleeding Duration",
             prHistTitle: "Period History", thNum: "#", thStart: "Start Date", thEnd: "End Date", thDur: "Duration",
@@ -534,7 +587,6 @@
             secLog: "3. Dodaj Miesiączkę", startDate: "Data Rozpoczęcia", endDate: "Data Zakończenia (Opcjonalne)", btnSaveEntry: "Zapisz",
             secView: "4. Wygląd", btnBar: "Słupki", btnLine: "Linia", bgColor: "Kolor Tła", btnImport: "Import", btnExport: "Eksport",
             
-            // App Mode Specific
             appMode: "Tryb Aplikacji", modeSelf: "Osobisty (Dla siebie)", modeClinic: "Kliniczny (Dla lekarzy)",
             secGlobal: "6. Ustawienia Globalne", defProvider: "Domyślny Lekarz Prowadzący",
             secNotesSelf: "5. Osobiste Notatki", secNotesClinic: "5. Notatki Pacjentki",
@@ -553,6 +605,7 @@
 
             statLast: "Ostatnia Miesiączka", statAvgDur: "Średnia Dł. Miesiączki", statDurSub: "Dni krwawienia",
             statAvgCyc: "Średnia Dł. Cyklu", statNext: "Spodziewana Następna", chartTitle: "Historia Cykli i Miesiączek",
+            statOvu: "Spodziewana Owulacja", thOvulation: "Owulacja",
             btnSavePng: "Zapisz PNG", btnPrintData: "Drukuj Raport",
             welcomeTitle: "Witaj w RedTracker", welcomeDesc: "Dodaj profil z menu po lewej stronie, aby zacząć.",
             btnSave: "Zapisz", btnCancel: "Anuluj", btnPrint: "Drukuj",
@@ -560,15 +613,21 @@
             prOptCode: "Kod / ID Pacjentki", prOptStats: "Statystyki (Średnie)", prOptTable: "Tabela Historii",
             prOptPred: "Przewidywania", prOptEmptyLines: "Puste linie na notatki odręczne", prLines: "Linie:",
             prScope: "Zakres Druku", 
-            // Dynamic text
+            
             noProfiles: "Brak profili", providerPlaceholder: "np. Dr. Kowalski", 
             days: "dni", autoCalcTxt: "(Obliczono automatycznie)", needDataTxt: "(Potrzeba więcej danych)", manualSetTxt: "(Ustawienie ręczne)",
             noData: "Brak Danych", startedToday: "Rozpoczął się dzisiaj!", daysAgo: "%s dni temu", expectedToday: "Oczekiwany dzisiaj",
             daysLate: "Spóźnia się o %s dni", inDays: "Za %s dni", logStartMsg: "Podaj datę startu",
+            
+            alertError: "Błąd", alertSuccess: "Sukces", alertConfirm: "Potwierdzenie", btnOk: "OK",
             alertNameReq: "Imię jest wymagane!", alertStartReq: "Data rozpoczęcia jest wymagana.", alertEndBefore: "Data zakończenia nie może być przed datą startu.",
             alertExists: "Wpis z tą datą startu już istnieje!", confirmDelete: "Czy na pewno chcesz usunąć ten profil i jego dane?",
             alertImportOk: "Dane pomyślnie zaimportowane!", alertImportFail: "Nieprawidłowy plik kopii zapasowej.", alertImportErr: "Błąd odczytu pliku.",
-            // Print specifics
+            cannotEndFuture: "Nie można zakończyć miesiączki, ponieważ data startu jest w przyszłości.",
+            
+            quickStart: "Zacznij (Dzisiaj)", quickStartYest: "Zacznij (Wczoraj)", 
+            quickEnd: "Zakończ (Dzisiaj)", quickEndYest: "Zakończ (Wczoraj)", editPeriodTitle: "Edytuj Miesiączkę",
+
             prGenOn: "Wygenerowano:", prPatCode: "Kod / ID Pacjentki:", prAttProvider: "Lekarz Prowadzący:",
             prTotEntries: "Ilość wpisów", prAvgCycle: "Średni Cykl", prAvgBleed: "Średnie Krwawienie",
             prHistTitle: "Historia Cykli", thNum: "Nr", thStart: "Początek", thEnd: "Koniec", thDur: "Trwanie",
@@ -579,9 +638,7 @@
 
     let currentLang = 'en';
 
-    function t(key, lang = currentLang) {
-        return i18n[lang][key] || key;
-    }
+    function t(key, lang = currentLang) { return i18n[lang][key] || key; }
 
     function setStaticText(id, key) {
         const el = document.getElementById(id);
@@ -591,8 +648,7 @@
     function updateAppTranslationUI() {
         const isSelf = appData.appMode === 'self';
 
-        // Headers & Basic
-        setStaticText('btnBackTxt', 'btnBack');
+        setStaticText('btnBackTxt', 'btnBack'); 
         setStaticText('madeByTxt', 'madeBy'); setStaticText('lightModernTxt', 'lightModern');
         setStaticText('secProfileTxt', 'secProfile'); setStaticText('btnAddTxt', 'btnAdd');
         setStaticText('secCalibTxt', 'secCalib'); setStaticText('autoCalcTxtLabel', 'autoCalc'); setStaticText('manualCycleTxt', 'manualCycle');
@@ -601,12 +657,11 @@
         setStaticText('btnImportTxt', 'btnImport'); setStaticText('btnExportTxt', 'btnExport');
         setStaticText('secGlobalTxt', 'secGlobal'); setStaticText('defProviderTxt', 'defProvider');
         
-        // Mode Specific App
         setStaticText('appModeTxt', 'appMode'); setStaticText('modeSelfTxt', 'modeSelf'); setStaticText('modeClinicTxt', 'modeClinic');
         setStaticText('secNotesTxt', isSelf ? 'secNotesSelf' : 'secNotesClinic');
+        
         const notesInput = document.getElementById('patientNotesInput');
         if(notesInput) notesInput.placeholder = isSelf ? t('notesPlaceholderSelf') : t('notesPlaceholderClinic');
-        
         const nameInput = document.getElementById('personNameInput');
         if(nameInput) nameInput.placeholder = isSelf ? t('nameReqSelf') : t('nameReqClinic');
         const codeInput = document.getElementById('personCodeInput');
@@ -614,29 +669,29 @@
         const provInput = document.getElementById('globalProviderInput');
         if(provInput) provInput.placeholder = t('providerPlaceholder');
 
-        // Stats & Dashboard
         setStaticText('statLastTxt', 'statLast'); setStaticText('statAvgDurTxt', 'statAvgDur'); setStaticText('statDurSubTxt', 'statDurSub');
-        setStaticText('statAvgCycTxt', 'statAvgCyc'); setStaticText('statNextTxt', 'statNext'); setStaticText('chartTitleText', 'chartTitle');
+        setStaticText('statAvgCycTxt', 'statAvgCyc'); setStaticText('statNextTxt', 'statNext'); setStaticText('statOvuTxt', 'statOvu'); 
+        setStaticText('chartTitleText', 'chartTitle');
         setStaticText('btnSavePngTxt', 'btnSavePng'); setStaticText('btnPrintDataTxt', 'btnPrintData');
         setStaticText('welcomeTitleTxt', 'welcomeTitle'); setStaticText('welcomeDescTxt', 'welcomeDesc');
         
-        // Modals
         setStaticText('btnSaveTxt', 'btnSave'); setStaticText('btnCancelTxt', 'btnCancel'); setStaticText('btnCancelPrintTxt', 'btnCancel'); setStaticText('btnPrintTxt', 'btnPrint');
         setStaticText('prTitleTxt', 'prTitle'); setStaticText('prLangLabelTxt', 'prLangLabel'); setStaticText('prWhatToPrintTxt', 'prWhatToPrint');
         
-        // Print Settings (Mode Specific)
-        setStaticText('prOptNameTxt', isSelf ? 'prOptNameSelf' : 'prOptNameClinic');
-        setStaticText('prOptCodeTxt', 'prOptCode');
+        setStaticText('prOptNameTxt', isSelf ? 'prOptNameSelf' : 'prOptNameClinic'); setStaticText('prOptCodeTxt', 'prOptCode');
         setStaticText('prOptStatsTxt', 'prOptStats'); setStaticText('prOptTableTxt', 'prOptTable'); setStaticText('prOptPredTxt', 'prOptPred');
         setStaticText('prOptSavedNotesTxt', isSelf ? 'prOptSavedNotesSelf' : 'prOptSavedNotesClinic');
         setStaticText('prOptEmptyLinesTxt', 'prOptEmptyLines'); setStaticText('prLinesTxt', 'prLines');
-        
         setStaticText('prScopeTxt', 'prScope');
         setStaticText('prScpCurrentTxt', isSelf ? 'prScpCurrentSelf' : 'prScpCurrentClinic');
         setStaticText('prScpSepTxt', isSelf ? 'prScpSepSelf' : 'prScpSepClinic');
         setStaticText('prScpContTxt', isSelf ? 'prScpContSelf' : 'prScpContClinic');
+        
+        setStaticText('editStartTxt', 'startDate'); setStaticText('editEndTxt', 'endDate');
+        setStaticText('btnSaveEntryEditTxt', 'btnSave'); setStaticText('btnCancelEntryEditTxt', 'btnCancel');
 
-        // Trigger updates in UI logic
+        setStaticText('dialogBtnOk', 'btnOk'); setStaticText('dialogBtnCancel', 'btnCancel');
+
         renderDashboard();
     }
 
@@ -648,11 +703,31 @@
         updateProfileDropdown(); 
     }
 
+    // --- CUSTOM DIALOG SYSTEM ---
+    let dialogResolve = null;
+    function showDialog({ title, message, type = 'alert' }) {
+        return new Promise(resolve => {
+            dialogResolve = resolve;
+            document.getElementById('dialogTitle').innerHTML = title;
+            document.getElementById('dialogMessage').innerHTML = message;
+            document.getElementById('dialogBtnCancel').style.display = type === 'confirm' ? 'block' : 'none';
+            document.getElementById('modalOverlay').style.display = 'block';
+            document.getElementById('unifiedDialog').style.display = 'block';
+        });
+    }
+
+    function closeDialog(result) {
+        document.getElementById('unifiedDialog').style.display = 'none';
+        const otherModalsOpen = ['profileModal', 'printModal', 'editEntryModal'].some(id => document.getElementById(id).style.display === 'block');
+        if(!otherModalsOpen) { document.getElementById('modalOverlay').style.display = 'none'; }
+        if(dialogResolve) { dialogResolve(result); dialogResolve = null; }
+    }
+
     // --- STATE MANAGEMENT ---
     let appData = {
-        appMode: 'self', // 'self' or 'clinical'
+        appMode: 'self', 
         globalProvider: "",
-        profiles: [], // { id, name, code, notes, periods: [{id, start, end}], autoCalibrate: true, manualCycle: 28 }
+        profiles: [], 
         activeProfileId: null
     };
 
@@ -669,7 +744,6 @@
         
         loadData();
         
-        // UI Toggles init
         const savedUI = localStorage.getItem('redTracker_modernUI');
         if (savedUI === 'true') {
             document.getElementById('uiToggle').checked = true;
@@ -696,7 +770,6 @@
             } catch(e) { console.error("Error loading data", e); }
         }
         
-        // Apply Mode Logic
         const modeRadios = document.getElementsByName('appModeRadio');
         for(let r of modeRadios) { if(r.value === appData.appMode) r.checked = true; }
         applyAppModeUI();
@@ -750,11 +823,11 @@
         link.click();
     }
 
-    function importData(event) {
+    async function importData(event) {
         const file = event.target.files[0];
         if(!file) return;
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
             try {
                 const parsed = JSON.parse(e.target.result);
                 if(parsed && parsed.profiles) {
@@ -768,9 +841,9 @@
                     document.getElementById('globalProviderInput').value = appData.globalProvider || "";
                     updateProfileDropdown();
                     updateAppTranslationUI();
-                    alert(t('alertImportOk'));
-                } else { alert(t('alertImportFail')); }
-            } catch(err) { alert(t('alertImportErr')); }
+                    await showDialog({title: t('alertSuccess'), message: t('alertImportOk'), type: 'alert'});
+                } else { await showDialog({title: t('alertError'), message: t('alertImportFail'), type: 'alert'}); }
+            } catch(err) { await showDialog({title: t('alertError'), message: t('alertImportErr'), type: 'alert'}); }
         };
         reader.readAsText(file);
         event.target.value = ''; 
@@ -786,12 +859,12 @@
             document.getElementById('personNameInput').value = profile.name;
             document.getElementById('personCodeInput').value = profile.code;
             const titleKey = appData.appMode === 'self' ? 'modalProfileTitleSelf' : 'modalProfileTitleClinic';
-            document.getElementById('mTitleTxt').innerText = t(titleKey); 
+            document.getElementById('profileModalTitle').innerHTML = `<i class="fa-solid fa-user-pen"></i> <span id="mTitleTxt">${t(titleKey)}</span>`; 
         } else {
             document.getElementById('personNameInput').value = '';
             document.getElementById('personCodeInput').value = '';
             const titleKey = appData.appMode === 'self' ? 'modalProfileTitleSelf' : 'modalProfileTitleClinic';
-            document.getElementById('mTitleTxt').innerText = t(titleKey);
+            document.getElementById('profileModalTitle').innerHTML = `<i class="fa-solid fa-user-plus"></i> <span id="mTitleTxt">${t(titleKey)}</span>`;
         }
         
         document.getElementById('profileModal').style.display = 'block';
@@ -801,13 +874,15 @@
     function closeAllModals() {
         document.getElementById('profileModal').style.display = 'none';
         document.getElementById('printModal').style.display = 'none';
+        document.getElementById('editEntryModal').style.display = 'none';
+        if (document.getElementById('unifiedDialog').style.display === 'block') { closeDialog(false); }
         document.getElementById('modalOverlay').style.display = 'none';
     }
 
-    function saveProfile() {
+    async function saveProfile() {
         const name = document.getElementById('personNameInput').value.trim();
         const code = document.getElementById('personCodeInput').value.trim();
-        if(!name) { alert(t('alertNameReq')); return; }
+        if(!name) { await showDialog({title: t('alertError'), message: t('alertNameReq'), type: 'alert'}); return; }
         
         if (isEditingProfile) {
             const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
@@ -827,9 +902,10 @@
         updateProfileDropdown();
     }
 
-    function deleteCurrentProfile() {
+    async function deleteCurrentProfile() {
         if(!appData.activeProfileId) return;
-        if(confirm(t('confirmDelete'))) {
+        const confirmDel = await showDialog({title: t('alertConfirm'), message: t('confirmDelete'), type: 'confirm'});
+        if(confirmDel) {
             appData.profiles = appData.profiles.filter(p => p.id !== appData.activeProfileId);
             appData.activeProfileId = appData.profiles.length > 0 ? appData.profiles[0].id : null;
             saveData();
@@ -906,24 +982,91 @@
         saveData();
     }
 
-    // --- DATA ENTRY LOGIC ---
-    function logPeriodData() {
+    // --- DATA ENTRY & QUICK ACTION LOGIC ---
+    function getLocalDateStr(daysOffset = 0) {
+        const date = new Date();
+        date.setDate(date.getDate() + daysOffset);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function updateQuickActionBtn() {
+        const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
+        if(!profile) return;
+        
+        const activePeriod = profile.periods.find(p => !p.end);
+        const btnToday = document.getElementById('qaTodayBtn');
+        const btnYest = document.getElementById('qaYestBtn');
+        
+        if(activePeriod) {
+            btnToday.className = 'btn-main';
+            btnToday.style.background = 'rgba(255, 107, 107, 0.2)';
+            btnToday.style.color = '#ff6b6b';
+            btnToday.style.border = '1px solid rgba(255, 107, 107, 0.4)';
+            btnToday.onclick = () => endPeriodQuick(activePeriod.id, 0);
+            btnToday.innerHTML = `<i class="fa-solid fa-stop"></i> <span>${t('quickEnd')}</span>`;
+
+            btnYest.className = 'btn-main';
+            btnYest.style.background = 'transparent';
+            btnYest.style.color = '#ff6b6b';
+            btnYest.style.border = '1px dashed rgba(255, 107, 107, 0.4)';
+            btnYest.onclick = () => endPeriodQuick(activePeriod.id, -1);
+            btnYest.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> <span>${t('quickEndYest')}</span>`;
+        } else {
+            btnToday.className = 'btn-main';
+            btnToday.style.background = 'var(--accent)';
+            btnToday.style.color = '#333';
+            btnToday.style.border = 'none';
+            btnToday.onclick = () => startPeriodQuick(0);
+            btnToday.innerHTML = `<i class="fa-solid fa-droplet"></i> <span>${t('quickStart')}</span>`;
+
+            btnYest.className = 'btn-small'; 
+            btnYest.style.background = ''; btnYest.style.color = ''; btnYest.style.border = '';
+            btnYest.style.padding = '15px'; btnYest.style.fontSize = '14px';
+            btnYest.onclick = () => startPeriodQuick(-1);
+            btnYest.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> <span>${t('quickStartYest')}</span>`;
+        }
+    }
+
+    async function startPeriodQuick(daysOffset) {
+        const dateStr = getLocalDateStr(daysOffset);
+        const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
+        
+        if(profile.periods.some(p => p.start === dateStr)) { await showDialog({title: t('alertError'), message: t('alertExists'), type: 'alert'}); return; }
+        
+        profile.periods.push({ id: Date.now().toString(), start: dateStr, end: null });
+        profile.periods.sort((a,b) => new Date(a.start) - new Date(b.start));
+        saveData();
+    }
+
+    async function endPeriodQuick(periodId, daysOffset) {
+        const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
+        const period = profile.periods.find(p => p.id === periodId);
+        if(!period) return;
+
+        const dateStr = getLocalDateStr(daysOffset);
+        if(new Date(dateStr) < new Date(period.start)) {
+            await showDialog({title: t('alertError'), message: t('cannotEndFuture'), type: 'alert'});
+            return;
+        }
+        
+        period.end = dateStr;
+        saveData();
+    }
+
+    async function logPeriodData() {
         const startVal = document.getElementById('startDateInput').value;
         const endVal = document.getElementById('endDateInput').value;
         
-        if(!startVal) { alert(t('alertStartReq')); return; }
-        if(endVal && new Date(endVal) < new Date(startVal)) { alert(t('alertEndBefore')); return; }
+        if(!startVal) { await showDialog({title: t('alertError'), message: t('alertStartReq'), type: 'alert'}); return; }
+        if(endVal && new Date(endVal) < new Date(startVal)) { await showDialog({title: t('alertError'), message: t('alertEndBefore'), type: 'alert'}); return; }
         
         const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
+        if(profile.periods.some(p => p.start === startVal)) { await showDialog({title: t('alertError'), message: t('alertExists'), type: 'alert'}); return; }
         
-        if(profile.periods.some(p => p.start === startVal)) { alert(t('alertExists')); return; }
-        
-        profile.periods.push({
-            id: Date.now().toString(),
-            start: startVal,
-            end: endVal || null
-        });
-        
+        profile.periods.push({ id: Date.now().toString(), start: startVal, end: endVal || null });
         profile.periods.sort((a,b) => new Date(a.start) - new Date(b.start));
         document.getElementById('endDateInput').value = ''; 
         saveData();
@@ -932,6 +1075,44 @@
     function removeEntry(id) {
         const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
         profile.periods = profile.periods.filter(p => p.id !== id);
+        saveData();
+    }
+
+    function openEditEntryModal(id) {
+        const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
+        const period = profile.periods.find(p => p.id === id);
+        if(!period) return;
+
+        document.getElementById('editEntryTitleTxt').innerHTML = `<i class="fa-solid fa-pen"></i> ${t('editPeriodTitle')}`;
+        document.getElementById('editEntryId').value = period.id;
+        document.getElementById('editStartDate').value = period.start;
+        document.getElementById('editEndDate').value = period.end || '';
+
+        document.getElementById('editEntryModal').style.display = 'block';
+        document.getElementById('modalOverlay').style.display = 'block';
+    }
+
+    async function saveEntryEdit() {
+        const id = document.getElementById('editEntryId').value;
+        const startVal = document.getElementById('editStartDate').value;
+        const endVal = document.getElementById('editEndDate').value;
+        
+        if(!startVal) { await showDialog({title: t('alertError'), message: t('alertStartReq'), type: 'alert'}); return; }
+        if(endVal && new Date(endVal) < new Date(startVal)) { await showDialog({title: t('alertError'), message: t('alertEndBefore'), type: 'alert'}); return; }
+        
+        const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
+        const period = profile.periods.find(p => p.id === id);
+        
+        if(startVal !== period.start && profile.periods.some(p => p.id !== id && p.start === startVal)) { 
+            await showDialog({title: t('alertError'), message: t('alertExists'), type: 'alert'}); 
+            return; 
+        }
+
+        period.start = startVal;
+        period.end = endVal || null;
+        
+        profile.periods.sort((a,b) => new Date(a.start) - new Date(b.start));
+        closeAllModals();
         saveData();
     }
 
@@ -981,6 +1162,8 @@
         const profile = appData.profiles.find(p => p.id === appData.activeProfileId);
         if(!profile) return;
 
+        updateQuickActionBtn();
+
         const durations = calculateDurations(profile.periods);
 
         const dateList = document.getElementById('dateList');
@@ -995,7 +1178,11 @@
             let textHtml = `<span>${formatDate(p.start)}</span>`;
             if(p.end) textHtml = `<div class="date-details"><span>${formatDate(p.start)} <i class="fa-solid fa-arrow-right" style="font-size:10px; opacity:0.5;"></i> ${formatDate(p.end)}</span><span class="date-sub">Duration: ${dur} ${t('days')}</span></div>`;
             
-            div.innerHTML = `${textHtml} <button onclick="removeEntry('${p.id}')"><i class="fa-solid fa-xmark"></i></button>`;
+            div.innerHTML = `${textHtml} 
+            <div style="display:flex; gap:5px;">
+                <button onclick="openEditEntryModal('${p.id}')" style="color: #4CAF50;"><i class="fa-solid fa-pen"></i></button>
+                <button onclick="removeEntry('${p.id}')"><i class="fa-solid fa-xmark"></i></button>
+            </div>`;
             dateList.appendChild(div);
         });
 
@@ -1019,6 +1206,7 @@
             if(diffDays === 0) document.getElementById('statDaysAgo').innerText = t('startedToday');
             else document.getElementById('statDaysAgo').innerText = t('daysAgo').replace('%s', diffDays);
 
+            // Next Period
             const nextDate = new Date(lastDate);
             nextDate.setDate(nextDate.getDate() + avgCycle);
             document.getElementById('statNextPeriod').innerText = formatDate(nextDate.toISOString());
@@ -1034,11 +1222,28 @@
                 document.getElementById('statDaysLeft').innerText = t('inDays').replace('%s', daysLeft);
                 document.getElementById('statDaysLeft').style.color = 'inherit';
             }
+
+            // Expected Ovulation (14 days before next period)
+            const ovuDate = new Date(nextDate);
+            ovuDate.setDate(ovuDate.getDate() - 14);
+            document.getElementById('statOvulation').innerText = formatDate(ovuDate.toISOString());
+            
+            const ovuDaysLeft = Math.ceil((ovuDate - today) / (1000 * 60 * 60 * 24));
+            if(ovuDaysLeft < 0) {
+                document.getElementById('statOvuDaysLeft').innerText = t('daysAgo').replace('%s', Math.abs(ovuDaysLeft));
+            } else if (ovuDaysLeft === 0) {
+                document.getElementById('statOvuDaysLeft').innerText = t('expectedToday');
+            } else {
+                document.getElementById('statOvuDaysLeft').innerText = t('inDays').replace('%s', ovuDaysLeft);
+            }
+
         } else {
             document.getElementById('statLastPeriod').innerText = t('noData');
             document.getElementById('statDaysAgo').innerText = t('logStartMsg');
             document.getElementById('statNextPeriod').innerText = t('noData');
             document.getElementById('statDaysLeft').innerText = '---';
+            document.getElementById('statOvulation').innerText = t('noData');
+            document.getElementById('statOvuDaysLeft').innerText = '---';
         }
 
         document.getElementById('statAvgCycle').innerText = `${avgCycle} ${t('days')}`;
@@ -1203,9 +1408,12 @@
                 lastDate.setDate(lastDate.getDate() + predCycle);
                 let endDate = new Date(lastDate);
                 endDate.setDate(endDate.getDate() + predPeriod - 1);
+                let ovuDate = new Date(lastDate);
+                ovuDate.setDate(ovuDate.getDate() - 14);
 
                 predRows += `<tr>
                     <td>${t('prCycPlus', prLang)}${i}</td>
+                    <td>${formatDate(ovuDate.toISOString(), prLang)}</td>
                     <td>${formatDate(lastDate.toISOString(), prLang)}</td>
                     <td>${formatDate(endDate.toISOString(), prLang)}</td>
                 </tr>`;
@@ -1214,7 +1422,12 @@
             <h3>${t('prPredTitle', prLang)}</h3>
             <table class="print-table" style="width: 100%;">
                 <thead>
-                    <tr><th>${t('thPred', prLang)}</th><th>${t('thExpStart', prLang)}</th><th>${t('thExpEnd', prLang)}</th></tr>
+                    <tr>
+                        <th>${t('thPred', prLang)}</th>
+                        <th>${t('thOvulation', prLang)}</th>
+                        <th>${t('thExpStart', prLang)}</th>
+                        <th>${t('thExpEnd', prLang)}</th>
+                    </tr>
                 </thead>
                 <tbody>
                     ${predRows}
@@ -1226,7 +1439,7 @@
         
         html += `
             <div class="print-web-header">
-                RedTracker <span class="print-version-tag">Beta v1</span>
+                RedTracker <span class="print-version-tag">v1</span>
             </div>
             <p class="print-credits">${t('madeBy', prLang)}</p>
         `;
@@ -1365,4 +1578,4 @@
 </script>
 
 </body>
-  </html>
+</html>
