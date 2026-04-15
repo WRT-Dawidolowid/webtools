@@ -8,6 +8,8 @@
     <!-- External Fonts and Libraries -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Added Marked.js for GitHub-like Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
         :root {
@@ -34,11 +36,12 @@
         }
 
         header {
-            text-align: center;
             margin-bottom: 50px;
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 20px;
         }
 
         header h1 { 
@@ -49,6 +52,32 @@
         header p { 
             font-size: 1.1em; opacity: 0.7; margin: 0; 
             font-weight: 400; 
+        }
+
+        /* Top Right Changelog Button */
+        .btn-changelog {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--glass-border);
+            color: #ffd89b;
+            padding: 12px 22px;
+            border-radius: 18px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.95em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-changelog:hover {
+            background: rgba(255, 216, 155, 0.15);
+            border-color: #ffd89b;
+            color: white;
+            transform: translateY(-4px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.2);
         }
 
         /* Grid Layout */
@@ -103,9 +132,8 @@
         .badge-cs { background: rgba(185, 16, 120, 0.2); color: #d19cbc; border: 1px solid rgba(202, 121, 159, 0.3); }
         .badge-beta { background: rgba(255, 216, 155, 0.15); color: #ffd89b; border: 1px solid rgba(255, 216, 155, 0.3); }
         .badge-stable { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-        .badge-wip { background: rgba(255, 255, 255, 0.1); color: #ccc; border: 1px solid rgba(255, 255, 255, 0.2); }
 
-        /* Group Styling */
+        /* Group Styling (For Suites) */
         .tool-group {
             grid-column: 1 / -1;
             display: grid;
@@ -129,9 +157,33 @@
             display: flex; align-items: center; gap: 8px;
         }
 
+        /* Line Separator (For standard categories) */
+        .separator {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.05em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 20px 0 5px 0;
+        }
+
+        .separator::before,
+        .separator::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px dashed var(--glass-border);
+        }
+
+        .separator::before { margin-right: 20px; }
+        .separator::after { margin-left: 20px; }
+        .separator i { margin-right: 8px; color: #ffd89b; }
+
         /* Buttons & Actions */
         .card-actions { margin-top: auto; }
-        
         .action-row { display: flex; gap: 10px; align-items: center; width: 100%; }
 
         .btn-main { 
@@ -142,28 +194,21 @@
         }
         .btn-main:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
 
-        .btn-cs { 
-            flex: 1; padding: 12px; background: var(--accent); border: none; filter: brightness(0.7);
-            border-radius: 12px; color: white; font-weight: 700; font-size: 14px;
-            cursor: pointer; transition: 0.3s; display: flex; 
-            justify-content: center; align-items: center; gap: 8px; text-decoration: none;
-        }
-
         .btn-icon {
             background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border);
-            color: white; width: 44px; height: 44px; border-radius: 12px;
+            color: white; height: 44px; border-radius: 12px;
             cursor: pointer; font-size: 16px; display: flex; align-items: center; 
             justify-content: center; transition: 0.3s; text-decoration: none; flex-shrink: 0;
+            padding: 0 15px; 
         }
         .btn-icon:hover { background: rgba(255,255,255,0.2); color: #ffd89b; }
+        .btn-icon.square { width: 44px; padding: 0; }
 
         /* Version Selector Grid */
         .version-selector-container {
             display: none; width: 100%; animation: slideIn 0.3s ease;
         }
-        
         .version-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-        
         .v-btn {
             background: rgba(0,0,0,0.4); color: white; text-decoration: none;
             padding: 10px; border-radius: 10px; text-align: center; font-weight: 600; 
@@ -171,9 +216,6 @@
             display: flex; justify-content: space-between; align-items: center;
         }
         .v-btn:hover:not(.disabled) { background: rgba(255,255,255,0.15); border-color: #ffd89b; }
-        
-        .v-btn.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
-
         .btn-text {
             background: transparent; border: none; color: rgba(255,255,255,0.5);
             font-size: 0.85em; cursor: pointer; text-decoration: none; font-weight: 600;
@@ -182,41 +224,97 @@
         .btn-text:hover { color: white; }
 
         /* Unified Modal Styles */
-        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(15, 15, 35, 0.98); padding: 30px; border-radius: 25px; border: 1px solid #ffd89b; z-index: 1000; display: none; text-align: center; box-shadow: 0 0 60px rgba(0,0,0,0.9); backdrop-filter: blur(15px); width: 320px; }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 999; display: none; }
-        .modal-btn { display: flex; justify-content: center; align-items: center; gap: 8px; flex: 1; padding: 14px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; cursor: pointer; font-weight: 600; transition: 0.2s;}
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 999; display: none; backdrop-filter: blur(5px); }
+        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(15, 15, 35, 0.98); padding: 30px; border-radius: 25px; border: 1px solid #ffd89b; z-index: 1000; display: none; text-align: center; box-shadow: 0 0 60px rgba(0,0,0,0.9); width: 320px; }
+        .modal-btn { display: flex; justify-content: center; align-items: center; gap: 8px; flex: 1; padding: 14px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; cursor: pointer; font-weight: 600; transition: 0.2s; width: 100%;}
         .modal-btn:hover { background: var(--accent); }
+
+        /* --- CHANGELOG MODAL SPECIFIC STYLES --- */
+        .changelog-modal { width: 650px; max-width: 90%; text-align: left; padding: 0; overflow: hidden; }
+        .changelog-header { padding: 25px 30px 15px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; }
+        .changelog-header h3 { margin: 0; color: #ffd89b; font-size: 1.5em; display: flex; align-items: center; gap: 10px; }
+        .changelog-body { max-height: 55vh; overflow-y: auto; padding: 20px 30px; font-size: 0.95em; line-height: 1.6; }
+        .changelog-footer { padding: 20px 30px; border-top: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); }
+        
+        .changelog-body i { margin-right: 5px; } 
+        .changelog-body h1, .changelog-body h2, .changelog-body h3 { color: white; margin-top: 20px; margin-bottom: 10px; }
+        .changelog-body h1 { font-size: 1.8em; color: #ffd89b; }
+        .changelog-body h2 { font-size: 1.4em; border-bottom: 1px solid var(--glass-border); padding-bottom: 8px; }
+        .changelog-body h3 { font-size: 1.2em; color: #a5b4fc; }
+        .changelog-body ul, .changelog-body ol { padding-left: 25px; margin-bottom: 15px; }
+        .changelog-body li { margin-bottom: 6px; color: rgba(255,255,255,0.85); }
+        .changelog-body code { background: rgba(0,0,0,0.4); padding: 3px 6px; border-radius: 6px; font-family: monospace; color: #34d399; font-size: 0.9em; }
+        .changelog-body pre { background: rgba(0,0,0,0.6); padding: 15px; border-radius: 12px; overflow-x: auto; border: 1px solid var(--glass-border); }
+        .changelog-body pre code { background: transparent; padding: 0; color: #e2e8f0; }
+        .changelog-body blockquote { border-left: 4px solid #ffd89b; margin: 0 0 15px 0; padding-left: 15px; color: rgba(255,255,255,0.6); font-style: italic; }
+        .changelog-body a { color: #60a5fa; text-decoration: none; font-weight: 600; }
+        .changelog-body a:hover { text-decoration: underline; }
+
+        .changelog-body::-webkit-scrollbar { width: 8px; }
+        .changelog-body::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        .changelog-body::-webkit-scrollbar-thumb { background: rgba(255, 216, 155, 0.4); border-radius: 10px; }
+        .changelog-body::-webkit-scrollbar-thumb:hover { background: #ffd89b; }
 
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <!-- Unified Dialog Modal -->
-    <div class="modal-overlay" id="modalOverlay" onclick="closeDialog()"></div>
+    <!-- Hidden File Input for Testing -->
+    <input type="file" id="localFileInput" accept=".txt,.md" style="display: none;">
+
+    <!-- Overlay -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeAllModals()"></div>
+
+    <!-- Dev Testing Modal -->
+    <div id="testModeModal" class="modal-box" style="z-index: 2000;">
+        <h3 style="margin-top:0; color:#ffd89b; font-size: 1.5em;"><i class="fa-solid fa-code"></i> Dev Mode</h3>
+        <p style="font-size: 0.9em; opacity: 0.8; margin-bottom: 20px;">You are in testing mode. Select a local <b>.txt</b> or <b>.md</b> file to preview how the changelog looks!</p>
+        
+        <button class="modal-btn" onclick="document.getElementById('localFileInput').click()" style="margin-bottom: 10px;">
+            <i class="fa-solid fa-folder-open"></i> Browse File
+        </button>
+        <button class="modal-btn" onclick="closeAllModals()" style="background: transparent;">Cancel</button>
+    </div>
+
+    <!-- General Alert Dialog -->
     <div id="unifiedDialog" class="modal-box" style="z-index: 2000;">
         <h3 id="dialogTitle" style="margin-top:0; color:#ffd89b; font-size: 1.5em;"></h3>
         <p id="dialogMessage" style="font-size: 0.9em; opacity: 0.8; margin-bottom: 20px;"></p>
         <div style="display:flex; gap:10px; justify-content: center;">
-            <button class="modal-btn" onclick="closeDialog()">OK</button>
+            <button class="modal-btn" onclick="closeAllModals()">OK</button>
+        </div>
+    </div>
+
+    <!-- Changelog Dialog -->
+    <div id="changelogDialog" class="modal-box changelog-modal" style="z-index: 2000;">
+        <div class="changelog-header">
+            <h3><i class="fa-solid fa-clock-rotate-left"></i> What's New</h3>
+        </div>
+        <div class="changelog-body" id="changelogContent">
+            <!-- Markdown content will be injected here -->
+        </div>
+        <div class="changelog-footer">
+            <button class="modal-btn" onclick="closeAllModals()"><i class="fa-solid fa-check"></i> Awesome, let's go!</button>
         </div>
     </div>
 
     <div class="container">
         <header>
-            <h1><i class="fa-solid fa-toolbox"></i> WebTools</h1>
-            <p>Your collection of useful browser tools</p>
-        </header>
-
-        <div class="tools-grid">
+            <!-- Title & Description on the Left -->
+            <div>
+                <h1><i class="fa-solid fa-toolbox"></i> WebTools</h1>
+                <p style="margin: -40px 0 0 255px; color: #ffd89b;">Made by Dawidolowid</p>
+                <p style="margin: 10px 0 0 0;">Your collection of great tools, designed to be useful or useless, but still a great collection!</p>
+            </div>
             
-            <!-- 
-            HOW TO ADD A VERSION SELECTOR TO ANY STANDARD TOOL:
-            1. Replace the `<div class="card-actions action-row">` section with the nested layout shown in the "Infinite Counters" card.
-            2. Give the main action row an ID (e.g., id="yourToolMainBtn").
-            3. Change the button onclick to `toggleVersions('yourTool', true)`.
-            4. Create the `id="yourToolVersions"` container below it. 
-            -->
+            <!-- Fixed the Icon here (swapped fa-sparkles for fa-bell) -->
+            <button class="btn-changelog" onclick="openManualChangelog()" title="View Updates">
+                <i class="fa-solid fa-bell"></i> What's New
+            </button>
+        </header>
+        
+        <div class="tools-grid">
 
             <!-- Team Lottery -->
             <div class="tool-card">
@@ -226,7 +324,7 @@
                 </div>
                 <div class="card-actions action-row">
                     <a href="/webtools/tools/team-lottery.html" class="btn-main">Open Tool</a>
-                    <button class="btn-icon" onclick="copyUrl('/webtools/tools/team-lottery.html')" title="Copy Link"><i class="fa-solid fa-link"></i></button>
+                    <button class="btn-icon square" onclick="copyUrl('/webtools/tools/team-lottery.html')" title="Copy Link"><i class="fa-solid fa-link"></i></button>
                 </div>
             </div>
             
@@ -238,7 +336,7 @@
                 </div>
                 <div class="card-actions action-row">
                     <a href="/webtools/tools/colorful-tools.html" class="btn-main">Open Tool</a>
-                    <button class="btn-icon" onclick="copyUrl('/webtools/tools/colorful-tools.html')" title="Copy Link"><i class="fa-solid fa-link"></i></button>
+                    <button class="btn-icon square" onclick="copyUrl('/webtools/tools/colorful-tools.html')" title="Copy Link"><i class="fa-solid fa-link"></i></button>
                 </div>
             </div>
 
@@ -250,9 +348,11 @@
                 </div>
                 <div class="card-actions action-row">
                     <a href="/webtools/tools/tool-o-discord.html" class="btn-main">Open Tool</a>
-                    <button class="btn-icon" onclick="copyUrl('/webtools/tools/tool-o-discord.html')" title="Copy Link"><i class="fa-solid fa-link"></i></button>
+                    <button class="btn-icon square" onclick="copyUrl('/webtools/tools/tool-o-discord.html')" title="Copy Link"><i class="fa-solid fa-link"></i></button>
                 </div>
             </div>
+
+            <div class="separator"><i class="fa-solid fa-wand-magic-sparkles"></i> Tools for Analysis</div>
 
             <div class="tool-card" style="grid-column: span 3;">
                 <div>
@@ -263,7 +363,6 @@
                 <div class="card-actions">
                     <div class="action-row" id="velocityMainBtn">
                         <button class="btn-main" onclick="toggleVersions('velocity', true)">Select Version</button>
-                        <button class="btn-icon" onclick="copyUrl('/webtools/tools/velocity-beta-v1.html')" title="Copy Link (Latest)"><i class="fa-solid fa-link"></i></button>
                     </div>
 
                     <div id="velocityVersions" class="version-selector-container">
@@ -277,6 +376,7 @@
                 </div>
             </div>
 
+            <!-- SUITE HIGHLIGHT GROUP -->
             <div class="tool-group">
                 <div class="group-label"><i class="fa-solid fa-chart-line"></i> Data Visualization Suite</div>
                 
@@ -290,7 +390,6 @@
                     <div class="card-actions">
                         <div class="action-row" id="counterMainBtn">
                             <button class="btn-main" onclick="toggleVersions('counter', true)">Select Version</button>
-                            <button class="btn-icon" onclick="copyUrl('/webtools/tools/infinite-counters-v2.html')" title="Copy Link (Latest)"><i class="fa-solid fa-link"></i></button>
                         </div>
 
                         <div id="counterVersions" class="version-selector-container">
@@ -316,13 +415,13 @@
                     <div class="card-actions">
                         <div class="action-row" id="chartMainBtn">
                             <button class="btn-main" onclick="toggleVersions('chart', true)">Select Version</button>
-                            <button class="btn-icon" onclick="copyUrl('/webtools/tools/chartstudio-v1.html')" title="Copy Link (Latest)"><i class="fa-solid fa-link"></i></button>
                         </div>
 
                         <div id="chartVersions" class="version-selector-container">
                             <div class="version-grid" id="chartVersionGrid">
-                                <a href="/webtools/tools/chartstudiobetabydawidolowid.html" class="v-btn">Beta V1 <span></span></a>
-                                <a href="/webtools/tools/chartstudio-v1.html" class="v-btn" style="border-color: rgba(16, 185, 129, 0.4);">Release V1 <span class="badge badge-new">Latest</span></a>
+                                <a href="/webtools/tools/chartstudiobetabydawidolowid.html" class="v-btn">Beta V1 <span class="badge badge-beta">Beta</span></a>
+                                <a href="/webtools/tools/chartstudio-v1.html" class="v-btn">Version 1</a>
+                                <a href="/webtools/tools/chartstudio-v2.html" class="v-btn" style="border-color: rgba(16, 185, 129, 0.4);">Version 2 <span class="badge badge-new">Latest</span></a>
                             </div>
 
                             <div class="action-row" style="margin-top: 5px;">
@@ -332,41 +431,135 @@
                     </div>
                 </div>
             </div>
-            <div class="tool-card"style="grid-column: span 2;">
+
+            <!-- SEPARATOR FOR STANDARD TOOLS -->
+            <div class="separator"><i class="fa-solid fa-eye"></i> Tracking Tools</div>
+                
+            <!-- RedTracker -->
+            <div class="tool-card" style="grid-column: span 2;">
                 <div>
                     <h3><i class="fa-solid fa-droplet"></i> RedTracker <span class="badge badge-new">New</span></h3>
                     <p>Track your or someone's period with advanced prediction mechanisms.</p>
                 </div>
                 <div class="card-actions action-row">
                     <a href="/webtools/tools/redtracker.html" class="btn-main">Open Tool</a>
-                    <button class="btn-icon" onclick="copyUrl('/webtools/tools/redtracker.html')" title="Copy Link"><i class="fa-solid fa-link"></i></button>
+                    <button class="btn-icon square" onclick="copyUrl('/webtools/tools/redtracker.html')" title="Copy Link"><i class="fa-solid fa-link"></i></button>
                 </div>
             </div>
-            <div class="tool-card"style="grid-column: span 1;">
+
+            <!-- WhiteTracker -->
+            <div class="tool-card" style="grid-column: span 1;">
                 <div>
-                    <h3><i class="fa-solid fa-bolt"></i> WhiteTracker <span class="badge badge-cs">Coming Soon</span></h3>
-                    <p>Stop your masturbation habit with our advanced analysis and reward tools.</p>
+                    <h3><i class="fa-solid fa-bolt"></i> ZenTracker <span class="badge badge-new">New</span></h3>
+                    <p>Stop your masturbation habit with our progress tracking and visualization tools.</p>
                 </div>
                 <div class="card-actions action-row">
-                    <a class="btn-cs">Coming Soon</a>
-                    <!-- <button class="btn-icon" onclick="copyUrl('/webtools/tools/whitetracker.html')" title="Copy Link"><i class="fa-solid fa-link"></i></button> -->
-                     <!-- </a> href="/webtools/tools/whitetracker.html"-->
+                    <a class="btn-main" href="/webtools/tools/zentracker.html">Open Tool</a>
+                    <button class="btn-icon square" onclick="copyUrl('/webtools/tools/zentracker.html')" title="Copy Link"><i class="fa-solid fa-link"></i></button>
                 </div>
             </div>
-        </div>
-    </div>
+
+        </div> <!-- End of tools-grid -->
+    </div> <!-- End of container -->
 
     <script>
-        // Unified Dialog System (Replaces standard alerts)
-        function showDialog({ title, message, type = 'alert' }) {
+        marked.setOptions({
+            gfm: true,
+            breaks: true
+        });
+
+        // ============================================
+        // ⚙️ CHANGELOG CONFIGURATION
+        // ============================================
+        const CHANGELOG_CONFIG = {
+            isTesting: false, // TRUE to test local files. Set to FALSE for production.
+            githubFile: 'https://raw.githubusercontent.com/WRT-Dawidolowid/webtools/refs/heads/main/changelog.md'
+        };
+
+        let activeChangelogText = null; 
+        // ============================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAndCheckChangelog();
+        });
+
+        document.getElementById('localFileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                closeAllModals(); 
+                activeChangelogText = e.target.result; 
+                showChangelogModal(activeChangelogText); 
+            };
+            reader.readAsText(file);
+            this.value = '';
+        });
+
+        async function fetchAndCheckChangelog() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const overrideTesting = urlParams.has('test'); 
+            
+            if (CHANGELOG_CONFIG.isTesting || overrideTesting) {
+                document.getElementById('modalOverlay').style.display = 'block';
+                document.getElementById('testModeModal').style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(CHANGELOG_CONFIG.githubFile, { cache: "no-store" });
+                if (!response.ok) return; 
+                
+                activeChangelogText = await response.text();
+                const lastSeenChangelog = localStorage.getItem('webtools_changelog_cache');
+
+                if (activeChangelogText !== lastSeenChangelog || urlParams.has('force_changelog')) {
+                    showChangelogModal(activeChangelogText);
+                    localStorage.setItem('webtools_changelog_cache', activeChangelogText);
+                }
+            } catch (error) {
+                console.log("Changelog fetching failed:", error);
+            }
+        }
+
+        function openManualChangelog() {
+            if (activeChangelogText) {
+                showChangelogModal(activeChangelogText);
+            } else if (CHANGELOG_CONFIG.isTesting) {
+                document.getElementById('modalOverlay').style.display = 'block';
+                document.getElementById('testModeModal').style.display = 'block';
+            } else {
+                fetch(CHANGELOG_CONFIG.githubFile, { cache: "no-store" })
+                    .then(res => res.text())
+                    .then(text => {
+                        activeChangelogText = text;
+                        showChangelogModal(text);
+                    }).catch(() => {
+                        showDialog({title: "Error", message: "Could not load changelog."});
+                    });
+            }
+        }
+
+        function showChangelogModal(markdownText) {
+            const htmlContent = marked.parse(markdownText);
+            document.getElementById('changelogContent').innerHTML = htmlContent;
+            
+            document.getElementById('modalOverlay').style.display = 'block';
+            document.getElementById('changelogDialog').style.display = 'block';
+        }
+
+        function showDialog({ title, message }) {
             document.getElementById('dialogTitle').innerHTML = title;
             document.getElementById('dialogMessage').innerHTML = message;
             document.getElementById('modalOverlay').style.display = 'block';
             document.getElementById('unifiedDialog').style.display = 'block';
         }
 
-        function closeDialog() {
+        function closeAllModals() {
             document.getElementById('unifiedDialog').style.display = 'none';
+            document.getElementById('changelogDialog').style.display = 'none';
+            document.getElementById('testModeModal').style.display = 'none';
             document.getElementById('modalOverlay').style.display = 'none';
         }
 
@@ -385,7 +578,6 @@
             });
         }
 
-        // Universal Function for Toggling Versions
         function toggleVersions(toolId, show) {
             const mainBtn = document.getElementById(toolId + 'MainBtn');
             const selector = document.getElementById(toolId + 'Versions');
