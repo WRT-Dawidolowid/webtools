@@ -1,0 +1,1720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChartStudio v2</title>
+    
+    <!-- External Fonts and Libraries -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js & Plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        /* --- STANDARD / GLASS UI VARIABLES --- */
+        :root {
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --accent: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+            --sidebar-bg: rgba(0, 0, 0, 0.45);
+            --default-navy: #1e1b4b;
+        }
+
+        body, input, button, select, textarea, div[contenteditable] { font-family: "Outfit", sans-serif; box-sizing: border-box; }
+        *, *::before, *::after { box-sizing: inherit; }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; margin: 0; padding: 20px;
+            min-height: 100vh; overflow-x: hidden;
+            transition: background 0.4s ease, color 0.4s ease;
+        }
+
+        .container {
+            max-width: 1350px; margin: 0 auto; padding: 30px;
+            background: rgba(255, 255, 255, 0.07); border-radius: 35px;
+            backdrop-filter: blur(25px); box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+            border: 1px solid var(--glass-border);
+            transition: all 0.4s ease; overflow: hidden;
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; transition: all 0.4s; }
+        .header h1 { margin: 0; font-size: 2.2em; letter-spacing: -1px; display: flex; align-items: baseline; gap: 10px; }
+        .version-tag { font-size: 0.4em; opacity: 0.7; font-weight: 600; background: rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 7px; color: #ffd89b; }
+        .credits { margin: 0; font-size: 0.9em; opacity: 0.5; font-weight: 400; }
+        
+        .back-btn { text-decoration: none; padding: 12px 24px; border-radius: 15px; background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--glass-border); font-size: 14px; font-weight: 600; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
+        .back-btn:hover { background: rgba(0,0,0,0.5); transform: translateX(-3px); }
+
+        .toggles-container { display: flex; gap: 15px; }
+        .header-center { display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); padding: 10px 20px; border-radius: 20px; border: 1px solid var(--glass-border); transition: all 0.4s; }
+        .ui-switch-label { display: flex; align-items: center; gap: 12px; cursor: pointer; margin: 0; }
+        .ui-switch { position: relative; width: 46px; height: 24px; }
+        .ui-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); transition: .4s; border-radius: 34px; border: 1px solid var(--glass-border); }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: #ffd89b; transition: .4s; border-radius: 50%; }
+        .ui-switch input:checked + .slider { background-color: rgba(255, 216, 155, 0.3); border-color: #ffd89b; }
+        .ui-switch input:checked + .slider:before { transform: translateX(22px); background-color: #fff; }
+
+        .layout { display: grid; grid-template-columns: 380px 1fr; gap: 30px; transition: all 0.4s ease; align-items: start; }
+
+        .sidebar { background: var(--sidebar-bg); padding: 25px; border-radius: 25px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 20px; height: fit-content; transition: all 0.4s ease; }
+        #sidebarOptions { display: none; flex-direction: column; gap: 20px; }
+        .section-label { color: #ffd89b; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; display: block; margin-bottom: 8px; transition: all 0.3s; }
+
+        .btn-main { width: 100%; padding: 15px; background: var(--accent); border: none; border-radius: 12px; color: white; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .chart-toggle { display: flex; flex-wrap: wrap; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 12px; gap: 4px; transition: all 0.3s; }
+        .toggle-btn { flex: 1 1 30%; padding: 10px; border: none; background: transparent; color: white; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 13px; }
+        .toggle-btn.active { background: rgba(255,255,255,0.15); }
+
+        .config-row { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; transition: all 0.3s;}
+        .custom-color-picker { position: relative; width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--glass-border); overflow: hidden; cursor: pointer; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .custom-color-picker input[type="color"] { position: absolute; top: -10px; left: -10px; width: 50px; height: 50px; cursor: pointer; opacity: 0; }
+        .custom-color-picker .color-preview { width: 100%; height: 100%; pointer-events: none; }
+
+        input[type="range"] { width: 120px; margin: 8px 0; accent-color: #ffd89b; cursor: pointer; }
+        input[type="checkbox"] { width: 18px; height: 18px; accent-color: #ffd89b; cursor: pointer; }
+
+        .metrics-list { max-height: 300px; overflow-y: auto; background: rgba(255,255,255,0.02); border-radius: 15px; padding: 12px; display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--glass-border); padding-bottom: 30px; transition: all 0.3s;}
+        .metric-item { display: flex; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.08); border-radius: 8px; cursor: grab; font-size: 14px; border: 1px solid transparent; transition: 0.2s; position: relative;}
+        .metric-item:active { cursor: grabbing; border-color: #ffd89b; background: rgba(255,216,155,0.1); }
+        .metric-item input { margin-right: 12px; }
+        .drag-handle { opacity: 0.4; margin-right: 10px; font-size: 12px; pointer-events: none; }
+        
+        .metric-group { background: rgba(0,0,0,0.3); border: 1px dashed var(--glass-border); border-radius: 12px; padding: 8px; margin-bottom: 5px; }
+        .group-header { font-size: 13px; font-weight: 700; color: #ffd89b; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .group-header input { margin-right: 8px; }
+        .group-delete { cursor: pointer; opacity: 0.6; font-size: 12px; color: #ff6b6b; border: none; background: transparent; padding: 4px;}
+        .group-delete:hover { opacity: 1; }
+        .drop-zone { min-height: 40px; border-radius: 8px; transition: background-color 0.2s, border 0.2s; padding-bottom: 5px; }
+        .drop-zone.drag-over { background: rgba(255,216,155,0.15); border: 1px dashed #ffd89b; }
+
+        .btn-small { background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.2s;}
+        .btn-small:hover { background: rgba(255,255,255,0.2); }
+
+        .sidebar-pagination { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 15px; border: 1px solid var(--glass-border); transition: all 0.3s;}
+        .nav-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white; width: 42px; height: 42px; border-radius: 10px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
+        .nav-btn:hover { background: rgba(255,255,255,0.2); }
+        .metric-dropdown { width: 100%; margin-top: 10px; background: rgba(0, 0, 0, 0.4); color: white; border: 1px solid var(--glass-border); padding: 12px; border-radius: 12px; outline: none; cursor: pointer; font-family: inherit; transition: all 0.3s;}
+
+        /* --- WORKSPACE --- */
+        .chart-card {
+            background: rgba(0,0,0,0.2); border-radius: 35px; padding: 35px;
+            border: 1px solid var(--glass-border); display: flex; flex-direction: column;
+            position: relative; min-height: 750px; justify-content: flex-start; align-items: center;
+            transition: all 0.4s ease; overflow: hidden; gap: 20px;
+        }
+
+        .export-frame {
+            background: var(--default-navy);
+            border-radius: 25px; padding: 30px;
+            width: 100%; height: 600px; flex-shrink: 0;
+            display: flex; flex-direction: column; align-items: center;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+            position: relative; overflow: hidden;
+            transition: all 0.4s ease; order: 1;
+        }
+
+        .chart-title-textbox {
+            background: transparent; border: 1px dashed transparent; color: #ffd89b;
+            font-size: 2.2em; font-weight: 700; text-align: center;
+            width: 90%; padding: 8px; border-radius: 10px; outline: none; transition: 0.3s;
+            margin: 0 auto 10px auto; display: none; z-index: 10; cursor: text; flex-shrink: 0;
+        }
+        .chart-title-textbox:hover, .chart-title-textbox:focus { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.05); }
+
+        .chart-wrapper { flex: 1; width: 100%; position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; }
+        .canvas-sizer { width: 100%; height: 100%; min-height: 400px; position: relative; display: flex; align-items: center; justify-content: center; transition: width 0.1s linear, height 0.1s linear; }
+        #interactiveTip { position: absolute; top: 0px; left: 10px; font-size: 11px; background: rgba(255,255,255,0.1); padding: 6px 12px; border-radius: 8px; opacity: 0.8; pointer-events: none; display: none; z-index: 10; color: #ffd89b; border: 1px solid rgba(255,255,255,0.1); }
+
+        .action-buttons { 
+            display: flex; align-items: center; gap: 15px; flex-wrap: wrap;
+            justify-content: center; width: 100%; 
+            order: 2; transition: all 0.4s ease; overflow: hidden;
+        }
+        .export-group { display: flex; gap: 15px; align-items: center; flex-wrap: wrap;}
+        .quality-group { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 12px; border: 1px solid var(--glass-border); transition: all 0.3s; white-space: nowrap; flex-wrap: wrap; }
+        .btn-action { background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white; padding: 14px 28px; border-radius: 14px; cursor: pointer; font-weight: 600; transition: 0.3s; display: flex; align-items: center; gap: 10px; }
+        .btn-action:hover { background: rgba(255,255,255,0.2); }
+
+        .order-panel { order: 3; display: none; width: 100%; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 20px; border: 1px dashed var(--glass-border); overflow: hidden; }
+        .sort-pill { background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); padding: 8px 16px; border-radius: 25px; font-size: 13px; font-weight: 600; cursor: grab; transition: all 0.2s; user-select: none; display: inline-flex; align-items: center; gap: 8px; }
+        .sort-pill i { opacity: 0.5; font-size: 11px; }
+        .sort-pill:active { cursor: grabbing; border-color: #ffd89b; background: rgba(255,216,155,0.1); }
+        .sort-pill.drag-over { background: rgba(255,216,155,0.2); border-style: dashed; }
+
+        /* 50/50 Settings Panels wrapper */
+        .settings-wrapper { display: flex; width: 100%; gap: 20px; order: 4; overflow: hidden; }
+        
+        .half-panel {
+            flex: 1; display: none; background: rgba(0,0,0,0.2); padding: 20px; 
+            border-radius: 20px; border: 1px solid var(--glass-border); overflow: hidden;
+        }
+
+        .cat-pill {
+            background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border);
+            padding: 8px 16px; border-radius: 25px; font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; user-select: none; display: inline-flex; align-items: center; gap: 8px;
+        }
+        .cat-pill:hover { background: rgba(255,255,255,0.2); }
+        .cat-pill.disabled-pill { background: rgba(255,107,107,0.1); border-color: rgba(255,107,107,0.5); color: #ff6b6b; }
+        .cat-pill.disabled-pill:hover { background: rgba(255,107,107,0.2); }
+
+        .draggable-watermark {
+            position: absolute; bottom: 25px; right: 25px; cursor: grab; z-index: 100; display: flex; flex-direction: column; align-items: flex-end; text-align: right; user-select: none; padding: 10px; border-radius: 12px; border: 1px dashed transparent; transition: border 0.2s;
+        }
+        .draggable-watermark:hover { border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); }
+        .draggable-watermark:active { cursor: grabbing; }
+        .wm-text-main { font-weight: 700; color: rgba(255,255,255,0.3); font-size: 26px; }
+        .wm-text-sub { font-weight: 600; color: rgba(255,255,255,0.2); font-size: 14px; margin-top: 2px; }
+
+        /* FIX: Replaced Absolute Positioning with Flexbox margin: auto for perfect centering in all UI modes */
+        .welcome-screen { margin: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; width: 100%; max-width: 550px; z-index: 1; }
+        .welcome-screen h2 { color: #ffd89b; font-size: 2.5em; margin: 0 0 15px 0; letter-spacing: -1px; min-height: 45px; }
+        .welcome-screen p { opacity: 0.5; line-height: 1.6; font-size: 1.1em; margin: 0; }
+        .welcome-screen .icon-large { font-size: 4em; margin-bottom: 25px; display: block; opacity: 0.8; color: #ffd89b; }
+
+        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(15, 15, 35, 0.98); padding: 30px; border-radius: 25px; border: 1px solid #ffd89b; z-index: 1000; display: none; text-align: center; box-shadow: 0 0 60px rgba(0,0,0,0.9); backdrop-filter: blur(15px); width: 320px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 999; display: none; }
+        .modal-btn { display: flex; justify-content: center; align-items: center; gap: 8px; flex: 1; padding: 14px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; cursor: pointer; font-weight: 600; transition: 0.2s;}
+        .modal-btn:hover { background: var(--accent); }
+        .modal-input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: white; font-size: 16px; margin-bottom: 20px; outline: none; box-sizing: border-box; }
+        .modal-input:focus { border-color: #ffd89b; }
+        
+        .heatmap-select { border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: white; padding: 6px 12px; border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; cursor: pointer; transition: all 0.3s;}
+
+        .movable-window { position: fixed; top: 150px; left: 50px; width: 400px; background: rgba(15, 15, 35, 0.95); border: 1px solid var(--glass-border); border-radius: 15px; box-shadow: 0 25px 50px rgba(0,0,0,0.5); z-index: 3000; display: none; flex-direction: column; overflow: hidden; backdrop-filter: blur(15px); transition: opacity 0.2s; }
+        .window-header { background: rgba(0,0,0,0.5); padding: 10px 15px; cursor: grab; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 13px; color: #ffd89b; }
+        .window-header:active { cursor: grabbing; }
+        .window-header button { background: transparent; border: none; color: white; cursor: pointer; font-size: 14px; opacity: 0.6; transition: 0.2s; }
+        .window-header button:hover { opacity: 1; color: #ff6b6b; }
+        .window-content { padding: 15px; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; min-height: 250px;}
+
+        /* --- MODERN LIGHT MODE UI OVERRIDES --- */
+        body.modern-ui { background: #f8fafc; color: #0f172a; }
+        body.modern-ui .container { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.05); padding: 25px; backdrop-filter: none; }
+        body.modern-ui .header { border-bottom: 1px solid #e2e8f0; padding-bottom: 25px; margin-bottom: 25px; }
+        body.modern-ui .header-center { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 12px; }
+        body.modern-ui .ui-switch-label span { color: #475569; }
+        body.modern-ui .slider { background-color: #cbd5e1; border-color: #94a3b8; }
+        body.modern-ui .ui-switch input:checked + .slider { background-color: #3b82f6; border-color: #3b82f6; }
+        body.modern-ui .ui-switch input:checked + .slider:before { background-color: #fff; }
+        body.modern-ui .back-btn { background: #f1f5f9; border-color: #e2e8f0; color: #0f172a; border-radius: 10px; }
+        body.modern-ui .back-btn:hover { background: #e2e8f0; }
+
+        body.modern-ui .layout { grid-template-columns: 1fr 400px; } 
+        body.modern-ui .sidebar { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; gap: 25px; grid-column: 2; box-shadow: 0 5px 20px rgba(0,0,0,0.03); }
+        body.modern-ui .section-label { color: #64748b; font-size: 10px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        body.modern-ui .section-label::before { content: ''; width: 6px; height: 6px; background: #3b82f6; border-radius: 50%; box-shadow: 0 0 8px #3b82f6; display: inline-block; }
+
+        body.modern-ui .btn-main { background: #3b82f6; border-radius: 10px; font-weight: 600; font-size: 14px; padding: 12px; }
+        body.modern-ui .btn-main:hover { background: #2563eb; }
+        body.modern-ui .chart-toggle { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 10px; padding: 4px; }
+        body.modern-ui .toggle-btn { border-radius: 6px; font-weight: 600; color: #64748b; font-size: 12px; padding: 8px; }
+        body.modern-ui .toggle-btn.active { background: #ffffff; color: #0f172a; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+        body.modern-ui .config-row { background: transparent; border: 1px solid #e2e8f0; border-radius: 10px; }
+        body.modern-ui .heatmap-select { background: #f8fafc; border: 1px solid #e2e8f0; color: #0f172a; }
+        body.modern-ui .custom-color-picker { border-color: #cbd5e1; box-shadow: none; }
+        body.modern-ui .metrics-list { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; }
+        body.modern-ui .metric-item { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; color: #0f172a; }
+        body.modern-ui .metric-item:active { border-color: #3b82f6; background: rgba(59,130,246,0.1); }
+        body.modern-ui .btn-small { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; border-radius: 6px; }
+        body.modern-ui .btn-small:hover { background: #e2e8f0; }
+
+        body.modern-ui .sidebar-pagination { background: transparent; border: 1px solid #e2e8f0; border-radius: 12px; }
+        body.modern-ui .nav-btn { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; border-radius: 8px; }
+        body.modern-ui .nav-btn:hover { background: #e2e8f0; }
+        body.modern-ui .metric-dropdown { background: #ffffff; border: 1px solid #e2e8f0; color: #0f172a; border-radius: 10px; }
+
+        /* FIX: overflow visible stops the invisible chart-card bounds from cutting off the individual panel corners */
+        /* FIX: Added min-height: 600px so it doesn't collapse entirely, fixing vertical centering */
+        body.modern-ui .chart-card { background: transparent; border: none; padding: 0; gap: 20px; min-height: 600px; grid-column: 1; grid-row: 1; overflow: visible; }
+        
+        body.modern-ui .action-buttons { order: 1; background: #ffffff; padding: 15px 25px; border-radius: 16px; border: 1px solid #e2e8f0; margin-top: 0; box-shadow: 0 5px 20px rgba(0,0,0,0.02); justify-content: space-between; }
+        body.modern-ui .export-frame { order: 2; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: none; }
+        
+        body.modern-ui .order-panel { order: 3; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 5px 20px rgba(0,0,0,0.02); }
+        body.modern-ui .order-panel > div { color: #64748b !important; }
+        body.modern-ui .sort-pill { background: #f8fafc; border-color: #e2e8f0; color: #0f172a; }
+        body.modern-ui .sort-pill:active { border-color: #3b82f6; color: #0f172a; background: rgba(59,130,246,0.1); }
+        
+        /* FIX: overflow visible stops the wrapper from clipping the bottom corners of the half-panels to a sharp square */
+        body.modern-ui .settings-wrapper { overflow: visible; }
+        
+        body.modern-ui .half-panel { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 5px 20px rgba(0,0,0,0.02); }
+        body.modern-ui .half-panel > div { color: #64748b !important; }
+        body.modern-ui .cat-pill { background: #f1f5f9; border-color: #e2e8f0; color: #0f172a; }
+        body.modern-ui .cat-pill.disabled-pill { background: #fee2e2; border-color: #fca5a5; color: #ef4444; }
+
+        body.modern-ui .btn-action { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; border-radius: 8px; padding: 10px 20px; font-size: 13px; font-weight: 600; }
+        body.modern-ui .btn-action:hover { background: #e2e8f0; }
+        body.modern-ui .quality-group { background: #f8fafc; border: 1px solid #e2e8f0; color: #0f172a; border-radius: 8px; padding: 8px 15px; }
+        
+        body.modern-ui .modal-box { background: #ffffff; border: 1px solid #e2e8f0; color: #0f172a; }
+        body.modern-ui .modal-box h3 { color: #0f172a !important; }
+        body.modern-ui .modal-btn { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; border-radius: 8px; }
+        body.modern-ui .modal-btn:hover { background: #3b82f6; color: white; border-color: #3b82f6; }
+        body.modern-ui .modal-input { background: #f8fafc; border-color: #e2e8f0; color: #0f172a; }
+        
+        body.modern-ui .welcome-screen h2 { color: #0f172a; }
+        body.modern-ui .welcome-screen p, body.modern-ui .welcome-screen .icon-large { color: #64748b; }
+        
+        body.modern-ui .movable-window { background: #ffffff; border-color: #e2e8f0; color: #0f172a; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        body.modern-ui .window-header { background: #f1f5f9; color: #0f172a; }
+        body.modern-ui .window-header button { color: #0f172a; }
+        body.modern-ui .window-content { background: #f8fafc; }
+
+        /* --- MODERN DARK MODE UI OVERRIDES --- */
+        body.modern-ui.dark-mode { background: #090a0f; color: white; }
+        body.modern-ui.dark-mode .container { background: #12141a; border-color: #222631; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
+        body.modern-ui.dark-mode .sidebar { background: #171a21; border-color: #222631; box-shadow: none; }
+        body.modern-ui.dark-mode .header { border-bottom-color: #222631; }
+        body.modern-ui.dark-mode .header-center { background: #171a21; border-color: #222631; }
+        body.modern-ui.dark-mode .ui-switch-label span { color: #94a3b8; }
+        body.modern-ui.dark-mode .slider { background-color: #0f1115; border-color: #222631; }
+        body.modern-ui.dark-mode .back-btn { background: #171a21; border-color: #222631; color: white; }
+        body.modern-ui.dark-mode .back-btn:hover { background: #222631; }
+        body.modern-ui.dark-mode .chart-toggle { background: #0f1115; border-color: #222631; }
+        body.modern-ui.dark-mode .toggle-btn { color: #94a3b8; }
+        body.modern-ui.dark-mode .toggle-btn.active { background: #222631; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        body.modern-ui.dark-mode .config-row { border-color: #222631; }
+        body.modern-ui.dark-mode .heatmap-select { background: #0f1115; border-color: #222631; color: white; }
+        body.modern-ui.dark-mode .custom-color-picker { border-color: #222631; }
+        body.modern-ui.dark-mode .metrics-list { background: #0f1115; border-color: #222631; }
+        body.modern-ui.dark-mode .metric-item { background: #171a21; border-color: #222631; color: #cbd5e1; }
+        body.modern-ui.dark-mode .btn-small { background: #222631; border-color: transparent; color: white; }
+        body.modern-ui.dark-mode .btn-small:hover { background: #333a4a; }
+        body.modern-ui.dark-mode .sidebar-pagination { border-color: #222631; }
+        body.modern-ui.dark-mode .nav-btn { background: #222631; border-color: transparent; color: white; }
+        body.modern-ui.dark-mode .nav-btn:hover { background: #333a4a; }
+        body.modern-ui.dark-mode .metric-dropdown { background: #0f1115; border-color: #222631; color: white; }
+        body.modern-ui.dark-mode .action-buttons { background: #171a21; border-color: #222631; box-shadow: none; }
+        body.modern-ui.dark-mode .export-frame { border-color: #222631; }
+        body.modern-ui.dark-mode .order-panel { background: #171a21; border-color: #222631; box-shadow: none; }
+        body.modern-ui.dark-mode .order-panel > div { color: #ffd89b !important; }
+        body.modern-ui.dark-mode .sort-pill { background: #0f1115; border-color: #222631; color: #cbd5e1; }
+        
+        body.modern-ui.dark-mode .half-panel { background: #171a21; border-color: #222631; box-shadow: none; }
+        body.modern-ui.dark-mode .half-panel > div { color: #ffd89b !important; }
+        body.modern-ui.dark-mode .cat-pill { background: #222631; border-color: #333a4a; color: white; }
+        body.modern-ui.dark-mode .cat-pill.disabled-pill { background: rgba(239,68,68,0.15); border-color: #ef4444; color: #ef4444; }
+        
+        body.modern-ui.dark-mode .btn-action { background: #222631; border-color: transparent; color: white; }
+        body.modern-ui.dark-mode .btn-action:hover { background: #333a4a; }
+        body.modern-ui.dark-mode .quality-group { background: #0f1115; border-color: #222631; color: white; }
+        body.modern-ui.dark-mode .modal-box { background: #12141a; border-color: #222631; color: white; }
+        body.modern-ui.dark-mode .modal-box h3 { color: #ffd89b !important; }
+        body.modern-ui.dark-mode .modal-btn { background: #222631; border-color: transparent; color: white; }
+        body.modern-ui.dark-mode .modal-btn:hover { background: #3b82f6; }
+        body.modern-ui.dark-mode .modal-input { background: #0f1115; border-color: #222631; color: white; }
+        
+        body.modern-ui.dark-mode .welcome-screen h2 { color: #ffd89b; }
+        body.modern-ui.dark-mode .welcome-screen p, body.modern-ui.dark-mode .welcome-screen .icon-large { color: #94a3b8; }
+        body.modern-ui.dark-mode .movable-window { background: #12141a; border-color: #222631; color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        body.modern-ui.dark-mode .window-header { background: #171a21; color: #ffd89b; border-bottom: 1px solid #222631; }
+        body.modern-ui.dark-mode .window-header button { color: white; }
+        body.modern-ui.dark-mode .window-content { background: #0f1115; }
+
+        /* --- RESPONSIVE MOBILE & TABLET SUPPORT --- */
+        @media (max-width: 992px) {
+            body { padding: 10px; }
+            .container { padding: 15px; border-radius: 20px; }
+
+            /* Re-align header objects */
+            .header { flex-direction: column; align-items: stretch; text-align: center; gap: 15px; margin-bottom: 20px; }
+            .header h1 { justify-content: center; font-size: 1.8em; flex-wrap: wrap; }
+            .toggles-container { justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+            .back-btn { justify-content: center; }
+
+            /* Stack Sidebar and Workspace */
+            .layout { display: flex; flex-direction: column; gap: 20px; }
+            
+            /* Override Modern UI specific Grid positioning */
+            body.modern-ui .layout { display: flex; flex-direction: column; }
+            body.modern-ui .sidebar { order: 1; }
+            body.modern-ui .chart-card { order: 2; margin-top: 0; }
+
+            .sidebar { width: 100%; padding: 20px; border-radius: 20px; }
+
+            /* Scrollable Workspace to strictly keep PC Chart Dimensions */
+            .chart-card { 
+                width: 100%; 
+                padding: 15px; 
+                border-radius: 20px; 
+                overflow-x: auto !important; /* Force horizontally scrollable view */
+                overflow-y: visible !important; /* Fixes clipping issue on mobile */
+                align-items: flex-start;
+                -webkit-overflow-scrolling: touch; 
+                min-height: 650px;
+            }
+
+            .export-frame { 
+                min-width: 850px; /* Forces identical un-squished dimension as PC */
+                height: 600px;
+                margin-bottom: 10px;
+            }
+
+            /* Make internal control panels match the forced width so layout does not break while scrolling */
+            .action-buttons, .order-panel, .settings-wrapper { 
+                min-width: 850px; 
+            }
+
+            /* Allow internal setting sections to stack */
+            .settings-wrapper { flex-direction: column; gap: 15px; }
+
+            /* Modals and Floating Windows */
+            .modal-box { width: 90%; max-width: 350px; padding: 20px; }
+            .movable-window { width: 90vw !important; left: 5vw !important; top: 10vh !important; }
+        }
+
+    </style>
+</head>
+<body>
+
+<input type="file" id="settingsInput" style="display:none" accept=".json" onchange="loadSettings(event)">
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeAllModals()"></div>
+
+<!-- Unified Dialog Modal -->
+<div id="unifiedDialog" class="modal-box" style="z-index: 2000;">
+    <h3 id="dialogTitle" style="margin-top:0; font-size: 1.5em;"></h3>
+    <p id="dialogMessage" style="font-size: 0.9em; opacity: 0.8; margin-bottom: 20px;"></p>
+    <input type="text" id="dialogInput" class="modal-input" style="display:none;" autocomplete="off" onkeydown="if(event.key === 'Enter') closeDialog(true)">
+    <div style="display:flex; gap:10px; justify-content: center;">
+        <button id="dialogBtnOk" class="modal-btn" onclick="closeDialog(true)">OK</button>
+        <button id="dialogBtnCancel" class="modal-btn" onclick="closeDialog(false)" style="opacity:0.4; border:none; background: transparent;">Cancel</button>
+    </div>
+</div>
+
+<!-- Edit Segment Modal -->
+<div id="actionModal" class="modal-box">
+    <h3 style="margin-top:0; font-size: 1.5em;"><i class="fa-solid fa-pen"></i> Edit Element</h3>
+    <p id="modalInfo" style="font-size: 0.9em; opacity: 0.6; margin-bottom: 20px;"></p>
+    
+    <div style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px;" id="colorPickerWrapper">
+        <span style="font-size: 14px; opacity: 0.8;">Element Color:</span>
+        <div class="custom-color-picker">
+            <div class="color-preview" id="segmentColorPreview"></div>
+            <input type="color" id="segmentColorPicker" onchange="updateSegmentColor(this.value)">
+        </div>
+    </div>
+    
+    <div style="display:flex; gap:10px; justify-content: center; margin-bottom: 10px;">
+        <button class="modal-btn" onclick="triggerValueChange()" id="editValueBtn"><i class="fa-solid fa-hashtag"></i> Edit Value</button>
+        <button class="modal-btn" onclick="closeAllModals()" style="opacity:0.4; border:none; background: transparent;">Cancel</button>
+    </div>
+    
+    <button id="toggleCategoryBtn" class="modal-btn" onclick="toggleItemDisabled()" style="width: 100%; border: 1px solid rgba(255,107,107,0.3); color: #ff6b6b; background: rgba(255,107,107,0.1);"><i class="fa-solid fa-eye-slash"></i> Disable Element</button>
+</div>
+
+<!-- Watermark Config Modal -->
+<div id="watermarkModal" class="modal-box">
+    <h3 style="margin-top:0; font-size: 1.4em;"><i class="fa-solid fa-stamp"></i> Watermark Config</h3>
+    <div style="text-align: left; margin-bottom: 20px; font-size: 14px;">
+        <label style="display:flex; align-items:center; gap:10px; margin-bottom:12px; cursor: pointer;">
+            <input type="checkbox" id="wmSnapToggle" onchange="saveWatermarkSettings()"> Snap to Corners
+        </label>
+        <label style="display:flex; align-items:center; gap:10px; margin-bottom:12px; cursor: pointer;">
+            <input type="checkbox" id="wmAuthorToggle" onchange="saveWatermarkSettings()"> Show "Made by Dawidolowid"
+        </label>
+        <label style="display:flex; align-items:center; gap:10px; margin-bottom:8px; cursor: pointer;">
+            <input type="checkbox" id="wmForToggle" onchange="saveWatermarkSettings()"> Enable "for [text]"
+        </label>
+        <input type="text" id="wmForInput" class="modal-input" placeholder="e.g. Your Company" style="display:none; margin-top:5px;" oninput="saveWatermarkSettings()">
+    </div>
+    <button class="modal-btn" onclick="closeAllModals()" style="background: var(--accent); color: white; border: none;">Done</button>
+</div>
+
+<!-- Movable Export Preview Window -->
+<div id="exportPreviewWindow" class="movable-window">
+    <div class="window-header" id="previewHeader">
+        <span><i class="fa-solid fa-eye"></i> Export Preview</span>
+        <button onclick="document.getElementById('previewToggle').click()" title="Close Preview"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="window-content">
+        <img id="previewImage" src="" style="width:100%; height:auto; border-radius: 8px;">
+    </div>
+</div>
+
+<div class="container">
+    <div class="header">
+        <div>
+            <h1>ChartStudio <span class="version-tag">v2</span></h1>
+            <p class="credits">Made by Dawidolowid</p>
+        </div>
+        
+        <div class="toggles-container">
+            <div class="header-center">
+                <label class="ui-switch-label">
+                    <span style="font-size: 12px; font-weight: 700; text-transform: uppercase;"><i class="fa-solid fa-wand-magic-sparkles"></i> Modern UI</span>
+                    <div class="ui-switch">
+                        <input type="checkbox" id="uiToggle" onchange="toggleModernUI()">
+                        <span class="slider"></span>
+                    </div>
+                </label>
+            </div>
+            
+            <div class="header-center" id="darkModeWrapper" style="display: none;">
+                <label class="ui-switch-label">
+                    <span style="font-size: 12px; font-weight: 700; text-transform: uppercase;"><i class="fa-solid fa-moon"></i> Dark Mode</span>
+                    <div class="ui-switch">
+                        <input type="checkbox" id="darkToggle" onchange="toggleDarkMode()">
+                        <span class="slider"></span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <a href="javascript:history.back()" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back to App</a>
+    </div>
+
+    <div class="layout">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div>
+                <span class="section-label">1. Data Source</span>
+                <button class="btn-main" onclick="document.getElementById('fileInput').click()">
+                    <i class="fa-solid fa-file-import"></i> Import Data (.json)
+                </button>
+                <input type="file" id="fileInput" style="display:none" accept=".json" multiple onchange="importFile(event)">
+                
+                <button id="unloadBtn" class="btn-small" onclick="unloadData()" style="display:none; width:100%; margin-top:10px; background:rgba(255,107,107,0.1); color:#ff6b6b; border-color:rgba(255,107,107,0.3); padding: 12px;">
+                    <i class="fa-solid fa-trash"></i> Unload JSON
+                </button>
+            </div>
+
+            <div id="sidebarOptions">
+                <div>
+                    <span class="section-label">2. Visual Style</span>
+                    <div class="chart-toggle">
+                        <button class="toggle-btn active" id="btn-bar" onclick="setChartType('bar')">Bar</button>
+                        <button class="toggle-btn" id="btn-line" onclick="setChartType('line')">Line</button>
+                        <button class="toggle-btn" id="btn-area" onclick="setChartType('area')">Area</button>
+                        <button class="toggle-btn" id="btn-pie" onclick="setChartType('pie')">Pie</button>
+                        <button class="toggle-btn" id="btn-doughnut" onclick="setChartType('doughnut')">Donut</button>
+                        <button class="toggle-btn" id="btn-gauge" onclick="setChartType('gauge')">Gauge</button>
+                        <button class="toggle-btn" id="btn-radar" onclick="setChartType('radar')">Radar</button>
+                        <button class="toggle-btn" id="btn-pyramid" onclick="setChartType('pyramid')">Pyramid</button>
+                        <button class="toggle-btn" id="btn-heatmap" onclick="setChartType('heatmap')">Heatmap</button>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="section-label">3. Theme & Titles</span>
+                    
+                    <div id="materialColorBtnWrapper" style="margin-bottom: 12px;">
+                        <button class="btn-small" onclick="generateMaterialColors()" style="width: 100%; padding: 10px; font-size: 13px;">
+                            <i class="fa-solid fa-palette"></i> Generate Material Colors
+                        </button>
+                    </div>
+
+                    <div class="config-row">
+                        <span style="font-size: 11px; font-weight: 600;">Frame Background</span>
+                        <div class="custom-color-picker">
+                            <div class="color-preview" id="bgColorPreview" style="background: #1e1b4b"></div>
+                            <input type="color" id="bgColorPicker" value="#1e1b4b" onchange="document.getElementById('bgColorPreview').style.background = this.value; updateChart()">
+                        </div>
+                    </div>
+                    <div class="config-row" style="margin-top:8px;">
+                        <span style="font-size: 11px; font-weight: 600;">Title Color</span>
+                        <div class="custom-color-picker">
+                            <div class="color-preview" id="titleColorPreview" style="background: #ffd89b"></div>
+                            <input type="color" id="titleColorPicker" value="#ffd89b" onchange="document.getElementById('titleColorPreview').style.background = this.value; updateTitleColor(this.value)">
+                        </div>
+                    </div>
+
+                    <!-- 3D Plugin Toggle -->
+                    <div id="3dToggleContainer" style="display: none; margin-top:8px;">
+                        <div class="config-row">
+                            <span style="font-size: 11px; font-weight: 600;">Enable 3D Effect</span>
+                            <input type="checkbox" id="enable3dCheck" onchange="updateChart()">
+                        </div>
+                    </div>
+
+                    <!-- Center Logo Options (For Donut/Gauge) -->
+                    <div id="centerLogoContainer" style="display: none; margin-top:8px;">
+                        <div class="config-row">
+                            <span style="font-size: 11px; font-weight: 600;">Center Logo</span>
+                            <input type="file" id="logoInput" accept="image/*" style="display:none" onchange="loadCenterLogo(event)">
+                            <div style="display:flex; gap:5px;">
+                                <button class="btn-small" title="Upload Logo" onclick="document.getElementById('logoInput').click()"><i class="fa-solid fa-upload"></i></button>
+                                <button class="btn-small" title="Remove Logo" onclick="clearCenterLogo()" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <div class="config-row" style="margin-top:4px; padding-top: 4px;">
+                            <span style="font-size: 11px; font-weight: 600;">Logo Size</span>
+                            <input type="range" id="logoSizeSlider" min="20" max="300" value="120" oninput="updateLogoSize()">
+                        </div>
+                    </div>
+                    
+                    <div id="pieSizeContainer" style="display: none; margin-top:8px;">
+                        <div class="config-row">
+                            <span id="pieSizeLabel" style="font-size: 11px; font-weight: 600;">Pie Size</span>
+                            <input type="range" id="pieSizeSlider" min="40" max="100" value="100" oninput="updatePieSize(this.value)">
+                        </div>
+                    </div>
+
+                    <div id="heatmapThemeContainer" style="display: none; margin-top:8px;">
+                        <div class="config-row">
+                            <span style="font-size: 11px; font-weight: 600;">Heatmap Color</span>
+                            <select id="heatmapThemeSelect" class="heatmap-select" onchange="updateChart()">
+                                <option value="default">Default (Blue-Orange)</option>
+                                <option value="fire">Fire (Yellow-Red)</option>
+                                <option value="ocean">Ocean (Teal-Blue)</option>
+                                <option value="emerald">Emerald (Green)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="fillToggleContainer" style="display: none; margin-top:8px;">
+                        <div class="config-row">
+                            <span style="font-size: 11px; font-weight: 600;">Fill Background Area</span>
+                            <input type="checkbox" id="fillAreaCheck" checked onchange="updateChart()">
+                        </div>
+                    </div>
+
+                    <div id="datalabelsToggleContainer" style="margin-top:8px;">
+                        <div class="config-row">
+                            <span style="font-size: 11px; font-weight: 600;">Show Value Labels</span>
+                            <input type="checkbox" id="showLabelsCheck" checked onchange="updateChart()">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="section-label">4. Analysis Mode</span>
+                    <div class="chart-toggle" style="margin-bottom: 10px;">
+                        <button class="toggle-btn active" id="mode-counter" onclick="setAnalysisMode('counter')">Compare Categories</button>
+                        <button class="toggle-btn" id="mode-category" onclick="setAnalysisMode('category')">Analyze Groups</button>
+                    </div>
+
+                    <div id="groupControls" style="display: none; justify-content: flex-end; margin-bottom: 8px;">
+                        <button class="btn-small" onclick="createNewGroup()"><i class="fa-solid fa-folder-plus"></i> New Group</button>
+                    </div>
+                    
+                    <div class="metrics-list drop-zone" id="metricsList" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'root')"></div>
+                </div>
+
+                <div id="paginationContainer">
+                    <span class="section-label">5. Navigation & Layout</span>
+                    <div class="sidebar-pagination">
+                        <button class="nav-btn" title="Load Layout" onclick="document.getElementById('settingsInput').click()"><i class="fa-solid fa-folder-open"></i></button>
+                        <button class="nav-btn" id="prevBtn" onclick="changePage(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                        <div id="pageIndicator" style="font-weight:700; color:#ffd89b; font-size:14px;">1 / 1</div>
+                        <button class="nav-btn" id="nextBtn" onclick="changePage(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                        <button class="nav-btn" title="Save Layout" onclick="saveSettings()"><i class="fa-solid fa-floppy-disk"></i></button>
+                    </div>
+                    <select id="pageDropdown" onchange="jumpToPage(this.value)" class="metric-dropdown"></select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workspace -->
+        <div class="chart-card">
+            
+            <div id="emptyMsg" class="welcome-screen">
+                <span id="welcomeIcon" class="icon-large"><i class="fa-solid fa-chart-pie"></i></span>
+                <h2 id="welcomeTitle"></h2>
+                <p id="welcomeText">Loading a JSON file is a good thing to begin with. Unlock professional analytics, custom themes, and beautiful data storytelling.</p>
+            </div>
+
+            <!-- Dynamic Workspace Actions Toolbar -->
+            <div class="action-buttons" id="actionButtons" style="display:none">
+                <div class="quality-group">
+                    <span style="font-size: 13px; font-weight: 600; opacity: 0.8;"><i class="fa-solid fa-search"></i> Quality:</span>
+                    <input type="range" id="exportQualitySlider" min="1" max="4" step="0.5" value="2" oninput="document.getElementById('qualityLabel').innerText = this.value + 'x'">
+                    <span id="qualityLabel" style="font-size: 13px; font-weight: 700; color: #ffd89b; min-width: 25px;">2x</span>
+                    <div style="width: 1px; height: 15px; background: var(--glass-border); margin: 0 8px;"></div>
+                    
+                    <label style="font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" id="watermarkToggle" onchange="saveWatermarkSettings()" checked> Watermark
+                    </label>
+                    <button class="btn-small" onclick="openWatermarkModal()" style="padding: 4px 8px; margin-left: 2px;" title="Watermark Settings"><i class="fa-solid fa-gear"></i></button>
+                    
+                    <div style="width: 1px; height: 15px; background: var(--glass-border); margin: 0 8px;"></div>
+                    
+                    <label style="font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px;" title="Live Mini-Preview of your Export">
+                        <input type="checkbox" id="previewToggle" onchange="togglePreviewWindow()"> Preview
+                    </label>
+                </div>
+                <div class="export-group">
+                    <button class="btn-action" onclick="copyToClipboard()"><i class="fa-solid fa-copy"></i> Copy Image</button>
+                    <button class="btn-action" onclick="exportToPng()" style="background: var(--accent); border: none; color: white;"><i class="fa-solid fa-download"></i> Export PNG</button>
+                </div>
+            </div>
+
+            <!-- Static Export Frame -->
+            <div id="exportFrame" class="export-frame" style="display:none;">
+                <div id="chartTitleInput" class="chart-title-textbox" contenteditable="true" oninput="handleTitleInput(this.innerText)"></div>
+                
+                <div class="chart-wrapper" id="chartWrapper">
+                    <div id="interactiveTip"><i class="fa-solid fa-lightbulb"></i> Tip: Click a segment to edit!</div>
+                    <div id="canvasSizer" class="canvas-sizer">
+                        <canvas id="reviewChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Interactive Watermark Layer -->
+                <div id="exportWatermark" class="draggable-watermark" style="display: flex;">
+                    <div class="wm-text-main"><i class="fa-solid fa-chart-pie"></i> ChartStudio <span style="font-size:0.5em; background:rgba(255,255,255,0.15); padding:3px 8px; border-radius:5px; vertical-align: middle;">v2</span></div>
+                    <div class="wm-text-sub" id="wmAuthor" style="display:none;">Made by Dawidolowid</div>
+                    <div class="wm-text-sub" id="wmFor" style="display:none;">for <span id="wmForText"></span></div>
+                </div>
+            </div>
+
+            <!-- Reorder Panel -->
+            <div id="orderPanel" class="order-panel">
+                <div style="font-size: 12px; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center;">
+                    <span><i class="fa-solid fa-sort"></i> Drag to Reorder Elements:</span>
+                    <button class="btn-small" onclick="resetSortOrder()" style="padding: 4px 8px; font-size: 10px;"><i class="fa-solid fa-rotate-left"></i> Reset Order</button>
+                </div>
+                <div id="orderPills" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+            </div>
+
+            <!-- 50/50 Settings Panels wrapper -->
+            <div class="settings-wrapper" id="settingsWrapper" style="display: none;">
+                <!-- X-Axis / Categories -->
+                <div id="categorySettingsPanel" class="half-panel">
+                    <div style="font-size: 12px; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center;">
+                        <span id="catSettingsTitle"><i class="fa-solid fa-sliders"></i> X-Axis Settings:</span>
+                        <button class="btn-small" onclick="resetDisabledCategories()" style="padding: 4px 8px; font-size: 10px;"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+                    </div>
+                    <div id="categoryPills" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                </div>
+                <!-- Datasets / Groups -->
+                <div id="groupSettingsPanel" class="half-panel">
+                    <div style="font-size: 12px; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center;">
+                        <span id="grpSettingsTitle"><i class="fa-solid fa-layer-group"></i> Dataset Settings:</span>
+                        <button class="btn-small" onclick="resetDisabledGroups()" style="padding: 4px 8px; font-size: 10px;"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+                    </div>
+                    <div id="groupPills" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    Chart.register(ChartDataLabels);
+
+    // Welcome Screen Typing Animation
+    const typePhrases = ["Ready to begin?", "Ready to visualize?", "Ready to set?"];
+    let typeIndex = 0; let charIndex = 0; let isDeleting = false; let typingTimeout;
+    
+    function typeWriter() {
+        const el = document.getElementById("welcomeTitle");
+        if(!el || document.getElementById("emptyMsg").style.display === "none") return; 
+        
+        if (rawData.length > 0) {
+            el.innerText = "Workspace Ready";
+            return;
+        }
+
+        const currentPhrase = typePhrases[typeIndex];
+        if (isDeleting) {
+            el.innerText = currentPhrase.substring(0, charIndex - 1); charIndex--;
+        } else {
+            el.innerText = currentPhrase.substring(0, charIndex + 1); charIndex++;
+        }
+
+        let speed = isDeleting ? 40 : 80;
+        if (!isDeleting && charIndex === currentPhrase.length) {
+            speed = 2000; isDeleting = true;
+        } else if (isDeleting && charIndex === 0) {
+            isDeleting = false; typeIndex = (typeIndex + 1) % typePhrases.length; speed = 400;
+        }
+        typingTimeout = setTimeout(typeWriter, speed);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        typeWriter();
+        
+        const savedUI = localStorage.getItem('modernUIEnabled');
+        const savedDark = localStorage.getItem('darkModeEnabled');
+        if (savedUI === 'true') {
+            document.getElementById('uiToggle').checked = true;
+            document.body.classList.add('modern-ui');
+            document.getElementById('darkModeWrapper').style.display = 'flex';
+            if(savedDark === 'true') {
+                document.getElementById('darkToggle').checked = true;
+                document.body.classList.add('dark-mode');
+            }
+        }
+        
+        if(localStorage.getItem('wmSnap') !== null) {
+            document.getElementById('wmSnapToggle').checked = localStorage.getItem('wmSnap') === 'true';
+            document.getElementById('wmAuthorToggle').checked = localStorage.getItem('wmAuthor') === 'true';
+            document.getElementById('wmForToggle').checked = localStorage.getItem('wmFor') === 'true';
+            document.getElementById('watermarkToggle').checked = localStorage.getItem('wmEnabled') !== 'false';
+            document.getElementById('wmForInput').value = localStorage.getItem('wmForText') || '';
+        } else {
+            document.getElementById('wmSnapToggle').checked = true;
+            document.getElementById('watermarkToggle').checked = true;
+        }
+        applyWatermarkDisplay();
+    });
+
+    function toggleModernUI() {
+        const isChecked = document.getElementById('uiToggle').checked;
+        const darkWrapper = document.getElementById('darkModeWrapper');
+        
+        if (isChecked) {
+            document.body.classList.add('modern-ui');
+            darkWrapper.style.display = 'flex';
+            if (document.getElementById('darkToggle').checked || localStorage.getItem('darkModeEnabled') === 'true') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('darkToggle').checked = true;
+            }
+        } else {
+            document.body.classList.remove('modern-ui');
+            document.body.classList.remove('dark-mode');
+            darkWrapper.style.display = 'none';
+        }
+        localStorage.setItem('modernUIEnabled', isChecked);
+        setTimeout(() => { if (myChart) myChart.resize(); }, 450); 
+    }
+    
+    function toggleDarkMode() {
+        const isChecked = document.getElementById('darkToggle').checked;
+        if (isChecked) { document.body.classList.add('dark-mode'); } 
+        else { document.body.classList.remove('dark-mode'); }
+        localStorage.setItem('darkModeEnabled', isChecked);
+    }
+
+    // Watermark Control Logic
+    let wmSnapEnabled = true;
+    function saveWatermarkSettings() {
+        localStorage.setItem('wmSnap', document.getElementById('wmSnapToggle').checked);
+        localStorage.setItem('wmAuthor', document.getElementById('wmAuthorToggle').checked);
+        localStorage.setItem('wmFor', document.getElementById('wmForToggle').checked);
+        localStorage.setItem('wmForText', document.getElementById('wmForInput').value);
+        localStorage.setItem('wmEnabled', document.getElementById('watermarkToggle').checked);
+        applyWatermarkDisplay();
+    }
+    
+    function applyWatermarkDisplay() {
+        const showWM = document.getElementById('watermarkToggle').checked;
+        wmSnapEnabled = document.getElementById('wmSnapToggle').checked;
+        
+        document.getElementById('exportWatermark').style.display = showWM ? 'flex' : 'none';
+        
+        const showAuthor = document.getElementById('wmAuthorToggle').checked;
+        document.getElementById('wmAuthor').style.display = showAuthor ? 'block' : 'none';
+        
+        const showFor = document.getElementById('wmForToggle').checked;
+        document.getElementById('wmForInput').style.display = showFor ? 'block' : 'none';
+        
+        const forText = document.getElementById('wmForInput').value;
+        document.getElementById('wmForText').innerText = forText;
+        document.getElementById('wmFor').style.display = (showFor && forText) ? 'block' : 'none';
+        
+        updatePreviewImage();
+    }
+
+    // Export Preview Movable Window Logic
+    const pw = document.getElementById('exportPreviewWindow');
+    const ph = document.getElementById('previewHeader');
+    let pwDragging = false, pwX = 0, pwY = 0;
+    ph.addEventListener('mousedown', e => {
+        pwDragging = true;
+        const rect = pw.getBoundingClientRect();
+        pwX = e.clientX - rect.left; pwY = e.clientY - rect.top;
+    });
+    document.addEventListener('mousemove', e => {
+        if(!pwDragging) return;
+        pw.style.left = (e.clientX - pwX) + 'px';
+        pw.style.top = (e.clientY - pwY) + 'px';
+    });
+    document.addEventListener('mouseup', () => { pwDragging = false; });
+
+    function togglePreviewWindow() {
+        pw.style.display = document.getElementById('previewToggle').checked ? 'flex' : 'none';
+        if (document.getElementById('previewToggle').checked) updatePreviewImage();
+    }
+
+    let previewDebounce;
+    function updatePreviewImage() {
+        if(document.getElementById('previewToggle').checked && document.getElementById('exportFrame').style.display !== 'none') {
+            clearTimeout(previewDebounce);
+            previewDebounce = setTimeout(async () => {
+                const previewImg = document.getElementById('previewImage');
+                const tip = document.getElementById('interactiveTip');
+                const tipState = tip.style.display; tip.style.display = 'none';
+                
+                const wmToggle = document.getElementById('watermarkToggle');
+                if(wmToggle.checked) document.getElementById('exportWatermark').style.border = 'none';
+                document.getElementById('chartTitleInput').style.border = 'none';
+
+                const canvas = await html2canvas(document.getElementById('exportFrame'), { scale: 0.5, useCORS: true, logging: false });
+                previewImg.src = canvas.toDataURL();
+
+                document.getElementById('chartTitleInput').style.border = '';
+                if(wmToggle.checked) document.getElementById('exportWatermark').style.border = '';
+                tip.style.display = tipState;
+            }, 800);
+        }
+    }
+
+    // Material Color Generator
+    const materialPalette = ['#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E', '#607D8B'];
+    function generateMaterialColors() {
+        if (currentChartType === 'heatmap') return;
+        let shuffled = [...materialPalette].sort(() => 0.5 - Math.random());
+        let i = 0;
+        baseCategories.forEach(cat => { categoryColorMap[cat] = shuffled[i++ % shuffled.length]; });
+        baseCounters.forEach(cnt => { counterColorMap[cnt] = shuffled[i++ % shuffled.length]; });
+        updateChart();
+    }
+
+    function getContrastColor(color) {
+        if (!color || color === 'transparent') return '#ffffff';
+        let r, g, b;
+        if (color.startsWith('rgba') || color.startsWith('rgb')) {
+            const parts = color.match(/[\d.]+/g); r = parseInt(parts[0]); g = parseInt(parts[1]); b = parseInt(parts[2]);
+        } else {
+            let hex = color.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i, (m, r, g, b) => r+r+g+g+b+b);
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            if(!result) return '#ffffff';
+            r = parseInt(result[1], 16); g = parseInt(result[2], 16); b = parseInt(result[3], 16);
+        }
+        const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+        return (yiq >= 128) ? '#000000' : '#ffffff';
+    }
+
+    function hslaToRgba(h, s, l, a) {
+        s /= 100; l /= 100; const k = n => (n + h / 30) % 12; const alpha = s * Math.min(l, 1 - l); const f = n => l - alpha * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+        return `rgba(${Math.round(255 * f(0))}, ${Math.round(255 * f(8))}, ${Math.round(255 * f(4))}, ${a})`;
+    }
+
+    // Watermark Drag Logic
+    const wm = document.getElementById('exportWatermark');
+    const exportFrame = document.getElementById('exportFrame');
+    let wmDragging = false, wmx = 0, wmy = 0;
+
+    wm.addEventListener('mousedown', e => { wmDragging = true; const rect = wm.getBoundingClientRect(); wmx = e.clientX - rect.left; wmy = e.clientY - rect.top; });
+    document.addEventListener('mousemove', e => {
+        if(!wmDragging) return;
+        const frameRect = exportFrame.getBoundingClientRect();
+        let newL = e.clientX - frameRect.left - wmx; let newT = e.clientY - frameRect.top - wmy;
+        newL = Math.max(0, Math.min(newL, frameRect.width - wm.offsetWidth)); newT = Math.max(0, Math.min(newT, frameRect.height - wm.offsetHeight));
+        wm.style.left = newL + 'px'; wm.style.top = newT + 'px'; wm.style.bottom = 'auto'; wm.style.right = 'auto';
+    });
+    document.addEventListener('mouseup', () => {
+        if(!wmDragging) return;
+        wmDragging = false;
+        if (wmSnapEnabled) {
+            const fRect = exportFrame.getBoundingClientRect(); const wRect = wm.getBoundingClientRect();
+            const cx = wRect.left - fRect.left + wRect.width/2; const cy = wRect.top - fRect.top + wRect.height/2;
+            const isLeft = cx < fRect.width / 2; const isTop = cy < fRect.height / 2;
+            wm.style.left = isLeft ? '25px' : 'auto'; wm.style.right = isLeft ? 'auto' : '25px';
+            wm.style.top = isTop ? '25px' : 'auto'; wm.style.bottom = isTop ? 'auto' : '25px';
+            wm.style.alignItems = isLeft ? 'flex-start' : 'flex-end'; wm.style.textAlign = isLeft ? 'left' : 'right';
+        }
+        updatePreviewImage();
+    });
+
+    function openWatermarkModal() { document.getElementById('watermarkModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block'; }
+
+    let centerImageObj = null;
+
+    function loadCenterLogo(event) {
+        const file = event.target.files[0]; if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => { centerImageObj = new Image(); centerImageObj.onload = () => updateChart(); centerImageObj.src = e.target.result; };
+        reader.readAsDataURL(file);
+    }
+    
+    function clearCenterLogo() { centerImageObj = null; document.getElementById('logoInput').value = ''; updateChart(); }
+
+    function updateLogoSize() { if (myChart && ['doughnut', 'gauge'].includes(currentChartType)) myChart.update('none'); }
+
+    const centerLogoPlugin = {
+        id: 'centerLogoPlugin',
+        afterDatasetsDraw(chart, args, options) {
+            if (!centerImageObj) return;
+            if (!['doughnut', 'gauge'].includes(currentChartType)) return; 
+            
+            const meta = chart.getDatasetMeta(0);
+            if (!meta || !meta.data || !meta.data.length) return;
+            const x = meta.data[0].x; const y = meta.data[0].y; const ctx = chart.ctx;
+            const targetSize = parseInt(document.getElementById('logoSizeSlider').value);
+            ctx.save();
+            const aspect = centerImageObj.width / centerImageObj.height;
+            let w = targetSize; let h = targetSize;
+            if (aspect > 1) { h = targetSize / aspect; } else { w = targetSize * aspect; }
+            let yOffset = 0; if(chart.config.options.circumference === 180) { yOffset = -h / 2; }
+            ctx.drawImage(centerImageObj, x - w/2, y - h/2 + yOffset, w, h);
+            ctx.restore();
+        }
+    };
+
+    // 3D Plugin rendering engine
+    const pseudo3DPlugin = {
+        id: 'pseudo3dPlugin',
+        beforeDatasetsDraw(chart, args, options) {
+            if (!document.getElementById('enable3dCheck')?.checked) return;
+            if (!['pie', 'doughnut', 'bar'].includes(chart.config.type)) return;
+
+            const ctx = chart.ctx;
+            chart.data.datasets.forEach((dataset, datasetIndex) => {
+                const meta = chart.getDatasetMeta(datasetIndex);
+                if (meta.hidden) return;
+
+                const depth = chart.config.type === 'bar' ? 12 : 20; 
+                
+                for (let i = depth; i > 0; i--) {
+                    ctx.save();
+                    if (chart.config.type === 'bar') {
+                        ctx.translate(i * 0.5, -i * 0.5); 
+                    } else {
+                        ctx.translate(0, i); 
+                    }
+                    ctx.filter = 'brightness(0.6)'; 
+                    meta.data.forEach((el) => { el.draw(ctx); });
+                    ctx.restore();
+                }
+            });
+        }
+    };
+
+    // Custom Heatmap Centered Labels Plugin
+    const heatmapLabelsPlugin = {
+        id: 'heatmapLabelsPlugin',
+        afterDatasetsDraw(chart, args, options) {
+            if (chart.config.type !== 'matrix' || !document.getElementById('showLabelsCheck').checked) return;
+            const ctx = chart.ctx;
+            const meta = chart.getDatasetMeta(0);
+            if (!meta || !meta.data.length) return;
+            ctx.save();
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = 'bold 16px Outfit, sans-serif';
+            meta.data.forEach((el, i) => {
+                const val = chart.data.datasets[0].data[i].v;
+                ctx.fillStyle = getContrastColor(el.options.backgroundColor);
+                const props = el.tooltipPosition();
+                ctx.fillText(val, props.x, props.y); 
+            });
+            ctx.restore();
+        }
+    };
+
+    const customPyramidPlugin = {
+        id: 'customPyramidPlugin',
+        beforeDatasetsDraw(chart, args, options) {
+            if (options.active !== true) return;
+            const ctx = chart.ctx; const meta = chart.getDatasetMeta(0);
+            if (!meta || !meta.data.length) return;
+            const elements = meta.data; const cX = (chart.chartArea.left + chart.chartArea.right) / 2;
+            const dataset = chart.data.datasets[0]; const colors = dataset.customColors || []; const borderC = dataset.customBorder || '#fff';
+            ctx.save();
+            elements.forEach((el, i) => {
+                const Y_current = el.y; const height = el.height; const topY = Y_current - height / 2; const bottomY = Y_current + height / 2;
+                const actualW = el.width !== undefined ? Math.abs(el.width) : Math.abs(el.base - el.x);
+                let topW, bottomW;
+                if (i === 0) topW = 0; else { const prevEl = meta.data[i-1]; const W_prev = prevEl.width !== undefined ? Math.abs(prevEl.width) : Math.abs(prevEl.base - prevEl.x); topW = (W_prev + actualW) / 2; }
+                if (i === meta.data.length - 1) bottomW = actualW; else { const nextEl = meta.data[i+1]; const W_next = nextEl.width !== undefined ? Math.abs(nextEl.width) : Math.abs(nextEl.base - nextEl.x); bottomW = (actualW + W_next) / 2; }
+                
+                ctx.beginPath(); ctx.moveTo(cX - topW / 2, topY); ctx.lineTo(cX + topW / 2, topY); ctx.lineTo(cX + bottomW / 2, bottomY); ctx.lineTo(cX - bottomW / 2, bottomY); ctx.closePath();
+                ctx.fillStyle = colors[i] || '#fff'; ctx.fill(); ctx.strokeStyle = borderC; ctx.lineWidth = dataset.borderWidth || 2; ctx.stroke();
+            });
+            ctx.restore();
+        },
+        afterDatasetsDraw(chart, args, options) {
+            if (options.active !== true || !options.showLabels) return;
+            const ctx = chart.ctx; const meta = chart.getDatasetMeta(0);
+            if (!meta || !meta.data.length) return;
+            const cX = (chart.chartArea.left + chart.chartArea.right) / 2; const dataset = chart.data.datasets[0];
+            const labels = chart.data.labels; const values = dataset.data; const colors = dataset.customColors || [];
+            ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            meta.data.forEach((el, i) => {
+                const Y_current = el.y; const val = values[i]; const label = labels[i];
+                const actualW = el.width !== undefined ? Math.abs(el.width) : Math.abs(el.base - el.x); let topW, bottomW;
+                if (i === 0) topW = 0; else { const prevEl = meta.data[i-1]; const W_prev = prevEl.width !== undefined ? Math.abs(prevEl.width) : Math.abs(prevEl.base - prevEl.x); topW = (W_prev + actualW) / 2; }
+                if (i === meta.data.length - 1) bottomW = actualW; else { const nextEl = meta.data[i+1]; const W_next = nextEl.width !== undefined ? Math.abs(nextEl.width) : Math.abs(nextEl.base - nextEl.x); bottomW = (actualW + W_next) / 2; }
+                
+                const midW = (topW + bottomW) / 2; const safeZoneWidth = midW * 0.8; 
+                let fontSize = Math.min(22, Math.max(9, el.height * 0.35)); 
+                ctx.font = `bold ${fontSize}px Outfit, sans-serif`;
+                let maxW = Math.max(ctx.measureText(label).width, ctx.measureText(val).width);
+                if (maxW > safeZoneWidth && safeZoneWidth > 10) { fontSize = fontSize * (safeZoneWidth / maxW); ctx.font = `bold ${fontSize}px Outfit, sans-serif`; }
+                if (safeZoneWidth > 5) { ctx.fillStyle = getContrastColor(colors[i] || '#fff'); ctx.fillText(label, cX, Y_current - fontSize * 0.6); ctx.fillText(val, cX, Y_current + fontSize * 0.6); }
+            });
+            ctx.restore();
+        }
+    };
+
+    Chart.register(centerLogoPlugin, heatmapLabelsPlugin, customPyramidPlugin, pseudo3DPlugin);
+
+    // Variables System
+    let rawData = []; let baseCounters = []; let baseCategories = []; 
+    let analysisMode = 'counter'; let selectedCounters = []; let selectedCategories = []; let categoryGroups = {};      
+    let myChart = null; let currentChartType = 'bar'; let currentPageIndex = 0;
+    let categoryColorMap = {}; let counterColorMap = {}; let customTitlesMap = {}; 
+    let activeEditName = null; let activeEditType = null;
+    let manualSortOrder = []; let disabledCategories = []; let disabledGroups = []; 
+    let dialogResolve = null;
+
+    function showDialog({ title, message, type = 'alert', defaultValue = '' }) {
+        return new Promise(resolve => {
+            dialogResolve = resolve;
+            document.getElementById('dialogTitle').innerHTML = title; document.getElementById('dialogMessage').innerHTML = message;
+            const input = document.getElementById('dialogInput'); const cancelBtn = document.getElementById('dialogBtnCancel');
+            if (type === 'prompt') { input.style.display = 'block'; input.value = defaultValue; } else { input.style.display = 'none'; }
+            if (type === 'alert') cancelBtn.style.display = 'none'; else cancelBtn.style.display = 'block';
+            document.getElementById('modalOverlay').style.display = 'block'; document.getElementById('unifiedDialog').style.display = 'block';
+            if (type === 'prompt') input.focus();
+        });
+    }
+
+    function closeDialog(isOk) {
+        document.getElementById('unifiedDialog').style.display = 'none';
+        if(document.getElementById('actionModal').style.display !== 'block' && document.getElementById('watermarkModal').style.display !== 'block') { document.getElementById('modalOverlay').style.display = 'none'; }
+        if (dialogResolve) {
+            const inputVal = document.getElementById('dialogInput').value; const isPrompt = document.getElementById('dialogInput').style.display === 'block';
+            const isConfirm = document.getElementById('dialogBtnCancel').style.display === 'block' && !isPrompt;
+            if (isPrompt) dialogResolve(isOk ? inputVal : null); else if (isConfirm) dialogResolve(isOk); else dialogResolve(true);
+            dialogResolve = null;
+        }
+    }
+
+    function closeAllModals() { 
+        document.getElementById('actionModal').style.display = 'none'; document.getElementById('unifiedDialog').style.display = 'none';
+        document.getElementById('watermarkModal').style.display = 'none'; document.getElementById('modalOverlay').style.display = 'none'; 
+        if(dialogResolve) { dialogResolve(null); dialogResolve = null; }
+    }
+
+    async function createNewGroup() {
+        const name = await showDialog({ title: '<i class="fa-solid fa-folder-plus"></i> New Group', message: 'Enter a name for your custom group.', type: 'prompt', defaultValue: '' });
+        if(name && name.trim() !== "" && !categoryGroups[name]) { categoryGroups[name] = []; renderList(); }
+    }
+
+    function openEditModal(name, type) {
+        if (currentChartType === 'heatmap') { document.getElementById('colorPickerWrapper').style.display = 'none'; } 
+        else { document.getElementById('colorPickerWrapper').style.display = 'flex'; }
+        
+        activeEditName = name;
+        activeEditType = type; // 'category' or 'group'
+        document.getElementById('modalInfo').innerText = `Editing: ${name}`;
+        
+        let hex = '#ffffff';
+        if(type === 'category') hex = (analysisMode === 'counter') ? categoryColorMap[name] : counterColorMap[name];
+        else hex = (analysisMode === 'counter') ? counterColorMap[name] : categoryColorMap[name];
+        if(!hex) hex = '#ffffff';
+        
+        document.getElementById('segmentColorPicker').value = hex; 
+        document.getElementById('segmentColorPreview').style.background = hex;
+        
+        const btn = document.getElementById('toggleCategoryBtn');
+        const isDisabled = (type === 'category') ? disabledCategories.includes(name) : disabledGroups.includes(name);
+        
+        if(isDisabled) {
+            btn.innerHTML = '<i class="fa-solid fa-eye"></i> Enable Element';
+            btn.style.backgroundColor = '#4CAF50'; btn.style.color = '#fff'; btn.style.border = 'none';
+        } else {
+            btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> Disable Element';
+            btn.style.backgroundColor = 'rgba(255,107,107,0.1)'; btn.style.color = '#ff6b6b'; btn.style.border = '1px solid rgba(255,107,107,0.3)';
+        }
+
+        document.getElementById('actionModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block';
+    }
+
+    function toggleItemDisabled() {
+        if(!activeEditName) return;
+        if(activeEditType === 'category') {
+            if(disabledCategories.includes(activeEditName)) { disabledCategories = disabledCategories.filter(i => i !== activeEditName); } 
+            else { disabledCategories.push(activeEditName); }
+        } else {
+            if(disabledGroups.includes(activeEditName)) { disabledGroups = disabledGroups.filter(i => i !== activeEditName); } 
+            else { disabledGroups.push(activeEditName); }
+        }
+        closeAllModals(); updateChart();
+    }
+
+    function resetDisabledCategories() { disabledCategories = []; updateChart(); }
+    function resetDisabledGroups() { disabledGroups = []; updateChart(); }
+    
+    function updateSegmentColor(hex) {
+        document.getElementById('segmentColorPreview').style.background = hex;
+        if (activeEditName) { 
+            if(activeEditType === 'category') {
+                if(analysisMode === 'counter') categoryColorMap[activeEditName] = hex; 
+                else counterColorMap[activeEditName] = hex;
+            } else {
+                if(analysisMode === 'counter') counterColorMap[activeEditName] = hex; 
+                else categoryColorMap[activeEditName] = hex;
+            }
+            updateChart(); 
+        }
+    }
+
+    async function triggerValueChange() {
+        if (['line', 'radar', 'area', 'heatmap'].includes(currentChartType)) { await showDialog({title: '<i class="fa-solid fa-circle-exclamation"></i> Notice', message: "Inline editing is disabled in multi-comparison mode. Switch to Bar or Pie to edit.", type: 'alert'}); closeAllModals(); return; }
+
+        const activeLabel = activeEditName; const currentSelection = (analysisMode === 'counter') ? selectedCounters[currentPageIndex] : selectedCategories[currentPageIndex];
+        if(analysisMode === 'category' && currentSelection.startsWith('GROUP:')) { await showDialog({title: '<i class="fa-solid fa-circle-exclamation"></i> Notice', message: "Cannot edit direct values of a grouped summary. Ungroup to edit individual category values.", type: 'alert'}); closeAllModals(); return; }
+
+        let currentVal = 0;
+        if(analysisMode === 'counter') { const cat = rawData.find(c => c.name === activeLabel); const item = cat?.items.find(i => i.name === currentSelection); currentVal = item ? item.value : 0; } 
+        else { const cat = rawData.find(c => c.name === currentSelection); const item = cat?.items.find(i => i.name === activeLabel); currentVal = item ? item.value : 0; }
+
+        document.getElementById('actionModal').style.display = 'none'; 
+        const newVal = await showDialog({ title: '<i class="fa-solid fa-hashtag"></i> Edit Value', message: `Set new value for <b>${activeLabel}</b>:`, type: 'prompt', defaultValue: currentVal });
+
+        if (newVal !== null && newVal.trim() !== '' && !isNaN(newVal)) {
+            if(analysisMode === 'counter') { rawData.forEach(cat => { if(cat.name === activeLabel) { cat.items.forEach(item => { if(item.name === currentSelection) item.value = parseFloat(newVal); }); } }); } 
+            else { rawData.forEach(cat => { if(cat.name === currentSelection) { cat.items.forEach(item => { if(item.name === activeLabel) item.value = parseFloat(newVal); }); } }); }
+            updateChart();
+        }
+        closeAllModals();
+    }
+
+    async function getHighResCanvas() {
+        document.getElementById('chartTitleInput').style.border = 'none'; 
+        const tip = document.getElementById('interactiveTip'); const tipState = tip.style.display; tip.style.display = 'none';
+        const wmToggle = document.getElementById('watermarkToggle'); if(wmToggle.checked) document.getElementById('exportWatermark').style.border = 'none';
+
+        const quality = parseFloat(document.getElementById('exportQualitySlider').value) || 2;
+        const originalRatio = myChart.options.devicePixelRatio || window.devicePixelRatio;
+        
+        myChart.options.devicePixelRatio = originalRatio * quality;
+        myChart.update('none'); 
+
+        await new Promise(r => setTimeout(r, 150));
+        
+        const canvas = await html2canvas(document.getElementById('exportFrame'), { backgroundColor: null, scale: quality, useCORS: true, logging: false });
+        
+        myChart.options.devicePixelRatio = originalRatio;
+        myChart.update('none');
+
+        document.getElementById('chartTitleInput').style.border = ''; 
+        if(wmToggle.checked) document.getElementById('exportWatermark').style.border = '';
+        tip.style.display = tipState;
+        
+        return canvas;
+    }
+
+    async function copyToClipboard() {
+        try {
+            const canvas = await getHighResCanvas();
+            canvas.toBlob(async (blob) => { await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]); await showDialog({title: '<i class="fa-solid fa-check"></i> Success', message: "High-quality image copied to clipboard!", type: 'alert'}); });
+        } catch (err) { await showDialog({title: '<i class="fa-solid fa-triangle-exclamation"></i> Error', message: "Copy failed.", type: 'alert'}); }
+    }
+
+    async function exportToPng() {
+        const title = document.getElementById('chartTitleInput').innerText || 'chart';
+        const canvas = await getHighResCanvas();
+        const link = document.createElement('a'); link.download = `${title}.png`; link.href = canvas.toDataURL('image/png', 1.0); link.click();
+    }
+
+    function saveSettings() {
+        const config = { 
+            catColors: categoryColorMap, countColors: counterColorMap, titles: customTitlesMap, groups: categoryGroups, sortOrder: manualSortOrder, disabledCategories: disabledCategories, disabledGroups: disabledGroups,
+            theme: { 
+                bg: document.getElementById('bgColorPicker').value, titleColor: document.getElementById('titleColorPicker').value, 
+                chartType: currentChartType, pieSize: document.getElementById('pieSizeSlider').value, fillArea: document.getElementById('fillAreaCheck').checked,
+                showLabels: document.getElementById('showLabelsCheck').checked, heatmapTheme: document.getElementById('heatmapThemeSelect').value
+            } 
+        };
+        const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
+        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "chartstudio_beta.json"; a.click();
+    }
+
+    function loadSettings(event) {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const s = JSON.parse(e.target.result);
+                categoryColorMap = s.catColors || {}; counterColorMap = s.countColors || {};
+                customTitlesMap = s.titles || {}; categoryGroups = s.groups || {}; manualSortOrder = s.sortOrder || []; disabledCategories = s.disabledCategories || []; disabledGroups = s.disabledGroups || [];
+                if(s.theme) { 
+                    document.getElementById('bgColorPicker').value = s.theme.bg; document.getElementById('bgColorPreview').style.background = s.theme.bg;
+                    document.getElementById('titleColorPicker').value = s.theme.titleColor; document.getElementById('titleColorPreview').style.background = s.theme.titleColor;
+                    if(s.theme.pieSize) document.getElementById('pieSizeSlider').value = s.theme.pieSize; 
+                    if(s.theme.fillArea !== undefined) document.getElementById('fillAreaCheck').checked = s.theme.fillArea;
+                    if(s.theme.showLabels !== undefined) document.getElementById('showLabelsCheck').checked = s.theme.showLabels;
+                    if(s.theme.heatmapTheme) document.getElementById('heatmapThemeSelect').value = s.theme.heatmapTheme;
+                    setChartType(s.theme.chartType); 
+                } else { renderList(); updateChart(); }
+            } catch (err) { await showDialog({title: '<i class="fa-solid fa-triangle-exclamation"></i> Error', message: "Failed to load layout file.", type: 'alert'}); }
+        };
+        reader.readAsText(event.target.files[0]);
+    }
+
+    function handleTitleInput(val) {
+        if (['line', 'radar', 'area', 'heatmap'].includes(currentChartType)) customTitlesMap[currentChartType + '_comparison_' + analysisMode] = val;
+        else { const currentKey = analysisMode + '_' + ((analysisMode === 'counter') ? selectedCounters[currentPageIndex] : selectedCategories[currentPageIndex]); customTitlesMap[currentKey] = val; }
+    }
+
+    function updateTitleColor(val) { document.getElementById('chartTitleInput').style.color = val; }
+
+    async function importFile(event) {
+        const files = event.target.files;
+        if(!files || files.length === 0) return;
+
+        document.getElementById('sidebarOptions').style.display = 'flex';
+        document.getElementById('unloadBtn').style.display = 'block';
+
+        for(let file of files) {
+            const text = await file.text();
+            try {
+                const parsed = JSON.parse(text);
+                mergeData(parsed);
+            } catch(e) { 
+                await showDialog({title: '<i class="fa-solid fa-triangle-exclamation"></i> Error', message: `Invalid JSON format in file: ${file.name}`, type: 'alert'});
+            }
+        }
+
+        baseCategories = rawData.map(c => c.name).sort();
+        const countersSet = new Set(); rawData.forEach(cat => cat.items?.forEach(i => countersSet.add(i.name)));
+        baseCounters = Array.from(countersSet).sort();
+        manualSortOrder = []; disabledCategories = []; disabledGroups = [];
+        
+        document.getElementById("welcomeTitle").innerText = "Workspace Ready"; 
+        renderList(); updateChart();
+    }
+
+    function mergeData(newData) {
+        if (!Array.isArray(newData)) return;
+        newData.forEach(newCat => {
+            let existingCat = rawData.find(c => c.name === newCat.name);
+            if(existingCat) {
+                newCat.items.forEach(newItem => {
+                    let existingItem = existingCat.items.find(i => i.name === newItem.name);
+                    if(existingItem) { existingItem.value += newItem.value; } 
+                    else { existingCat.items.push(newItem); }
+                });
+            } else {
+                rawData.push(newCat);
+            }
+        });
+    }
+
+    async function unloadData() {
+        const confirmed = await showDialog({title: '<i class="fa-solid fa-triangle-exclamation"></i> Unload Data', message: 'Are you sure you want to remove all imported data?', type: 'confirm'});
+        if (confirmed) {
+            rawData = []; baseCounters = []; baseCategories = []; categoryGroups = {}; manualSortOrder = []; disabledCategories = []; disabledGroups = [];
+            selectedCounters = []; selectedCategories = [];
+            document.getElementById('sidebarOptions').style.display = 'none';
+            document.getElementById('unloadBtn').style.display = 'none';
+            document.getElementById('actionButtons').style.display = 'none';
+            document.getElementById('exportFrame').style.display = 'none';
+            document.getElementById('orderPanel').style.display = 'none';
+            document.getElementById('settingsWrapper').style.display = 'none';
+            document.getElementById('emptyMsg').style.display = 'flex';
+            if (myChart) { myChart.destroy(); myChart = null; }
+            
+            clearTimeout(typingTimeout); isDeleting = false; typeIndex = 0; charIndex = 0;
+            document.getElementById("welcomeTitle").innerText = ""; typeWriter();
+            document.getElementById('fileInput').value = '';
+        }
+    }
+
+    function setAnalysisMode(mode) {
+        analysisMode = mode;
+        document.getElementById('mode-counter').classList.toggle('active', mode === 'counter');
+        document.getElementById('mode-category').classList.toggle('active', mode === 'category');
+        document.getElementById('groupControls').style.display = mode === 'category' ? 'flex' : 'none';
+        currentPageIndex = 0; manualSortOrder = []; 
+        renderList(); populateDropdown(); updateChart();
+    }
+
+    async function deleteGroup(name) {
+        const confirmed = await showDialog({ title: '<i class="fa-solid fa-trash"></i> Delete Group', message: `Delete group "<b>${name}</b>"?<br><br>All categories inside will be safely moved back to the main list.`, type: 'confirm' });
+        if(confirmed) { selectedCategories = selectedCategories.filter(m => m !== `GROUP:${name}`); delete categoryGroups[name]; renderList(); populateDropdown(); updateChart(); }
+    }
+
+    function dragStart(ev, itemName) { ev.dataTransfer.setData("text/plain", itemName); ev.dataTransfer.effectAllowed = "move"; ev.stopPropagation(); }
+    function allowDrop(ev) { ev.preventDefault(); ev.stopPropagation(); ev.dataTransfer.dropEffect = "move"; ev.currentTarget.classList.add('drag-over'); }
+    function dragLeave(ev) { ev.stopPropagation(); if (ev.currentTarget.contains(ev.relatedTarget)) return; ev.currentTarget.classList.remove('drag-over'); }
+    function drop(ev, targetGroup) {
+        ev.preventDefault(); ev.stopPropagation(); ev.currentTarget.classList.remove('drag-over');
+        if(analysisMode !== 'category') return;
+        const itemName = ev.dataTransfer.getData("text/plain"); if(!itemName) return;
+        Object.keys(categoryGroups).forEach(g => { categoryGroups[g] = categoryGroups[g].filter(m => m !== itemName); });
+        if (targetGroup !== 'root') { if(!categoryGroups[targetGroup]) categoryGroups[targetGroup] = []; categoryGroups[targetGroup].push(itemName); selectedCategories = selectedCategories.filter(m => m !== itemName); }
+        renderList(); populateDropdown(); updateChart();
+    }
+
+    function renderList() {
+        const list = document.getElementById('metricsList'); list.innerHTML = "";
+        if(analysisMode === 'counter') { baseCounters.forEach(c => list.appendChild(createDOMItem(c, selectedCounters.includes(c)))); } 
+        else {
+            Object.keys(categoryGroups).sort().forEach(groupName => {
+                const groupDiv = document.createElement('div'); groupDiv.className = 'metric-group';
+                const groupID = `GROUP:${groupName}`; const isChecked = selectedCategories.includes(groupID) ? 'checked' : '';
+                groupDiv.innerHTML = `<div class="group-header"><label><input type="checkbox" value="${groupID}" onchange="toggleSelection(this, '${groupID}')" ${isChecked}> <i class="fa-solid fa-folder"></i> ${groupName}</label><button class="group-delete" onclick="deleteGroup('${groupName}')" title="Delete Group"><i class="fa-solid fa-trash"></i></button></div><div class="group-items drop-zone" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${groupName}')">${categoryGroups[groupName].length === 0 ? '<div style="font-size:11px; opacity:0.5; padding:4px;">Drag categories here...</div>' : ''}</div>`;
+                const itemsContainer = groupDiv.querySelector('.group-items'); categoryGroups[groupName].forEach(m => itemsContainer.appendChild(createDOMItem(m, selectedCategories.includes(m), true))); list.appendChild(groupDiv);
+            });
+            const groupedItems = Object.values(categoryGroups).flat(); const unassigned = baseCategories.filter(m => !groupedItems.includes(m)); unassigned.forEach(m => list.appendChild(createDOMItem(m, selectedCategories.includes(m), true)));
+        }
+    }
+
+    function createDOMItem(name, isChecked, draggable = false) {
+        const div = document.createElement('div'); div.className = 'metric-item';
+        if(draggable) { div.draggable = true; div.ondragstart = (e) => dragStart(e, name); }
+        div.innerHTML = `${draggable ? '<i class="fa-solid fa-grip-vertical drag-handle"></i> ' : ''}<input style="pointer-events:auto;" type="checkbox" value="${name}" onchange="toggleSelection(this, '${name}')" ${isChecked ? 'checked' : ''}><span style="pointer-events:none;">${name}</span>`;
+        return div;
+    }
+
+    function toggleSelection(checkbox, name) {
+        let arr = (analysisMode === 'counter') ? selectedCounters : selectedCategories;
+        if (checkbox.checked) { arr.push(name); } else { arr = arr.filter(m => m !== name); }
+        arr.sort();
+        if(analysisMode === 'counter') selectedCounters = arr; else selectedCategories = arr;
+        currentPageIndex = 0; populateDropdown(); updateChart();
+    }
+
+    function populateDropdown() {
+        const dd = document.getElementById('pageDropdown'); dd.innerHTML = '';
+        const arr = (analysisMode === 'counter') ? selectedCounters : selectedCategories;
+        arr.forEach((item, index) => { const opt = document.createElement('option'); opt.value = index; opt.text = item.replace('GROUP:', 'Group: '); dd.appendChild(opt); });
+    }
+
+    function setChartType(type) {
+        currentChartType = type;
+        document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('btn-' + type).classList.add('active');
+        
+        const pieContainer = document.getElementById('pieSizeContainer');
+        const fillContainer = document.getElementById('fillToggleContainer');
+        const heatmapContainer = document.getElementById('heatmapThemeContainer');
+        const labelsContainer = document.getElementById('datalabelsToggleContainer');
+        const logoContainer = document.getElementById('centerLogoContainer');
+        const matColorBtn = document.getElementById('materialColorBtnWrapper');
+        const toggle3d = document.getElementById('3dToggleContainer');
+        const pieLabel = document.getElementById('pieSizeLabel');
+        
+        if (['pie', 'doughnut', 'pyramid', 'radar', 'gauge'].includes(type)) {
+            pieContainer.style.display = 'block';
+            if(type === 'doughnut') pieLabel.innerText = 'Donut Size';
+            else if(type === 'pyramid') pieLabel.innerText = 'Pyramid Size';
+            else if(type === 'radar') pieLabel.innerText = 'Radar Size';
+            else if(type === 'gauge') pieLabel.innerText = 'Gauge Size';
+            else pieLabel.innerText = 'Pie Size';
+            updatePieSize(document.getElementById('pieSizeSlider').value);
+        } else {
+            pieContainer.style.display = 'none'; updatePieSize(100);
+        }
+
+        fillContainer.style.display = (['line', 'radar'].includes(type)) ? 'block' : 'none';
+        heatmapContainer.style.display = (type === 'heatmap') ? 'block' : 'none';
+        labelsContainer.style.display = (['line', 'area', 'radar'].includes(type)) ? 'none' : 'block';
+        logoContainer.style.display = (['doughnut', 'gauge'].includes(type)) ? 'block' : 'none';
+        matColorBtn.style.display = (type === 'heatmap') ? 'none' : 'block';
+        toggle3d.style.display = (['pie', 'doughnut', 'bar'].includes(type)) ? 'block' : 'none';
+
+        document.getElementById('paginationContainer').style.display = (['line', 'radar', 'area', 'heatmap'].includes(type)) ? 'none' : 'block';
+        updateChart();
+    }
+
+    function updatePieSize(val) {
+        const sizer = document.getElementById('canvasSizer');
+        if (['pie', 'doughnut', 'pyramid', 'radar', 'gauge'].includes(currentChartType)) {
+            sizer.style.width = val + '%'; sizer.style.height = val + '%';
+        } else {
+            sizer.style.width = '100%'; sizer.style.height = '100%';
+        }
+        if (myChart) myChart.resize(); 
+    }
+
+    function changePage(step) { currentPageIndex += step; updateChart(); }
+    function jumpToPage(val) { currentPageIndex = parseInt(val); updateChart(); }
+
+    function resetSortOrder() { manualSortOrder = []; updateChart(); }
+
+    function renderOrderPills(currentLabels) {
+        const container = document.getElementById('orderPills'); const orderPanel = document.getElementById('orderPanel');
+        container.innerHTML = '';
+        if(!currentLabels || currentLabels.length === 0) { orderPanel.style.display = 'none'; return; }
+        orderPanel.style.display = 'block';
+
+        let allLabels = (analysisMode === 'counter') ? [...baseCategories] : [...baseCounters];
+        if(manualSortOrder.length === 0 || manualSortOrder.length !== allLabels.length) {
+            allLabels.forEach(l => { if(!manualSortOrder.includes(l)) manualSortOrder.push(l); });
+            manualSortOrder = manualSortOrder.filter(l => allLabels.includes(l));
+        }
+
+        currentLabels.forEach(label => {
+            const pill = document.createElement('div'); pill.className = 'sort-pill'; pill.draggable = true;
+            pill.innerHTML = `<i class="fa-solid fa-grip-vertical"></i> ${label}`;
+            pill.ondragstart = (e) => e.dataTransfer.setData('text/plain', label);
+            pill.ondragover = (e) => { e.preventDefault(); pill.classList.add('drag-over'); };
+            pill.ondragleave = () => pill.classList.remove('drag-over');
+            pill.ondrop = (e) => {
+                e.preventDefault(); pill.classList.remove('drag-over');
+                const draggedLabel = e.dataTransfer.getData('text/plain'); if(draggedLabel === label) return;
+                const fromIdx = manualSortOrder.indexOf(draggedLabel); const toIdx = manualSortOrder.indexOf(label);
+                manualSortOrder.splice(fromIdx, 1); manualSortOrder.splice(toIdx, 0, draggedLabel);
+                updateChart(); 
+            };
+            container.appendChild(pill);
+        });
+    }
+
+    function applyManualSortOrder(arr) {
+        if(manualSortOrder.length === 0) return arr;
+        return arr.sort((a, b) => { let idxA = manualSortOrder.indexOf(a); let idxB = manualSortOrder.indexOf(b); if(idxA === -1) idxA = 999; if(idxB === -1) idxB = 999; return idxA - idxB; });
+    }
+
+    function renderCategorySettings(allCategories, allGroups) {
+        const catContainer = document.getElementById('categoryPills'); 
+        const grpContainer = document.getElementById('groupPills'); 
+        const wrapper = document.getElementById('settingsWrapper');
+        
+        catContainer.innerHTML = ''; grpContainer.innerHTML = '';
+        
+        if(!allCategories || allCategories.length === 0) { wrapper.style.display = 'none'; return; }
+        wrapper.style.display = 'flex';
+        
+        document.getElementById('categorySettingsPanel').style.display = 'block';
+        document.getElementById('groupSettingsPanel').style.display = (['line', 'radar', 'area', 'heatmap'].includes(currentChartType)) ? 'block' : 'none';
+
+        allCategories.forEach(label => {
+            const pill = document.createElement('div'); 
+            const isDisabled = disabledCategories.includes(label);
+            pill.className = 'cat-pill' + (isDisabled ? ' disabled-pill' : ''); 
+            pill.innerHTML = isDisabled ? `<i class="fa-solid fa-eye-slash"></i> ${label}` : `<i class="fa-solid fa-eye"></i> ${label}`;
+            pill.onclick = () => openEditModal(label, 'category');
+            catContainer.appendChild(pill);
+        });
+
+        allGroups.forEach(label => {
+            const baseLabel = label.replace('GROUP:', '');
+            const pill = document.createElement('div'); 
+            const isDisabled = disabledGroups.includes(label);
+            pill.className = 'cat-pill' + (isDisabled ? ' disabled-pill' : ''); 
+            pill.innerHTML = isDisabled ? `<i class="fa-solid fa-eye-slash"></i> ${baseLabel}` : `<i class="fa-solid fa-eye"></i> ${baseLabel}`;
+            pill.onclick = () => openEditModal(label, 'group');
+            grpContainer.appendChild(pill);
+        });
+    }
+
+    function updateChart() {
+        const canvas = document.getElementById('reviewChart'); const ctx = canvas.getContext('2d');
+        const emptyMsg = document.getElementById('emptyMsg'); const actionButtons = document.getElementById('actionButtons');
+        const titleInput = document.getElementById('chartTitleInput'); const exportFrame = document.getElementById('exportFrame');
+        const tip = document.getElementById('interactiveTip');
+        
+        const bgHex = document.getElementById('bgColorPicker').value; const frameTextColor = getContrastColor(bgHex);
+        const gridColor = (frameTextColor === '#ffffff') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+        const borderColor = (frameTextColor === '#ffffff') ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)';
+        const showLabels = document.getElementById('showLabelsCheck').checked;
+
+        exportFrame.style.background = bgHex; 
+        if (myChart) myChart.destroy();
+
+        const activeList = (analysisMode === 'counter') ? selectedCounters : selectedCategories;
+
+        if (activeList.length === 0) {
+            emptyMsg.style.display = 'flex'; actionButtons.style.display = 'none'; exportFrame.style.display = 'none'; 
+            document.getElementById('orderPanel').style.display = 'none'; document.getElementById('settingsWrapper').style.display = 'none';
+            if (rawData.length > 0) { document.getElementById('welcomeIcon').innerHTML = '<i class="fa-solid fa-clipboard-list"></i>'; }
+            return;
+        }
+
+        exportFrame.style.display = 'flex'; emptyMsg.style.display = 'none'; actionButtons.style.display = 'flex'; titleInput.style.display = 'block';
+
+        let labels = []; let datasets = []; let chartOptions = {}; let finalChartType = currentChartType;
+        
+        let allCategories = (analysisMode === 'counter') ? [...baseCategories] : [...baseCounters];
+        let allGroups = activeList;
+        renderCategorySettings(allCategories, allGroups);
+
+        if (currentChartType === 'heatmap') {
+            finalChartType = 'matrix';
+            titleInput.innerText = customTitlesMap['heatmap_comparison_' + analysisMode] || 'Heatmap Analysis';
+            titleInput.style.color = document.getElementById('titleColorPicker').value;
+            tip.style.display = 'none';
+
+            labels = allCategories.filter(l => !disabledCategories.includes(l));
+            labels = applyManualSortOrder(labels);
+            const enabledDatasets = activeList.filter(d => !disabledGroups.includes(d));
+
+            let matrixData = []; let minVal = Infinity, maxVal = -Infinity;
+
+            enabledDatasets.forEach((selection) => {
+                const isGroup = selection.startsWith('GROUP:'); const baseName = isGroup ? selection.replace('GROUP:', '') : selection;
+                labels.forEach(colLabel => {
+                    let sum = 0;
+                    if (analysisMode === 'counter') {
+                        const cat = rawData.find(c => c.name === colLabel); const item = cat?.items.find(i => i.name === baseName); sum = item ? item.value : 0;
+                    } else {
+                        rawData.forEach(cat => {
+                            const matchesGroup = isGroup && categoryGroups[baseName]?.includes(cat.name); const matchesCategory = !isGroup && cat.name === baseName;
+                            if (matchesGroup || matchesCategory) { const item = cat.items.find(i => i.name === colLabel); if(item) sum += item.value; }
+                        });
+                    }
+                    if(sum < minVal) minVal = sum; if(sum > maxVal) maxVal = sum;
+                    matrixData.push({ x: colLabel, y: baseName, v: sum });
+                });
+            });
+
+            renderOrderPills(labels); 
+            const theme = document.getElementById('heatmapThemeSelect').value;
+
+            datasets.push({
+                label: 'Heatmap Data', data: matrixData,
+                datalabels: { display: false }, 
+                backgroundColor: (context) => {
+                    const value = context.dataset.data[context.dataIndex].v; const ratio = maxVal === minVal ? 1 : (value - minVal) / (maxVal - minVal);
+                    let hue, sat, light;
+                    if(theme === 'fire') { hue = ratio * 60; sat = 100; light = 50; } else if(theme === 'ocean') { hue = 220 - ratio * 40; sat = 80; light = 50; } else if(theme === 'emerald') { hue = 160 - ratio * 60; sat = 80; light = 40; } else { hue = (1 - ratio) * 240 + ratio * 40; sat = 80; light = 60; }
+                    return hslaToRgba(hue, sat, light, 0.9);
+                },
+                borderColor: borderColor, borderWidth: 1, width: ({chart}) => (chart.chartArea || {}).width / labels.length - 2, height: ({chart}) => (chart.chartArea || {}).height / enabledDatasets.length - 2
+            });
+
+            chartOptions = {
+                responsive: true, maintainAspectRatio: false, layout: { padding: { top: 20, bottom: 25, left: 25, right: 25 } }, clip: false, 
+                plugins: {
+                    title: { display: false }, legend: { display: false }, 
+                    datalabels: { display: false }, 
+                    tooltip: { callbacks: { title: () => '', label: (ctx) => { const d = ctx.dataset.data[ctx.dataIndex]; return `${d.y} -> ${d.x}: ${d.v}`; } } }
+                },
+                scales: {
+                    x: { type: 'category', labels: labels, position: 'bottom', offset: true, ticks: { padding: 10, color: frameTextColor, font: { family: 'Outfit', size: 14 } }, grid: { display: false } },
+                    y: { type: 'category', labels: enabledDatasets.map(s => s.replace('GROUP:', '')), offset: true, ticks: { color: frameTextColor, font: { family: 'Outfit', size: 14 } }, grid: { display: false } }
+                }
+            };
+        }
+        else if (['line', 'radar', 'area'].includes(currentChartType)) {
+            finalChartType = currentChartType === 'area' ? 'line' : currentChartType;
+            titleInput.innerText = customTitlesMap[currentChartType + '_comparison_' + analysisMode] || 'Comparison Overview';
+            titleInput.style.color = document.getElementById('titleColorPicker').value;
+            tip.style.display = 'block'; tip.innerHTML = '<i class="fa-solid fa-lightbulb"></i> Tip: Click on a dataset border to change its color!';
+            
+            const isFilled = currentChartType === 'area' ? true : document.getElementById('fillAreaCheck').checked;
+            
+            labels = allCategories.filter(l => !disabledCategories.includes(l));
+            labels = applyManualSortOrder(labels); renderOrderPills(labels); 
+            const enabledDatasets = activeList.filter(d => !disabledGroups.includes(d));
+            
+            enabledDatasets.forEach((selection) => {
+                const isGroup = selection.startsWith('GROUP:'); const baseName = isGroup ? selection.replace('GROUP:', '') : selection;
+                let dataPoints = [];
+                if (analysisMode === 'counter') {
+                    labels.forEach(catName => { const cat = rawData.find(c => c.name === catName); const item = cat?.items.find(i => i.name === baseName); dataPoints.push(item ? item.value : 0); });
+                } else {
+                    labels.forEach(counterName => {
+                        let sum = 0; rawData.forEach(cat => { const matchesGroup = isGroup && categoryGroups[baseName]?.includes(cat.name); const matchesCategory = !isGroup && cat.name === baseName; if (matchesGroup || matchesCategory) { const item = cat.items.find(i => i.name === counterName); if(item) sum += item.value; } });
+                        dataPoints.push(sum);
+                    });
+                }
+                let colorHex = (analysisMode === 'counter') ? (counterColorMap[baseName] || (counterColorMap[baseName] = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'))) : (categoryColorMap[baseName] || (categoryColorMap[baseName] = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')));
+
+                datasets.push({
+                    label: baseName, data: dataPoints, borderColor: colorHex, 
+                    backgroundColor: isFilled ? (context) => {
+                        if(!context.chart.chartArea) return colorHex + '80';
+                        const chartArea = context.chart.chartArea;
+                        const gradient = context.chart.ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                        gradient.addColorStop(0, colorHex + '90'); gradient.addColorStop(1, colorHex + '00');
+                        return gradient;
+                    } : 'transparent', 
+                    borderWidth: currentChartType === 'radar' ? 2 : 3, pointBackgroundColor: colorHex, pointRadius: currentChartType === 'area' ? 0 : (currentChartType === 'radar' ? 4 : 6), pointHoverRadius: 8, tension: currentChartType === 'area' ? 0.4 : 0.3, fill: isFilled
+                });
+            });
+
+            let scalesConfig = {};
+            if (['line', 'area'].includes(currentChartType)) { scalesConfig = { y: { stacked: currentChartType === 'area', beginAtZero: true, grid: { color: gridColor }, ticks: { color: frameTextColor, font: { family: 'Outfit', size: 14 } } }, x: { grid: { color: gridColor }, ticks: { color: frameTextColor, font: { family: 'Outfit', size: 14 } } } }; } 
+            else { scalesConfig = { r: { angleLines: { color: gridColor }, grid: { color: gridColor }, pointLabels: { color: frameTextColor, font: { family: 'Outfit', size: 14 } }, ticks: { display: false, backdropColor: 'transparent' } } }; }
+
+            chartOptions = {
+                responsive: true, maintainAspectRatio: false, layout: { padding: 25 },
+                onClick: (e, elements) => { if (elements.length > 0) openEditModal(datasets[elements[0].datasetIndex].label, 'group'); },
+                plugins: {
+                    title: { display: false },
+                    legend: { 
+                        display: true, position: 'bottom', labels: { color: frameTextColor, font: { family: 'Outfit', size: 14 } },
+                        onClick: function() {} // Disables default hide-dataset action
+                    },
+                    datalabels: { display: false } 
+                },
+                scales: scalesConfig
+            };
+        } 
+        else {
+            const currentSelection = activeList[currentPageIndex]; const isGroup = currentSelection.startsWith('GROUP:'); const baseName = isGroup ? currentSelection.replace('GROUP:', '') : currentSelection;
+            const customTitleKey = analysisMode + '_' + currentSelection;
+            titleInput.innerText = customTitlesMap[customTitleKey] || baseName; titleInput.style.color = document.getElementById('titleColorPicker').value;
+            
+            document.getElementById('pageDropdown').value = currentPageIndex; document.getElementById('pageIndicator').innerText = `${currentPageIndex + 1} / ${activeList.length}`;
+            document.getElementById('prevBtn').disabled = (currentPageIndex === 0); document.getElementById('nextBtn').disabled = (currentPageIndex === activeList.length - 1);
+
+            let values = [], colors = [];
+            
+            if (analysisMode === 'counter') {
+                rawData.forEach((cat) => {
+                    if (disabledCategories.includes(cat.name)) return;
+                    const item = cat.items.find(i => i.name === baseName);
+                    if (item && item.value > 0) { labels.push(cat.name); values.push(item.value); if (!categoryColorMap[cat.name]) categoryColorMap[cat.name] = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'); colors.push(categoryColorMap[cat.name]); }
+                });
+            } else {
+                baseCounters.forEach(counterName => {
+                    if (disabledCategories.includes(counterName)) return;
+                    let sum = 0; rawData.forEach(cat => { const matchesGroup = isGroup && categoryGroups[baseName]?.includes(cat.name); const matchesCategory = !isGroup && cat.name === baseName; if (matchesGroup || matchesCategory) { const item = cat.items.find(i => i.name === counterName); if(item) sum += item.value; } });
+                    if(sum > 0) { labels.push(counterName); values.push(sum); if (!counterColorMap[counterName]) counterColorMap[counterName] = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'); colors.push(counterColorMap[counterName]); }
+                });
+            }
+
+            if (manualSortOrder.length > 0 && currentChartType !== 'pyramid') {
+                const combined = labels.map((l, i) => ({ label: l, val: values[i], col: colors[i] }));
+                combined.sort((a, b) => { let idxA = manualSortOrder.indexOf(a.label); let idxB = manualSortOrder.indexOf(b.label); if(idxA === -1) idxA = 999; if(idxB === -1) idxB = 999; return idxA - idxB; });
+                labels = combined.map(c => c.label); values = combined.map(c => c.val); colors = combined.map(c => c.col);
+            }
+            renderOrderPills(labels); 
+
+            tip.style.display = labels.length > 0 ? 'block' : 'none';
+            tip.innerHTML = '<i class="fa-solid fa-lightbulb"></i> Tip: Click a segment to edit!';
+
+            if (currentChartType === 'pyramid') {
+                finalChartType = 'bar'; document.getElementById('orderPanel').style.display = 'none'; 
+                let combined = labels.map((l, i) => ({ label: l, val: values[i], col: colors[i] })); combined.sort((a, b) => a.val - b.val); 
+                labels = combined.map(c => c.label); values = combined.map(c => c.val); colors = combined.map(c => c.col);
+                datasets = [{ data: values, backgroundColor: 'transparent', borderColor: 'transparent', hoverBackgroundColor: 'transparent', borderWidth: 2, customColors: colors, customBorder: borderColor, categoryPercentage: 1.0, barPercentage: 1.0 }];
+
+                chartOptions = {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false, layout: { padding: 25 },
+                    onClick: (e, elements, chart) => { const yClick = e.y; const meta = chart.getDatasetMeta(0); for (let i = 0; i < meta.data.length; i++) { const el = meta.data[i]; if (yClick >= el.y - el.height / 2 && yClick <= el.y + el.height / 2) { openEditModal(labels[i], 'category'); return; } } },
+                    plugins: {
+                        customPyramidPlugin: { active: true, showLabels: showLabels }, title: { display: false }, legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { labelColor: function(context) { return { borderColor: '#fff', backgroundColor: colors[context.dataIndex] }; } } }
+                    }, scales: { x: { display: false, min: 0 }, y: { display: false, grid: { display: false } } }
+                };
+            } else {
+                if (currentChartType === 'gauge') finalChartType = 'doughnut';
+                datasets = [{ data: values, backgroundColor: colors, borderColor: borderColor, borderWidth: 2, borderRadius: currentChartType === 'bar' ? 12 : 0 }];
+
+                chartOptions = {
+                    responsive: true, maintainAspectRatio: false, layout: { padding: 25 }, 
+                    onClick: (e, elements) => { if (elements.length > 0) openEditModal(labels[elements[0].index], 'category'); },
+                    plugins: {
+                        title: { display: false }, 
+                        legend: { 
+                            display: ['pie', 'doughnut', 'gauge'].includes(currentChartType), position: 'bottom', labels: { color: frameTextColor, font: { family: 'Outfit', size: 14 } },
+                            onClick: function() {} 
+                        },
+                        datalabels: { 
+                            display: showLabels, color: (context) => { if (['pie', 'doughnut', 'gauge'].includes(currentChartType)) return getContrastColor(context.dataset.backgroundColor[context.dataIndex]); else return frameTextColor; }, 
+                            font: (context) => { const size = (['pie', 'doughnut', 'gauge'].includes(currentChartType)) ? Math.min(22, Math.max(14, context.chart.height / 25)) : 16; return { weight: 'bold', family: 'Outfit', size: size }; }, 
+                            anchor: currentChartType === 'bar' ? 'end' : 'center', align: currentChartType === 'bar' ? 'top' : 'center', formatter: val => val
+                        }
+                    },
+                    scales: currentChartType === 'bar' ? { y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: frameTextColor, font: { family: 'Outfit', size: 14 } } }, x: { grid: { color: gridColor }, ticks: { color: frameTextColor, font: { family: 'Outfit', size: 14 } } } } : {}
+                };
+                if (currentChartType === 'gauge') { chartOptions.circumference = 180; chartOptions.rotation = -90; }
+            }
+        }
+
+        myChart = new Chart(ctx, { type: finalChartType, data: { labels: labels, datasets: datasets }, plugins: [ChartDataLabels, centerLogoPlugin, heatmapLabelsPlugin, customPyramidPlugin, pseudo3DPlugin], options: chartOptions });
+        updatePreviewImage();
+    }
+</script>
+
+</body>
+</html>
