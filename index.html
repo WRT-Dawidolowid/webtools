@@ -54,8 +54,14 @@
             font-weight: 400; 
         }
 
-        /* Top Right Changelog Button */
-        .btn-changelog {
+        /* Header Actions Layout */
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-header {
             background: rgba(0, 0, 0, 0.25);
             border: 1px solid var(--glass-border);
             color: #ffd89b;
@@ -72,7 +78,7 @@
             backdrop-filter: blur(10px);
         }
 
-        .btn-changelog:hover {
+        .btn-header:hover {
             background: rgba(255, 216, 155, 0.15);
             border-color: #ffd89b;
             color: white;
@@ -132,6 +138,11 @@
         .badge-cs { background: rgba(185, 16, 120, 0.2); color: #d19cbc; border: 1px solid rgba(202, 121, 159, 0.3); }
         .badge-beta { background: rgba(255, 216, 155, 0.15); color: #ffd89b; border: 1px solid rgba(255, 216, 155, 0.3); }
         .badge-stable { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        
+        /* Mobile Specific Badges (Hidden on PC by default) */
+        .mobile-badge { display: none; }
+        .badge-no-mobile { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-partial { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
 
         /* Group Styling (For Suites) */
         .tool-group {
@@ -229,6 +240,12 @@
         .modal-btn { display: flex; justify-content: center; align-items: center; gap: 8px; flex: 1; padding: 14px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; cursor: pointer; font-weight: 600; transition: 0.2s; width: 100%;}
         .modal-btn:hover { background: var(--accent); }
 
+        /* Settings Modal Specifics */
+        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; text-align: left; }
+        .setting-label { font-size: 0.95em; color: white; font-weight: 500; display: flex; flex-direction: column; gap: 4px; }
+        .setting-sub { font-size: 0.75em; color: rgba(255,255,255,0.5); font-weight: 400;}
+        input[type="checkbox"] { width: 18px; height: 18px; accent-color: #ffd89b; cursor: pointer; }
+
         /* --- CHANGELOG MODAL SPECIFIC STYLES --- */
         .changelog-modal { width: 650px; max-width: 90%; text-align: left; padding: 0; overflow: hidden; }
         .changelog-header { padding: 25px 30px 15px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; }
@@ -256,6 +273,31 @@
         .changelog-body::-webkit-scrollbar-thumb:hover { background: #ffd89b; }
 
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* =========================================================
+           📱 MOBILE RESPONSIVENESS ADDITIONS
+           ========================================================= */
+        @media (max-width: 768px) {
+            body { padding: 20px 10px; }
+            .container { padding: 25px 15px; border-radius: 20px; }
+            header { flex-direction: column; gap: 15px; margin-bottom: 30px; }
+            header h1 { font-size: 2.2em; }
+            header p[style*="margin: -40px 0 0 255px"] { margin: 5px 0 15px 0 !important; }
+            .header-actions { width: 100%; flex-direction: column; }
+            .btn-header { width: 100%; justify-content: center; }
+            .tools-grid { grid-template-columns: 1fr; }
+            .tool-group { grid-template-columns: 1fr; padding: 35px 15px 15px 15px; }
+            .group-label { left: 15px; font-size: 0.75em; }
+            .tool-card[style*="grid-column"] { grid-column: span 1 !important; }
+            .modal-box { width: 90%; max-width: 320px; padding: 25px 20px; }
+            .changelog-modal { width: 95%; max-width: none; }
+            .changelog-header { padding: 20px 20px 15px; }
+            .changelog-body { padding: 15px 20px; }
+            .changelog-footer { padding: 15px 20px; }
+            
+            /* Show Mobile Badges only on phone */
+            .mobile-badge { display: inline-block; }
+        }
     </style>
 </head>
 <body>
@@ -286,6 +328,58 @@
         </div>
     </div>
 
+    <!-- Mobile Warning Dialog -->
+    <div id="mobileWarningDialog" class="modal-box" style="z-index: 2000;">
+        <h3 style="margin-top:0; color:#fbbf24; font-size: 1.5em;"><i class="fa-solid fa-mobile-screen"></i> Warning</h3>
+        <p style="font-size: 0.9em; opacity: 0.8; margin-bottom: 20px;">This tool is not fully optimized for mobile devices and may not function properly. Proceed anyway?</p>
+        <div style="display:flex; gap:10px; justify-content: center;">
+            <button class="modal-btn" onclick="closeAllModals()" style="background: transparent;">Cancel</button>
+            <button class="modal-btn" onclick="proceedToMobileUrl()" style="background: rgba(245, 158, 11, 0.2); border-color: #fbbf24;">Proceed</button>
+        </div>
+    </div>
+
+    <!-- Mobile Block Dialog -->
+    <div id="mobileBlockDialog" class="modal-box" style="z-index: 2000;">
+        <h3 style="margin-top:0; color:#ff6b6b; font-size: 1.5em;"><i class="fa-solid fa-ban"></i> Blocked</h3>
+        <p style="font-size: 0.9em; opacity: 0.8; margin-bottom: 20px;">This tool requires a PC. You have disabled warnings in Settings, preventing access. Turn on "Skip compatibility checks" to force open.</p>
+        <div style="display:flex; gap:10px; justify-content: center;">
+            <button class="modal-btn" onclick="closeAllModals()">Understood</button>
+        </div>
+    </div>
+
+    <!-- Settings Dialog -->
+    <div id="settingsDialog" class="modal-box" style="z-index: 2000;">
+        <h3 style="margin-top:0; color:#ffd89b; font-size: 1.5em; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; margin-bottom: 20px;">
+            <i class="fa-solid fa-gear"></i> Settings
+        </h3>
+        
+        <div class="setting-row">
+            <div class="setting-label">
+                Hide Incompatible Tools
+                <span class="setting-sub">Hides tools on phone that are for PC only.</span>
+            </div>
+            <input type="checkbox" id="setHideIncompatible">
+        </div>
+        
+        <div class="setting-row">
+            <div class="setting-label">
+                Show Mobile Warning
+                <span class="setting-sub">Warns before opening unoptimized tools.</span>
+            </div>
+            <input type="checkbox" id="setShowWarning">
+        </div>
+        
+        <div class="setting-row" style="margin-bottom: 30px;">
+            <div class="setting-label">
+                Skip Compatibility Checks
+                <span class="setting-sub">Forces everything to open without checking.</span>
+            </div>
+            <input type="checkbox" id="setSkipChecks">
+        </div>
+
+        <button class="modal-btn" onclick="saveSettings()"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+    </div>
+
     <!-- Changelog Dialog -->
     <div id="changelogDialog" class="modal-box changelog-modal" style="z-index: 2000;">
         <div class="changelog-header">
@@ -308,10 +402,14 @@
                 <p style="margin: 10px 0 0 0;">Your collection of great tools, designed to be useful or useless, but still a great collection!</p>
             </div>
             
-            <!-- Fixed the Icon here (swapped fa-sparkles for fa-bell) -->
-            <button class="btn-changelog" onclick="openManualChangelog()" title="View Updates">
-                <i class="fa-solid fa-bell"></i> What's New
-            </button>
+            <div class="header-actions">
+                <button class="btn-header" onclick="openManualChangelog()" title="View Updates">
+                    <i class="fa-solid fa-bell"></i> What's New
+                </button>
+                <button class="btn-header" onclick="openSettings()" title="Settings" style="background: rgba(255,255,255,0.05); border-color: var(--glass-border); color: white;">
+                    <i class="fa-solid fa-gear"></i> Settings
+                </button>
+            </div>
         </header>
         
         <div class="tools-grid">
@@ -463,30 +561,177 @@
     </div> <!-- End of container -->
 
     <script>
-        marked.setOptions({
-            gfm: true,
-            breaks: true
+        // ============================================
+        // 📱 MOBILE COMPATIBILITY SYSTEM
+        // Settings: true (Supported), false (PC Only), 'partial' (Partial Support)
+        // ============================================
+        const MOBILE_COMPATIBILITY = {
+            '/webtools/tools/team-lottery.html': true,
+            '/webtools/tools/colorful-tools.html': true,
+            '/webtools/tools/tool-o-discord.html': true,
+            '/webtools/tools/velocity-beta-v1.html': false,
+            '/webtools/tools/infinite-counters-v1.html': false, 
+            '/webtools/tools/infinite-counters-v2.html': 'partial',
+            '/webtools/tools/infinite-counters-v3beta.html': 'partial',
+            '/webtools/tools/chartstudiobetabydawidolowid.html': false,
+            '/webtools/tools/chartstudio-v1.html': false,
+            '/webtools/tools/chartstudio-v2.html': true,
+            '/webtools/tools/redtracker.html': true,
+            '/webtools/tools/zentracker.html': true
+        };
+
+        // User Settings Configuration
+        let userSettings = {
+            skipChecks: false,
+            showWarning: true,
+            hideIncompatible: true
+        };
+
+        function loadSettings() {
+            const saved = localStorage.getItem('webtools_mobile_settings');
+            if (saved) {
+                userSettings = { ...userSettings, ...JSON.parse(saved) };
+            }
+            applyMobileVisibility();
+        }
+
+        function saveSettings() {
+            userSettings.hideIncompatible = document.getElementById('setHideIncompatible').checked;
+            userSettings.showWarning = document.getElementById('setShowWarning').checked;
+            userSettings.skipChecks = document.getElementById('setSkipChecks').checked;
+            
+            localStorage.setItem('webtools_mobile_settings', JSON.stringify(userSettings));
+            applyMobileVisibility();
+            closeAllModals();
+        }
+
+        function openSettings() {
+            document.getElementById('setHideIncompatible').checked = userSettings.hideIncompatible;
+            document.getElementById('setShowWarning').checked = userSettings.showWarning;
+            document.getElementById('setSkipChecks').checked = userSettings.skipChecks;
+            
+            document.getElementById('modalOverlay').style.display = 'block';
+            document.getElementById('settingsDialog').style.display = 'block';
+        }
+
+        function applyMobileVisibility() {
+            const isMobile = window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
+
+            document.querySelectorAll('.tool-card').forEach(card => {
+                const links = card.querySelectorAll('a.btn-main, a.v-btn');
+                let hasVisibleLink = false;
+
+                links.forEach(link => {
+                    const href = link.getAttribute('href');
+                    const compStatus = MOBILE_COMPATIBILITY[href];
+
+                    // If mobile AND "Hide Incompatible" is on AND it is strictly false (PC Only)
+                    if (isMobile && userSettings.hideIncompatible && compStatus === false) {
+                        link.style.display = 'none';
+                    } else {
+                        link.style.display = ''; // Restore visibility
+                        hasVisibleLink = true;
+                    }
+                });
+
+                // Hide the whole card if all links inside it are hidden
+                if (!hasVisibleLink) {
+                    card.style.display = 'none';
+                } else {
+                    card.style.display = 'flex';
+                }
+            });
+        }
+
+        // Handle link clicks dynamically based on settings
+        let pendingMobileUrl = '';
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a.btn-main, a.v-btn');
+            if (!link) return;
+
+            const href = link.getAttribute('href');
+            const compStatus = MOBILE_COMPATIBILITY[href];
+            const isMobile = window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
+
+            if (isMobile && !userSettings.skipChecks && (compStatus === false || compStatus === 'partial')) {
+                e.preventDefault(); 
+                pendingMobileUrl = href;
+                
+                if (userSettings.showWarning) {
+                    document.getElementById('modalOverlay').style.display = 'block';
+                    document.getElementById('mobileWarningDialog').style.display = 'block';
+                } else {
+                    // Warning disabled but checks not skipped = Blocked
+                    document.getElementById('modalOverlay').style.display = 'block';
+                    document.getElementById('mobileBlockDialog').style.display = 'block';
+                }
+            }
         });
 
+        function proceedToMobileUrl() {
+            if (pendingMobileUrl) {
+                window.location.href = pendingMobileUrl;
+            }
+        }
+
+        // Apply visual updates on resize incase user shifts from Desktop -> Mobile layout actively
+        window.addEventListener('resize', applyMobileVisibility);
+
+
         // ============================================
-        // ⚙️ CHANGELOG CONFIGURATION
+        // ⚙️ INITIALIZATION & CHANGELOG CONFIGURATION
         // ============================================
+        marked.setOptions({ gfm: true, breaks: true });
+
         const CHANGELOG_CONFIG = {
-            isTesting: false, // TRUE to test local files. Set to FALSE for production.
+            isTesting: false, 
             githubFile: 'https://raw.githubusercontent.com/WRT-Dawidolowid/webtools/refs/heads/main/changelog.md'
         };
 
         let activeChangelogText = null; 
-        // ============================================
 
         document.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
             fetchAndCheckChangelog();
+            
+            // Auto-inject PC ONLY / PARTIAL badges dynamically based on the "best available" version
+            document.querySelectorAll('.tool-card').forEach(card => {
+                const links = card.querySelectorAll('a.btn-main, a.v-btn');
+                let hasCompatible = false;
+                let hasPartial = false;
+                let hasPcOnly = false;
+                
+                links.forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (MOBILE_COMPATIBILITY[href] === true) hasCompatible = true;
+                    if (MOBILE_COMPATIBILITY[href] === 'partial') hasPartial = true;
+                    if (MOBILE_COMPATIBILITY[href] === false) hasPcOnly = true;
+                });
+                
+                const h3 = card.querySelector('h3');
+                if (h3) {
+                    // If there is NO fully compatible version...
+                    if (!hasCompatible) {
+                        // Show Partial if any version has partial support
+                        if (hasPartial) {
+                            h3.insertAdjacentHTML('beforeend', '<span class="badge badge-partial mobile-badge" title="Partial Support"><i class="fa-solid fa-triangle-exclamation"></i> Partial</span>');
+                        } 
+                        // Show PC Only if ALL versions are explicitly marked PC only
+                        else if (hasPcOnly) {
+                            h3.insertAdjacentHTML('beforeend', '<span class="badge badge-no-mobile mobile-badge" title="PC Only"><i class="fa-solid fa-desktop"></i> PC Only</span>');
+                        }
+                    }
+                    // If hasCompatible == true, no mobile warning badge is displayed at the top of the card at all.
+                }
+            });
         });
 
+        // -------------------------------------------
+        // Standard Dialog Functions
+        // -------------------------------------------
         document.getElementById('localFileInput').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 closeAllModals(); 
@@ -499,28 +744,21 @@
 
         async function fetchAndCheckChangelog() {
             const urlParams = new URLSearchParams(window.location.search);
-            const overrideTesting = urlParams.has('test'); 
-            
-            if (CHANGELOG_CONFIG.isTesting || overrideTesting) {
+            if (CHANGELOG_CONFIG.isTesting || urlParams.has('test')) {
                 document.getElementById('modalOverlay').style.display = 'block';
                 document.getElementById('testModeModal').style.display = 'block';
                 return;
             }
-
             try {
                 const response = await fetch(CHANGELOG_CONFIG.githubFile, { cache: "no-store" });
                 if (!response.ok) return; 
-                
                 activeChangelogText = await response.text();
                 const lastSeenChangelog = localStorage.getItem('webtools_changelog_cache');
-
                 if (activeChangelogText !== lastSeenChangelog || urlParams.has('force_changelog')) {
                     showChangelogModal(activeChangelogText);
                     localStorage.setItem('webtools_changelog_cache', activeChangelogText);
                 }
-            } catch (error) {
-                console.log("Changelog fetching failed:", error);
-            }
+            } catch (error) { console.log("Changelog fetching failed:", error); }
         }
 
         function openManualChangelog() {
@@ -532,19 +770,13 @@
             } else {
                 fetch(CHANGELOG_CONFIG.githubFile, { cache: "no-store" })
                     .then(res => res.text())
-                    .then(text => {
-                        activeChangelogText = text;
-                        showChangelogModal(text);
-                    }).catch(() => {
-                        showDialog({title: "Error", message: "Could not load changelog."});
-                    });
+                    .then(text => { activeChangelogText = text; showChangelogModal(text); })
+                    .catch(() => { showDialog({title: "Error", message: "Could not load changelog."}); });
             }
         }
 
         function showChangelogModal(markdownText) {
-            const htmlContent = marked.parse(markdownText);
-            document.getElementById('changelogContent').innerHTML = htmlContent;
-            
+            document.getElementById('changelogContent').innerHTML = marked.parse(markdownText);
             document.getElementById('modalOverlay').style.display = 'block';
             document.getElementById('changelogDialog').style.display = 'block';
         }
@@ -560,35 +792,25 @@
             document.getElementById('unifiedDialog').style.display = 'none';
             document.getElementById('changelogDialog').style.display = 'none';
             document.getElementById('testModeModal').style.display = 'none';
+            document.getElementById('mobileWarningDialog').style.display = 'none';
+            document.getElementById('mobileBlockDialog').style.display = 'none';
+            document.getElementById('settingsDialog').style.display = 'none';
             document.getElementById('modalOverlay').style.display = 'none';
         }
 
         function copyUrl(url) {
-            const fullUrl = window.location.origin + url;
-            navigator.clipboard.writeText(fullUrl).then(() => {
-                showDialog({
-                    title: '<i class="fa-solid fa-check" style="color:#10b981;"></i> Success', 
-                    message: "Link has been successfully copied to your clipboard!"
-                });
+            navigator.clipboard.writeText(window.location.origin + url).then(() => {
+                showDialog({ title: '<i class="fa-solid fa-check" style="color:#10b981;"></i> Success', message: "Link copied!" });
             }).catch(() => {
-                showDialog({
-                    title: '<i class="fa-solid fa-triangle-exclamation" style="color:#ff6b6b;"></i> Error', 
-                    message: "Failed to copy the link."
-                });
+                showDialog({ title: '<i class="fa-solid fa-triangle-exclamation" style="color:#ff6b6b;"></i> Error', message: "Failed to copy." });
             });
         }
 
         function toggleVersions(toolId, show) {
             const mainBtn = document.getElementById(toolId + 'MainBtn');
             const selector = document.getElementById(toolId + 'Versions');
-            
-            if (show) {
-                mainBtn.style.display = 'none';
-                selector.style.display = 'block';
-            } else {
-                mainBtn.style.display = 'flex';
-                selector.style.display = 'none';
-            }
+            if (show) { mainBtn.style.display = 'none'; selector.style.display = 'block'; } 
+            else { mainBtn.style.display = 'flex'; selector.style.display = 'none'; }
         }
     </script>
 </body>
