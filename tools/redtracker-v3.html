@@ -1,0 +1,2383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RedTracker - Period & Cycle Tracker</title>
+    
+    <!-- External Fonts and Libraries -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js & Plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        /* --- STANDARD / GLASS UI VARIABLES --- */
+        :root {
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --accent: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            --sidebar-bg: rgba(0, 0, 0, 0.45);
+            --default-navy: #1e1b4b;
+        }
+
+        body, input, button, select, textarea { font-family: "Outfit", sans-serif; box-sizing: border-box; }
+        *, *::before, *::after { box-sizing: inherit; }
+
+        body {
+            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+            color: white; margin: 0; padding: 20px;
+            min-height: 100vh; overflow-x: hidden; max-width: 100vw;
+            transition: background 0.4s ease, color 0.4s ease;
+        }
+
+        .container {
+            max-width: 1350px; margin: 0 auto; padding: 30px;
+            background: rgba(255, 255, 255, 0.07); border-radius: 35px;
+            backdrop-filter: blur(25px); box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+            border: 1px solid var(--glass-border);
+            transition: all 0.4s ease; overflow: hidden; width: 100%;
+        }
+        
+        body.tour-active .container { backdrop-filter: none !important; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; transition: all 0.4s; flex-wrap: wrap; gap: 15px;}
+        .header h1 { margin: 0; font-size: 2.2em; letter-spacing: -1px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; cursor: default;}
+        .version-tag { font-size: 0.4em; opacity: 0.7; font-weight: 600; background: rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 7px; color: #ffe4e6; white-space: nowrap; cursor: pointer; user-select: none; transition: 0.2s; }
+        .version-tag:active { transform: scale(0.9); }
+        .credits { margin: 0; font-size: 0.9em; opacity: 0.8; font-weight: 400; cursor: default;}
+
+        .toggles-container { display: flex; gap: 15px; align-items: stretch; flex-wrap: wrap;}
+
+        .lang-select { background: rgba(0,0,0,0.2); color: white; border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 20px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; outline: none; transition: 0.3s;}
+        .lang-select option { background: #1e1b4b; color: white; }
+
+        .back-btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            text-decoration: none; padding: 10px 20px;
+            background: rgba(0,0,0,0.3); color: white;
+            border: 1px solid var(--glass-border); border-radius: 20px;
+            font-size: 13px; font-weight: 700; text-transform: uppercase;
+            transition: 0.3s; cursor: pointer;
+        }
+        .back-btn:hover { background: rgba(0,0,0,0.5); border-color: #ff9a9e; }
+
+        .layout { display: grid; grid-template-columns: 380px 1fr; gap: 30px; transition: all 0.4s ease; align-items: start; }
+        .main-content { display: flex; flex-direction: column; gap: 15px; width: 100%; overflow: hidden;}
+
+        .sidebar { background: var(--sidebar-bg); padding: 25px; border-radius: 25px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 20px; height: fit-content; transition: all 0.4s ease; width: 100%;}
+        body.tour-active .sidebar { backdrop-filter: none !important; }
+        
+        /* SIDEBAR SECTIONS & COLLAPSE STYLES */
+        .sidebar-section { display: flex; flex-direction: column; gap: 10px; width: 100%; transition: 0.3s; }
+        .sect-header { cursor: default; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+        .sect-header .section-label { color: #ffb6b9; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; display: block; margin: 0; transition: all 0.3s; }
+        .sect-header .toggle-icon { display: none; color: #ffb6b9; font-size: 12px; transition: transform 0.3s; }
+        .sect-body { display: flex; flex-direction: column; gap: 10px; width: 100%; transition: 0.3s; }
+        .mobile-only { display: none !important; }
+
+        .btn-main { width: 100%; padding: 15px; background: var(--accent); border: none; border-radius: 12px; color: #333; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 14px;}
+        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255, 154, 158, 0.4); }
+        
+        .btn-small { background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;}
+        .btn-small:hover { background: rgba(255,255,255,0.2); }
+
+        .chart-toggle { display: flex; flex-wrap: wrap; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 12px; gap: 4px; transition: all 0.3s; }
+        .toggle-btn { flex: 1 1 30%; padding: 10px; border: none; background: transparent; color: white; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; font-size: 13px; text-align: center; }
+        .toggle-btn.active { background: rgba(255,255,255,0.15); }
+
+        .config-row { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; transition: all 0.3s; flex-wrap: wrap; gap: 10px;}
+        
+        .custom-color-picker { position: relative; width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--glass-border); overflow: hidden; cursor: pointer; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .custom-color-picker input[type="color"] { position: absolute; top: -10px; left: -10px; width: 50px; height: 50px; cursor: pointer; opacity: 0; }
+        .custom-color-picker .color-preview { width: 100%; height: 100%; pointer-events: none; }
+
+        input[type="range"], input[type="number"] { accent-color: #ff9a9e; cursor: pointer; }
+        input[type="checkbox"], input[type="radio"] { width: 16px; height: 16px; accent-color: #ff9a9e; cursor: pointer; flex-shrink: 0;}
+        
+        .metric-dropdown { width: 100%; background: rgba(0, 0, 0, 0.4); color: white; border: 1px solid var(--glass-border); padding: 12px; border-radius: 12px; outline: none; cursor: pointer; font-family: inherit; transition: all 0.3s;}
+        .metric-dropdown option { background: #1e1b4b; color: white; }
+        
+        .text-input { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: white; font-family: inherit; font-size: 14px; outline:none; }
+        .text-input::placeholder { color: rgba(255,255,255,0.4); }
+        textarea.text-input { resize: vertical; min-height: 80px; }
+        
+        .quick-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--glass-border); }
+
+        .date-input { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: white; font-family: inherit; font-size: 14px; outline:none; color-scheme: dark;}
+        .date-group { width: 100%; }
+        .date-group label { display: block; font-size: 11px; opacity: 0.8; margin-bottom: 4px; font-weight: 600;}
+        
+        .date-list { max-height: 180px; overflow-y: auto; background: rgba(255,255,255,0.02); border-radius: 10px; padding: 10px; margin-top: 5px; border: 1px solid var(--glass-border); }
+        .date-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 6px; margin-bottom: 5px; font-size: 13px; gap: 10px; flex-wrap: wrap;}
+        .date-item button { background: transparent; border: none; color: #ff6b6b; cursor: pointer; padding: 5px;}
+        .date-details { display: flex; flex-direction: column; word-break: break-word; }
+        .date-sub { font-size: 10px; opacity: 0.6; }
+
+        /* --- WORKSPACE --- */
+        .chart-card { background: rgba(0,0,0,0.2); border-radius: 35px; padding: 35px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; position: relative; min-height: auto; justify-content: flex-start; align-items: center; transition: all 0.4s ease; overflow: hidden; gap: 20px; width: 100%; margin-bottom: 15px;}
+        body.tour-active .chart-card { backdrop-filter: none !important; }
+
+        .dashboard-stats { display: flex; gap: 15px; width: 100%; order: 1; flex-wrap: wrap; margin-bottom: 10px; }
+        .stat-box { flex: 1 1 15%; min-width: 130px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 20px; border-radius: 20px; text-align: center; backdrop-filter: blur(10px); }
+        .stat-box h3 { margin: 0 0 10px 0; font-size: 10px; text-transform: uppercase; opacity: 0.7; letter-spacing: 1px; color: #ffb6b9; word-wrap: break-word;}
+        .stat-box p { margin: 0; font-size: 20px; font-weight: 700; word-break: break-word; }
+        .stat-box .subtext { font-size: 11px; opacity: 0.6; margin-top: 5px; word-wrap: break-word; }
+
+        /* --- MINI CALENDAR & PHASES --- */
+        .calendar-card { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 20px; padding: 25px; order: 2; backdrop-filter: blur(10px); display: none; transition: all 0.4s ease; }
+        .calendar-header-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 10px;}
+        .calendar-header-nav h3 { margin: 0; font-size: clamp(14px, 3.5vw, 18px); color: #fff; text-align: center; }
+        .cal-nav-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white; padding: 8px 15px; border-radius: 10px; cursor: pointer; transition: 0.2s; font-weight: 600; display: flex; align-items: center; justify-content: center;}
+        .cal-nav-btn:hover { background: rgba(255,255,255,0.2); }
+        
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; width: 100%; }
+        .cal-day-name { text-align: center; font-size: 11px; opacity: 0.7; font-weight: 700; margin-bottom: 5px; text-transform: uppercase; }
+        .cal-day { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: clamp(11px, 2.5vw, 14px); font-weight: 600; background: rgba(0,0,0,0.2); cursor: default; border: 2px solid transparent; transition: 0.2s; box-sizing: border-box; position: relative; z-index: 1;}
+        .cal-empty { background: transparent; pointer-events: none; border: none; }
+        .cal-day.interactive:hover { transform: scale(1.1); z-index: 5; cursor: help; } 
+        
+        .phase-period { background: #ff4757; color: white; box-shadow: inset 0 0 10px rgba(0,0,0,0.2); }
+        .phase-follicular { background: rgba(255, 182, 185, 0.3); color: white; }
+        .phase-luteal { background: rgba(168, 237, 179, 0.3); color: white; }
+        .phase-ovulation { background: #ffa502; color: white; box-shadow: 0 0 12px rgba(255,165,2,0.8); font-weight: 800; z-index: 2;}
+        .fertile-day { border: 2px dashed #c084fc !important; }
+        .cal-today { text-decoration: underline; text-underline-offset: 4px; border-color: #fff; font-weight: 800;}
+        
+        .legend-container { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 25px; font-size: 12px; }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-weight: 500; opacity: 0.9;}
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .legend-outline { background: transparent; border: 2px dashed #c084fc; }
+
+        .phase-status-box { background: rgba(0,0,0,0.3); border-radius: 15px; padding: 15px; margin-top: 20px; border: 1px solid var(--glass-border); text-align: center; }
+        .phase-status-box strong { color: #ffb6b9; }
+        .safety-warning { font-size: 11px; opacity: 0.9; margin-top: 6px; color: #ff9a9e; font-weight: 600;}
+        .phase-symptoms { font-size: 12px; opacity: 0.8; margin-top: 8px; font-style: italic; }
+
+        /* CALENDAR INSPECTION TOOLTIP */
+        .cal-tooltip {
+            position: fixed; background: rgba(15, 15, 35, 0.95); color: white; padding: 15px;
+            border-radius: 15px; font-size: 13px; z-index: 2000; pointer-events: none;
+            border: 1px solid #ff9a9e; box-shadow: 0 15px 35px rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+            max-width: 240px; text-align: center; opacity: 0; transform: translateY(10px) translateX(-50%);
+            transition: opacity 0.2s ease, transform 0.2s ease; display: none;
+        }
+        .cal-tooltip.visible { opacity: 1; transform: translateY(0) translateX(-50%); }
+        .cal-tooltip h4 { margin: 0 0 5px 0; color: #ffb6b9; font-size: 14px; }
+        .cal-tooltip .tt-symp { font-style: italic; opacity: 0.8; font-size: 11px; margin-top: 5px;}
+
+        .insights-panel { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; backdrop-filter: blur(10px); order: 3; transition: all 0.4s ease; display: none; }
+        .insights-panel h4 { margin: 0 0 12px 0; color: #ffd89b; display: flex; align-items: center; gap: 8px; font-size: 15px;}
+        .insights-panel ul { margin: 0; padding-left: 20px; font-size: 13px; opacity: 0.9; line-height: 1.6; }
+        .insights-panel li { margin-bottom: 6px; }
+        .insights-panel li.warning { color: #ff9a9e; font-weight: 600; }
+        .insights-panel li.good { color: #a8edb3; font-weight: 600; }
+        .insights-panel li.normal { color: #e2e8f0; }
+
+        .export-frame { background: var(--default-navy); border-radius: 25px; padding: 30px; width: 100%; height: 450px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; box-shadow: 0 15px 40px rgba(0,0,0,0.5); position: relative; overflow: hidden; transition: all 0.4s ease; order: 4; margin-top: 10px; }
+        .chart-wrapper { flex: 1; width: 100%; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .canvas-sizer { width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center; }
+
+        .action-buttons { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; justify-content: center; width: 100%; order: 5; transition: all 0.4s ease; }
+        .btn-action { background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white; padding: 14px 28px; border-radius: 14px; cursor: pointer; font-weight: 600; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; text-align: center; }
+        .btn-action:hover { background: rgba(255,255,255,0.2); }
+
+        /* --- SYMPTOMS & HISTORY --- */
+        .symptom-tag-label { display: inline-flex; align-items: center; padding: 6px 12px; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); border-radius: 20px; font-size: 12px; cursor: pointer; transition: 0.2s; margin: 4px; user-select: none; }
+        .symptom-tag-label input { display: none; }
+        .symptom-tag-label:has(input:checked) { background: var(--accent); color: #333; font-weight: bold; border-color: transparent; }
+        
+        .add-symptom-group { display: flex; gap: 5px; margin-top: 15px; }
+        .add-symptom-group input { flex: 1; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.3); color: white; outline: none; font-family: inherit; font-size: 13px; }
+        .add-symptom-group button { padding: 8px 15px; border-radius: 10px; border: none; background: rgba(255,255,255,0.15); color: white; cursor: pointer; transition: 0.2s; }
+        .add-symptom-group button:hover { background: rgba(255,255,255,0.3); }
+
+        .history-list { width: 100%; display: flex; flex-direction: column; gap: 15px; }
+        .history-card-item { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 15px; padding: 15px; display: flex; flex-direction: column; gap: 10px; transition: 0.3s; }
+        .history-card-item:hover { background: rgba(255,255,255,0.08); }
+        .hc-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
+        .hc-dates { font-weight: 600; font-size: 15px; }
+        .hc-dur { font-size: 12px; opacity: 0.8; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 8px; }
+        .hc-symptoms { display: flex; flex-wrap: wrap; gap: 5px; }
+        .hc-symp-badge { background: rgba(255,154,158,0.2); color: #ffe4e6; border: 1px solid rgba(255,154,158,0.4); padding: 3px 8px; border-radius: 12px; font-size: 11px; }
+
+        /* --- FEATURE TOUR (POINTING) STYLES --- */
+        .tour-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9998; display: none; background: rgba(0,0,0,0.4); }
+        .tour-box { position: absolute; background: #1e1b4b; border: 2px solid #ff9a9e; border-radius: 15px; padding: 20px; z-index: 10000; width: 280px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.7); display: none; color: white; opacity: 0; transition: opacity 0.3s, top 0.3s, left 0.3s; }
+        .tour-box.visible { opacity: 1; }
+        .tour-box h3 { margin: 0 0 10px 0; color: #ff9a9e; font-size: 1.3em; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .tour-box p { font-size: 14px; opacity: 0.9; margin-bottom: 15px; line-height: 1.4; }
+        .tour-controls { display: flex; gap: 8px; justify-content: center; }
+        .tour-btn { background: var(--accent); border: none; color: #333; padding: 10px 15px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; font-family: inherit; font-size: 13px;}
+        .tour-btn-skip { background: transparent; border: 1px solid var(--glass-border); color: white; padding: 10px 15px; border-radius: 10px; cursor: pointer; transition: 0.2s; font-family: inherit; font-size: 13px;}
+        .tour-arrow { position: absolute; width: 0; height: 0; border-style: solid; transition: left 0.3s; }
+        .tour-box.arrow-top .tour-arrow { bottom: 100%; border-width: 0 12px 12px 12px; border-color: transparent transparent #ff9a9e transparent; transform: translateX(-50%); }
+        .tour-box.arrow-bottom .tour-arrow { top: 100%; border-width: 12px 12px 0 12px; border-color: #ff9a9e transparent transparent transparent; transform: translateX(-50%); }
+        .tour-highlight { position: relative !important; z-index: 9999 !important; box-shadow: 0 0 0 4px #ff9a9e, 0 0 30px rgba(255, 154, 158, 0.7) !important; border-radius: inherit; transition: box-shadow 0.3s; background-color: var(--sidebar-bg); }
+
+        /* REORDER MODAL & DRAG STYLES */
+        .reorder-list { display: flex; flex-direction: column; gap: 8px; text-align: left; margin-bottom: 20px;}
+        .reorder-item { background: rgba(0,0,0,0.4); border: 1px solid var(--glass-border); padding: 12px 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s, opacity 0.2s; user-select: none; }
+        .reorder-item.dragging { opacity: 0.6; background: rgba(255,154,158,0.2); border-color: #ff9a9e; }
+        .drag-handle { cursor: grab; font-size: 16px; opacity: 0.6; padding-right: 15px; }
+        .drag-handle:active { cursor: grabbing; }
+        .hide-btn { background: transparent; border: none; color: white; cursor: pointer; opacity: 0.5; transition: 0.2s; padding: 5px; font-size: 14px;}
+        .hide-btn:hover { opacity: 1; color: #ff9a9e; }
+        .reorder-item.dimmed span { opacity: 0.4; text-decoration: line-through; }
+
+        /* DEV MODE STYLES & OVERLAYS */
+        .dev-float-btn { position: fixed; bottom: 20px; left: 20px; z-index: 9000; background: #ff4757; color: white; border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 20px; cursor: pointer; box-shadow: 0 5px 15px rgba(255,71,87,0.5); display: none; align-items: center; justify-content: center; transition: 0.3s;}
+        .dev-float-btn:hover { transform: scale(1.1) rotate(15deg); }
+        
+        body.dev-show-sectors .sidebar-section,
+        body.dev-show-sectors .chart-card {
+            position: relative;
+            outline: 2px dashed #ff4757 !important;
+            outline-offset: -2px;
+        }
+        body.dev-show-sectors .sidebar-section::before,
+        body.dev-show-sectors .chart-card::before {
+            content: attr(id);
+            position: absolute; top: 0; left: 0;
+            background: #ff4757; color: white;
+            font-size: 11px; font-weight: bold; font-family: monospace;
+            padding: 2px 6px; z-index: 1000;
+            border-bottom-right-radius: 8px;
+            pointer-events: none;
+        }
+
+        .dev-terminal-output {
+            background: rgba(0,0,0,0.8); border: 1px solid var(--glass-border); 
+            height: 90px; overflow-y: auto; color: #a8edb3; font-family: monospace; 
+            font-size: 11px; padding: 8px; border-radius: 8px 8px 0 0; text-align: left; margin-bottom: 0;
+        }
+        .dev-terminal-input {
+            width: 100%; background: rgba(0,0,0,0.9); border: 1px solid var(--glass-border); border-top: none;
+            color: #ffb6b9; font-family: monospace; font-size: 12px; padding: 8px; border-radius: 0 0 8px 8px; outline: none; margin-bottom: 10px;
+        }
+
+        /* MODALS */
+        .modal-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(15, 15, 35, 0.98); padding: 30px; border-radius: 25px; border: 1px solid #ff9a9e; z-index: 1000; display: none; text-align: center; box-shadow: 0 0 60px rgba(0,0,0,0.9); backdrop-filter: blur(15px); width: 90%; max-width: 420px; max-height: 90vh; overflow-y: auto;}
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 999; display: none; }
+        
+        .modal-btn { display: flex; justify-content: center; align-items: center; gap: 8px; flex: 1; padding: 14px; border-radius: 12px; cursor: pointer; font-weight: 600; transition: 0.2s; font-family: inherit; font-size: 14px;}
+        .modal-btn-primary { background: var(--accent); color: #333; border: none; }
+        .modal-btn-secondary { background: transparent; border: 1px solid var(--glass-border); color: white; opacity: 0.7; }
+        .modal-btn-secondary:hover { opacity: 1; background: rgba(255,255,255,0.1); }
+        
+        .modal-input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: white; font-size: 16px; margin-bottom: 20px; outline: none; box-sizing: border-box; }
+        .modal-input:focus { border-color: #ff9a9e; }
+        .modal-input::placeholder { color: rgba(255,255,255,0.4); }
+
+        /* --- MOBILE RESPONSIVENESS & COLLAPSIBLE/REORDER --- */
+        @media (max-width: 992px) {
+            .layout { grid-template-columns: 1fr; }
+            .header { flex-direction: column; text-align: center; gap: 15px; }
+            .header h1 { justify-content: center; }
+            .toggles-container { width: 100%; justify-content: center; }
+            .chart-card { padding: 25px; }
+            .export-frame { height: 380px; padding: 15px; }
+            .stat-box { min-width: 45%; }
+            
+            .mobile-only { display: flex !important; }
+            .sect-header { cursor: pointer; margin-bottom: 10px; }
+            .sect-header .toggle-icon { display: block; }
+            .sidebar-section.collapsed .sect-body { display: none; }
+            .sidebar-section.collapsed .sect-header { margin-bottom: 0; }
+            .sidebar-section.collapsed .toggle-icon { transform: rotate(-90deg); }
+            .sticky-on-mobile { display: grid !important; }
+        }
+        @media (max-width: 576px) {
+            body { padding: 0; }
+            .container { padding: 20px 15px; border-radius: 0; border-left: none; border-right: none; }
+            .sidebar { padding: 20px 15px; }
+            .header h1 { font-size: 1.8em; }
+            .toggles-container { flex-direction: row; gap: 10px; width: 100%; justify-content: space-between; flex-wrap: wrap;}
+            .lang-select, .back-btn { flex: 1; text-align: center; justify-content: center; padding: 10px; min-width: 30%;}
+            .stat-box { min-width: 100%; padding: 15px;} 
+            .export-frame { height: 320px; padding: 10px; border-radius: 15px; }
+            .action-buttons { flex-direction: column; width: 100%; }
+            .btn-action { width: 100%; }
+            .modal-box { padding: 20px; width: 95%; }
+            .date-item { flex-direction: column; align-items: flex-start; }
+            .date-item > div:last-child { width: 100%; justify-content: flex-end; margin-top: 5px; }
+            .calendar-card { padding: 15px; }
+            .calendar-grid { gap: 4px; }
+            .cal-day-name { font-size: 9px; }
+            .tour-box { width: 90%; max-width: 320px; }
+        }
+
+        /* --- MODERN LIGHT OVERRIDES --- */
+        body.modern-ui { background: #fdf2f8; color: #0f172a; }
+        body.modern-ui .back-btn { background: #f8fafc; color: #0f172a; border-color: #e2e8f0; }
+        body.modern-ui .back-btn:hover { background: #e2e8f0; }
+        body.modern-ui .container { background: #ffffff; border: 1px solid #fce7f3; box-shadow: 0 20px 40px rgba(236,72,153,0.05); backdrop-filter: none; }
+        body.modern-ui .lang-select { background: #f8fafc; color: #0f172a; border-color: #e2e8f0; }
+        body.modern-ui .lang-select option { background: #fff; color: #0f172a; }
+        body.modern-ui .sidebar { background: #ffffff; border-color: #fce7f3; box-shadow: 0 5px 20px rgba(0,0,0,0.02); }
+        body.modern-ui .sect-header .section-label { color: #db2777; }
+        body.modern-ui .sect-header .toggle-icon { color: #db2777; }
+        body.modern-ui .chart-card { background: transparent; border: none; padding: 0; box-shadow: none;}
+        body.modern-ui .stat-box { background: #ffffff; border-color: #fce7f3; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
+        body.modern-ui .stat-box h3 { color: #db2777; }
+        body.modern-ui .export-frame { border: 1px solid #e2e8f0; box-shadow: none; }
+        body.modern-ui .metric-dropdown, body.modern-ui .date-input, body.modern-ui .text-input { background: #ffffff; border-color: #e2e8f0; color: #0f172a; }
+        body.modern-ui .metric-dropdown option { background: #ffffff; color: #0f172a; }
+        body.modern-ui .text-input::placeholder { color: #94a3b8; }
+        body.modern-ui .date-list { background: #f8fafc; border-color: #e2e8f0; color: #0f172a; }
+        body.modern-ui .date-item { background: #ffffff; border-color: #e2e8f0; border: 1px solid #e2e8f0;}
+        body.modern-ui .btn-action { background: #ffffff; border-color: #e2e8f0; color: #0f172a; }
+        body.modern-ui .config-row { border: 1px solid #e2e8f0; background: #fafafa;}
+        body.modern-ui .chart-toggle { background: #f1f5f9; border: 1px solid #e2e8f0;}
+        body.modern-ui .toggle-btn { color: #64748b;}
+        body.modern-ui .toggle-btn.active { background: #fff; color: #0f172a; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
+        body.modern-ui .btn-small { color: #0f172a; border-color: #e2e8f0; background: #f8fafc;}
+        body.modern-ui .modal-box { background: #ffffff; color: #0f172a; border-color:#e2e8f0; }
+        body.modern-ui .modal-input { background: #f8fafc; color: #0f172a; border-color:#e2e8f0;}
+        body.modern-ui .modal-input::placeholder { color: #94a3b8; }
+        body.modern-ui .insights-panel { background: #ffffff; border-color: #fce7f3; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
+        body.modern-ui .insights-panel h4 { color: #db2777; }
+        body.modern-ui .insights-panel li.warning { color: #e11d48; }
+        body.modern-ui .insights-panel li.good { color: #16a34a; }
+        body.modern-ui .insights-panel li.normal { color: #475569; }
+        body.modern-ui .symptom-tag-label { background: #f8fafc; border-color: #e2e8f0; color: #0f172a; }
+        body.modern-ui .symptom-tag-label:has(input:checked) { background: #fce7f3; color: #db2777; border-color: #fce7f3; }
+        body.modern-ui .add-symptom-group input { background: #f8fafc; border-color: #e2e8f0; color: #0f172a; }
+        body.modern-ui .add-symptom-group button { background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0;}
+        body.modern-ui .history-card-item { background: #ffffff; border-color: #fce7f3; box-shadow: 0 5px 15px rgba(0,0,0,0.02); }
+        body.modern-ui .hc-header { border-color: #f1f5f9; }
+        body.modern-ui .hc-dur { background: #f8fafc; color: #64748b; }
+        body.modern-ui .hc-symp-badge { background: #fce7f3; color: #db2777; border-color: transparent; }
+        body.modern-ui .calendar-card { background: #ffffff; border-color: #fce7f3; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
+        body.modern-ui .calendar-header-nav h3 { color: #db2777; }
+        body.modern-ui .cal-nav-btn { background: #f8fafc; border-color: #e2e8f0; color: #0f172a; }
+        body.modern-ui .cal-nav-btn:hover { background: #e2e8f0; }
+        body.modern-ui .cal-day { background: #f8fafc; color: #0f172a; }
+        body.modern-ui .phase-period { background: #f43f5e; color: white; box-shadow: none; }
+        body.modern-ui .phase-follicular { background: #fce7f3; color: #db2777; }
+        body.modern-ui .phase-luteal { background: #dcfce3; color: #16a34a; }
+        body.modern-ui .phase-ovulation { background: #f59e0b; color: white; border-color: #0f172a; box-shadow: none; }
+        body.modern-ui .cal-today { border-color: #0f172a; }
+        body.modern-ui .fertile-day { border-color: #c084fc !important; }
+        body.modern-ui .legend-outline { border-color: #c084fc; }
+        body.modern-ui .phase-status-box { background: #f8fafc; border-color: #e2e8f0; color: #0f172a; }
+        body.modern-ui .phase-status-box strong { color: #db2777; }
+        body.modern-ui .safety-warning { color: #e11d48; }
+        body.modern-ui .cal-tooltip { background: #ffffff; color: #0f172a; border-color: #fce7f3; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        body.modern-ui .tour-box { background: #ffffff; color: #0f172a; border-color: #fce7f3; box-shadow: 0 15px 50px rgba(0,0,0,0.1); }
+        body.modern-ui .tour-box h3 { color: #db2777; }
+        body.modern-ui .tour-btn-skip { color: #0f172a; border-color: #e2e8f0; }
+        body.modern-ui .tour-btn-skip:hover { background: #f1f5f9; }
+        body.modern-ui .tour-box.arrow-top .tour-arrow { border-color: transparent transparent #fce7f3 transparent; }
+        body.modern-ui .tour-box.arrow-bottom .tour-arrow { border-color: #fce7f3 transparent transparent transparent; }
+        body.modern-ui .tour-highlight { background-color: #ffffff; box-shadow: 0 0 0 4px #ec4899, 0 0 25px rgba(236,72,153, 0.4) !important; }
+        body.modern-ui .reorder-item { background: #f8fafc; border-color: #e2e8f0; color: #0f172a; }
+        body.modern-ui .hide-btn { color: #0f172a; }
+        body.modern-ui .modal-btn-primary { background: #db2777; color: white; border: none; }
+        body.modern-ui .modal-btn-secondary { background: transparent; border: 1px solid #e2e8f0; color: #64748b; }
+        body.modern-ui .modal-btn-secondary:hover { background: #f1f5f9; color: #0f172a; }
+
+        /* --- MODERN DARK (BLACK & BLUE) OVERRIDES --- */
+        body.modern-dark { background: #020617; color: #f8fafc; }
+        body.modern-dark .back-btn { background: #1e293b; color: #f8fafc; border-color: #334155; }
+        body.modern-dark .back-btn:hover { background: #334155; }
+        body.modern-dark .container { background: #0f172a; border: 1px solid #1e293b; box-shadow: 0 20px 40px rgba(0,0,0,0.8); backdrop-filter: none; }
+        body.modern-dark .lang-select { background: #1e293b; color: #f8fafc; border-color: #334155; }
+        body.modern-dark .lang-select option { background: #0f172a; color: #f8fafc; }
+        body.modern-dark .sidebar { background: #0f172a; border-color: #1e293b; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
+        body.modern-dark .sect-header .section-label { color: #60a5fa; }
+        body.modern-dark .sect-header .toggle-icon { color: #60a5fa; }
+        body.modern-dark .chart-card { background: transparent; border: none; padding: 0; box-shadow: none;}
+        body.modern-dark .stat-box { background: #0f172a; border-color: #1e293b; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        body.modern-dark .stat-box h3 { color: #60a5fa; }
+        body.modern-dark .export-frame { border: 1px solid #1e293b; box-shadow: none; background: #020617; }
+        body.modern-dark .metric-dropdown, body.modern-dark .date-input, body.modern-dark .text-input { background: #0f172a; border-color: #334155; color: #f8fafc; }
+        body.modern-dark .metric-dropdown option { background: #0f172a; color: #f8fafc; }
+        body.modern-dark .text-input::placeholder { color: #64748b; }
+        body.modern-dark .date-list { background: #020617; border-color: #1e293b; color: #f8fafc; }
+        body.modern-dark .date-item { background: #0f172a; border-color: #334155; border: 1px solid #334155;}
+        body.modern-dark .btn-main { background: #3b82f6; color: #ffffff; }
+        body.modern-dark .btn-action { background: #1e293b; border-color: #334155; color: #f8fafc; }
+        body.modern-dark .config-row { border: 1px solid #1e293b; background: #020617;}
+        body.modern-dark .chart-toggle { background: #020617; border: 1px solid #334155;}
+        body.modern-dark .toggle-btn { color: #94a3b8;}
+        body.modern-dark .toggle-btn.active { background: #3b82f6; color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.5);}
+        body.modern-dark .btn-small { color: #f8fafc; border-color: #334155; background: #1e293b;}
+        body.modern-dark .modal-box { background: #0f172a; color: #f8fafc; border-color:#3b82f6; }
+        body.modern-dark .modal-input { background: #020617; color: #f8fafc; border-color:#334155;}
+        body.modern-dark .modal-input::placeholder { color: #64748b; }
+        body.modern-dark .insights-panel { background: #0f172a; border-color: #1e293b; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        body.modern-dark .insights-panel h4 { color: #60a5fa; }
+        body.modern-dark .insights-panel li.warning { color: #ef4444; }
+        body.modern-dark .insights-panel li.good { color: #10b981; }
+        body.modern-dark .insights-panel li.normal { color: #94a3b8; }
+        body.modern-dark .symptom-tag-label { background: #1e293b; border-color: #334155; color: #f8fafc; }
+        body.modern-dark .symptom-tag-label:has(input:checked) { background: rgba(59,130,246,0.2); color: #60a5fa; border-color: #3b82f6; }
+        body.modern-dark .add-symptom-group input { background: #020617; border-color: #334155; color: #f8fafc; }
+        body.modern-dark .add-symptom-group button { background: #1e293b; color: #f8fafc; border: 1px solid #334155;}
+        body.modern-dark .history-card-item { background: #0f172a; border-color: #1e293b; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        body.modern-dark .hc-header { border-color: #1e293b; }
+        body.modern-dark .hc-dur { background: #020617; color: #94a3b8; }
+        body.modern-dark .hc-symp-badge { background: rgba(59,130,246,0.2); color: #60a5fa; border-color: transparent; }
+        body.modern-dark .calendar-card { background: #0f172a; border-color: #1e293b; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        body.modern-dark .calendar-header-nav h3 { color: #60a5fa; }
+        body.modern-dark .cal-nav-btn { background: #1e293b; border-color: #334155; color: #f8fafc; }
+        body.modern-dark .cal-nav-btn:hover { background: #334155; }
+        body.modern-dark .cal-day { background: #1e293b; color: #f8fafc; }
+        body.modern-dark .phase-period { background: #ef4444; color: white; box-shadow: none; }
+        body.modern-dark .phase-follicular { background: rgba(59,130,246,0.2); color: #60a5fa; }
+        body.modern-dark .phase-luteal { background: rgba(16,185,129,0.2); color: #34d399; }
+        body.modern-dark .phase-ovulation { background: #f59e0b; color: white; border-color: #020617; box-shadow: none; }
+        body.modern-dark .cal-today { border-color: #f8fafc; }
+        body.modern-dark .fertile-day { border-color: #a855f7 !important; }
+        body.modern-dark .legend-outline { border-color: #a855f7; }
+        body.modern-dark .phase-status-box { background: #1e293b; border-color: #334155; color: #f8fafc; }
+        body.modern-dark .phase-status-box strong { color: #60a5fa; }
+        body.modern-dark .safety-warning { color: #ef4444; }
+        body.modern-dark .cal-tooltip { background: #0f172a; color: #f8fafc; border-color: #3b82f6; box-shadow: 0 10px 25px rgba(0,0,0,0.8); }
+        body.modern-dark .tour-box { background: #0f172a; color: #f8fafc; border-color: #3b82f6; box-shadow: 0 15px 50px rgba(0,0,0,0.8); }
+        body.modern-dark .tour-box h3 { color: #60a5fa; }
+        body.modern-dark .tour-btn-skip { color: #f8fafc; border-color: #334155; background: transparent;}
+        body.modern-dark .tour-btn-skip:hover { background: #1e293b; }
+        body.modern-dark .tour-box.arrow-top .tour-arrow { border-color: transparent transparent #0f172a transparent; }
+        body.modern-dark .tour-box.arrow-bottom .tour-arrow { border-color: #0f172a transparent transparent transparent; }
+        body.modern-dark .tour-highlight { background-color: #0f172a; box-shadow: 0 0 0 4px #3b82f6, 0 0 25px rgba(59,130,246, 0.6) !important; }
+        body.modern-dark .reorder-item { background: #1e293b; border-color: #334155; color: #f8fafc; }
+        body.modern-dark .hide-btn { color: #f8fafc; }
+        body.modern-dark .reorder-item.dragging { background: rgba(59,130,246,0.2); border-color: #3b82f6; }
+        body.modern-dark .modal-btn-primary { background: #3b82f6; color: white; border: none; }
+        body.modern-dark .modal-btn-secondary { background: transparent; border: 1px solid #334155; color: #94a3b8; }
+        body.modern-dark .modal-btn-secondary:hover { background: #1e293b; color: #f8fafc; }
+
+        /* --- PRINT STYLES --- */
+        #printArea { display: none; }
+        @media print {
+            body { background: white; color: black; margin: 0; padding: 0; font-family: "Outfit", sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .back-btn, .container, .modal-box, .modal-overlay, #printModal, #editEntryModal, .tour-overlay, .tour-box, .cal-tooltip, .dev-float-btn, #devModal { display: none !important; }
+            #printArea { display: block; }
+            .page-break { page-break-after: always; break-after: page; }
+            .print-patient-container { padding: 20px; }
+            .print-web-header { display: flex; align-items: baseline; gap: 10px; font-size: 2.2em; font-weight: 700; margin-bottom: 2px; color: black; }
+            .print-version-tag { font-size: 0.4em; opacity: 0.8; font-weight: 600; background: #eee; padding: 3px 10px; border-radius: 7px; color: #333; }
+            .print-credits { margin: 0 0 20px 0; font-size: 0.9em; opacity: 0.7; border-bottom: 2px solid #000; padding-bottom: 10px; }
+            .print-info-block { margin-bottom: 25px; font-size: 14px; }
+            .print-info-block h2 { margin: 0 0 10px 0; font-size: 22px; }
+            .print-stats { display: flex; justify-content: space-between; margin-bottom: 30px; gap: 15px;}
+            .print-stat-box { border: 2px solid #000; padding: 15px; flex: 1; text-align: center; border-radius: 8px; background-color: #fcfcfc;}
+            .print-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; border: 2px solid #000; }
+            .print-table th, .print-table td { border: 1px solid #000 !important; padding: 10px; text-align: left; }
+            .print-table th { background-color: #eee; font-weight: bold; }
+            .print-notes { margin-top: 30px; }
+            .print-note-line { border-bottom: 1px dashed #666; height: 35px; width: 100%; margin-bottom: 10px; }
+            .saved-notes-box { border: 1px solid #000; padding: 15px; border-radius: 8px; font-size: 14px; background: #fafafa; min-height: 50px; }
+            
+            /* Print Calendar Specifics */
+            .print-calendar th { text-align: center; background-color: #ddd; }
+            .print-calendar td { height: 70px; vertical-align: top; text-align: right; position: relative; width: 14.28%; }
+            .p-cal-num { font-weight: bold; font-size: 14px; margin-bottom: 5px; display: block;}
+            .p-cal-phase { position: absolute; bottom: 5px; left: 5px; right: 5px; font-size: 10px; font-weight: 700; padding: 3px; border-radius: 4px; text-align: center;}
+            .p-cal-fertile { position: absolute; top: 5px; left: 5px; width: 14px; height: 14px; border: 2px dashed #9b59b6; border-radius: 50%; font-size: 8px; line-height: 14px; text-align: center; color: #9b59b6;}
+            .bg-p-period { background-color: #ff4757 !important; color: white !important; }
+            .bg-p-follicular { background-color: #fce7f3 !important; color: #db2777 !important; }
+            .bg-p-luteal { background-color: #dcfce3 !important; color: #16a34a !important; }
+            .bg-p-ovulation { background-color: #ffa502 !important; color: white !important; border: 1px solid #000 !important;}
+        }
+    </style>
+</head>
+<body>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeAllModals()"></div>
+
+<!-- Dialogs & Modals -->
+<!-- Z-INDEX 6000 TO ENSURE IT ALWAYS POPS OVER DEV MODE -->
+<div id="unifiedDialog" class="modal-box" style="z-index: 6000;">
+    <h3 id="dialogTitle" style="margin-top:0; font-size: 1.5em; color: #ff9a9e;"></h3>
+    <p id="dialogMessage" style="font-size: 1em; margin-bottom: 20px; opacity: 0.9;"></p>
+    <div style="display:flex; gap:10px; justify-content: center; flex-wrap: wrap;">
+        <button id="dialogBtnOk" class="modal-btn modal-btn-primary" onclick="closeDialog(true)">OK</button>
+        <button id="dialogBtnCancel" class="modal-btn modal-btn-secondary" onclick="closeDialog(false)">Cancel</button>
+    </div>
+</div>
+
+<div id="profileModal" class="modal-box" style="z-index: 2000;">
+    <h3 id="profileModalTitle" style="margin-top:0; font-size: 1.5em; color: #ff9a9e;"><i class="fa-solid fa-user"></i> <span id="mTitleTxt">Profile</span></h3>
+    <input type="text" id="personNameInput" class="modal-input" placeholder="Name (Required)" autocomplete="off">
+    <div id="personCodeWrapper">
+        <input type="text" id="personCodeInput" class="modal-input" placeholder="Patient Code / ID (Optional)" autocomplete="off">
+    </div>
+    <div style="display:flex; gap:10px; justify-content: center; flex-wrap: wrap;">
+        <button class="modal-btn modal-btn-primary" onclick="saveProfile()" id="btnSaveTxt">Save</button>
+        <button class="modal-btn modal-btn-secondary" onclick="closeAllModals()" id="btnCancelTxt">Cancel</button>
+    </div>
+</div>
+
+<div id="editEntryModal" class="modal-box" style="z-index: 2000; max-width: 500px; text-align: left;">
+    <h3 style="margin-top:0; font-size: 1.5em; color: #ff9a9e; text-align: center;" id="editEntryTitleTxt"><i class="fa-solid fa-pen"></i> Edit Period</h3>
+    <input type="hidden" id="editEntryId">
+    
+    <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+        <div class="date-group" style="flex:1;">
+            <label id="editStartTxt">Start Date</label>
+            <input type="date" id="editStartDate" class="modal-input" style="margin-bottom:0;">
+        </div>
+        <div class="date-group" style="flex:1;">
+            <label id="editEndTxt">End Date</label>
+            <input type="date" id="editEndDate" class="modal-input" style="margin-bottom:0;">
+        </div>
+    </div>
+    
+    <div style="margin-bottom: 20px; border-top: 1px solid var(--glass-border); padding-top: 15px;">
+        <label style="display: block; font-size: 11px; opacity: 0.8; margin-bottom: 8px; font-weight: 600; text-transform: uppercase;" id="sympTitleTxt">Symptoms</label>
+        <div id="symptomsChecklist" style="display: flex; flex-wrap: wrap; gap: 2px;">
+            <!-- Generated dynamically -->
+        </div>
+        <div class="add-symptom-group">
+            <input type="text" id="newSymptomInput" placeholder="Add custom symptom...">
+            <button type="button" onclick="addCustomSymptom()"><i class="fa-solid fa-plus"></i></button>
+        </div>
+    </div>
+
+    <div style="display:flex; gap:10px; justify-content: center; flex-wrap: wrap;">
+        <button class="modal-btn modal-btn-primary" onclick="saveEntryEdit()" id="btnSaveEntryEditTxt">Save</button>
+        <button class="modal-btn modal-btn-secondary" onclick="closeAllModals()" id="btnCancelEntryEditTxt">Cancel</button>
+    </div>
+</div>
+
+<div id="printModal" class="modal-box" style="z-index: 2000; text-align: left;">
+    <h3 style="margin-top:0; font-size: 1.5em; color: #ff9a9e; text-align: center;"><i class="fa-solid fa-print"></i> <span id="prTitleTxt">Print Settings</span></h3>
+    <div style="margin-bottom: 15px;">
+        <strong style="font-size: 13px; color: #ffb6b9; display:block; margin-bottom: 8px;" id="prLangLabelTxt">Print Language</strong>
+        <select id="prLangSelect" class="metric-dropdown" style="padding: 8px;">
+            <option value="en">English</option><option value="pl">Polski</option>
+        </select>
+    </div>
+    <div style="margin-bottom: 15px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
+        <strong style="font-size: 13px; color: #ffb6b9; display:block; margin-bottom: 8px;" id="prWhatToPrintTxt">What to Print?</strong>
+        <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom:6px;"><input type="checkbox" id="prShowName" checked> <span id="prOptNameTxt">Profile Name</span></label>
+        <label id="prShowCodeWrapper" style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom:6px;"><input type="checkbox" id="prShowCode" checked> <span id="prOptCodeTxt">Patient Code / ID</span></label>
+        <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom:6px;"><input type="checkbox" id="prShowStats" checked> <span id="prOptStatsTxt">Statistics (Averages)</span></label>
+        <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom:6px;"><input type="checkbox" id="prShowTable" checked> <span id="prOptTableTxt">History Table (w/ Symptoms)</span></label>
+        <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom:6px;"><input type="checkbox" id="prShowPredictions" checked> <span id="prOptPredTxt">Future Predictions</span></label>
+        <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom:6px;"><input type="checkbox" id="prShowCalendar" checked> <span id="prOptCalendarTxt">Current Calendar Month</span></label>
+        <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom:6px;"><input type="checkbox" id="prShowSavedNotes" checked> <span id="prOptSavedNotesTxt">Saved Notes</span></label>
+        <div style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-top:10px; flex-wrap: wrap;">
+            <input type="checkbox" id="prShowNotes" checked onchange="document.getElementById('notesLinesWrapper').style.opacity = this.checked ? '1' : '0.4'; document.getElementById('prNotesLines').disabled = !this.checked;">
+            <span id="prOptEmptyLinesTxt" style="flex:1;">Empty lined space for handwritten notes</span>
+            <span id="notesLinesWrapper" style="display:flex; align-items:center; gap:5px; flex-wrap: wrap;">
+                <span id="prLinesTxt">Lines:</span> <input type="number" id="prNotesLines" value="4" min="1" max="30" class="modal-input" style="width: 50px; padding: 4px; margin: 0; min-height: unset; height: auto; text-align: center;">
+            </span>
+        </div>
+    </div>
+    <div style="margin-bottom: 20px;" id="prScopeWrapper">
+        <strong style="font-size: 13px; color: #ffb6b9; display:block; margin-bottom: 8px;" id="prScopeTxt">Print Scope</strong>
+        <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom:6px;"><input type="radio" name="printScope" value="current" checked> <span id="prScpCurrentTxt">Current Profile Only</span></label>
+        <label style="display:flex; align-items:center; gap:8px; font-size: 14px; margin-bottom:6px;"><input type="radio" name="printScope" value="all_sep"> <span id="prScpSepTxt">All Profiles (Separate Pages)</span></label>
+        <label style="display:flex; align-items:center; gap:8px; font-size: 14px;"><input type="radio" name="printScope" value="all_cont"> <span id="prScpContTxt">All Profiles (Continuous List)</span></label>
+    </div>
+    <div style="display:flex; gap:10px; justify-content: center; flex-wrap: wrap;">
+        <button class="modal-btn modal-btn-primary" onclick="executePrint()"><i class="fa-solid fa-check"></i> <span id="btnPrintTxt">Print</span></button>
+        <button class="modal-btn modal-btn-secondary" onclick="closeAllModals()"><span id="btnCancelPrintTxt">Cancel</span></button>
+    </div>
+</div>
+
+<div id="reorderModal" class="modal-box" style="z-index: 2000;">
+    <h3 style="margin-top:0; font-size: 1.5em; color: #ff9a9e;" id="reorderTitleTxt">Reorder Sections</h3>
+    <div id="reorderListContainer" class="reorder-list"></div>
+    <div style="display:flex; gap:10px; justify-content: center; flex-wrap: wrap;">
+        <button class="modal-btn modal-btn-primary" onclick="saveReorder()"><i class="fa-solid fa-check"></i> <span id="btnSaveReorderTxt">Save</span></button>
+        <button class="modal-btn modal-btn-secondary" onclick="closeAllModals()"><span id="btnCancelReorderTxt">Cancel</span></button>
+    </div>
+</div>
+
+<!-- DEV MODE PANEL -->
+<button class="dev-float-btn" id="devFloatBtn" onclick="openDevModal()"><i class="fa-solid fa-code"></i></button>
+
+<div id="devModal" class="modal-box" style="z-index: 5000; width: 95%; max-width: 600px; padding: 20px;">
+    <h3 style="margin-top:0; margin-bottom: 15px; font-size: 1.5em; color: #ff9a9e;"><i class="fa-solid fa-code"></i> Developer Mode</h3>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <!-- COL 1 -->
+        <div>
+            <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; margin-bottom: 10px; text-align:left; border: 1px solid var(--glass-border);">
+                <strong style="color:#ffb6b9; font-size:12px;">Auto Randomizer</strong><br>
+                <div style="display:flex; gap:5px; margin-top:5px;">
+                    <input type="number" id="devMockCount" class="modal-input" placeholder="Count" value="6" style="padding:5px; margin:0; flex:1;" title="Ilość cykli">
+                    <input type="number" id="devMockCyc" class="modal-input" placeholder="Cyc Len" value="28" style="padding:5px; margin:0; flex:1;" title="Długość cyklu">
+                    <input type="number" id="devMockBleed" class="modal-input" placeholder="Bleed" value="5" style="padding:5px; margin:0; flex:1;" title="Ilość dni krwawienia">
+                </div>
+                <select id="devMockPattern" class="metric-dropdown" style="padding: 5px; margin-top:5px; font-size:12px;">
+                    <option value="regular">Regular (+/- 2 days)</option>
+                    <option value="irregular">Irregular (+/- 8 days)</option>
+                    <option value="short">Short Cycle (~19 days)</option>
+                    <option value="long">Long Cycle (~42 days)</option>
+                </select>
+                <button class="modal-btn modal-btn-primary" onclick="generateMockData()" style="width: 100%; padding: 8px; margin-top:5px; font-size:12px;">Generate</button>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; margin-bottom: 10px; text-align:left; border: 1px solid var(--glass-border);">
+                <strong style="color:#ffb6b9; font-size:12px;">Shift All Dates</strong><br>
+                <div style="display:flex; gap:5px; margin-top:5px;">
+                    <input type="number" id="devShiftDays" class="modal-input" placeholder="Days (-5 or 10)" value="0" style="padding:5px; margin:0; flex:2;">
+                    <button class="btn-small" onclick="shiftAllDates()" style="flex:1;">Shift</button>
+                </div>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; margin-bottom: 10px; text-align:left; border: 1px solid var(--glass-border);">
+                <strong style="color:#ffb6b9; font-size:12px;">Tutorial Tools</strong><br>
+                <div style="display:flex; gap:5px; margin-top:5px;">
+                    <input type="text" id="devTourTarget" class="modal-input" placeholder="Target ID" style="padding: 5px; margin:0; flex:2;">
+                    <button class="btn-small" onclick="testTourStep()" style="flex:1;">Highlight</button>
+                </div>
+                <button class="modal-btn modal-btn-secondary" onclick="replayTutorial()" style="width: 100%; padding:6px; margin-top:5px; font-size:11px;">Replay App Tutorial</button>
+            </div>
+        </div>
+
+        <!-- COL 2 -->
+        <div>
+            <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; margin-bottom: 10px; text-align:left; border: 1px solid var(--glass-border);">
+                <strong style="color:#ffb6b9; font-size:12px;">Raw Profile JSON Editor</strong><br>
+                <textarea id="devRawJson" class="text-input" style="font-family:monospace; font-size:10px; height:120px; margin-top:5px; padding:5px;" placeholder="Load a profile first..."></textarea>
+                <div style="display:flex; gap:5px; margin-top:5px;">
+                    <button class="btn-small" onclick="loadRawJson()" style="flex:1; padding: 4px;">Load Active</button>
+                    <button class="btn-small" onclick="saveRawJson()" style="flex:1; padding: 4px; background:rgba(255,154,158,0.2); color:#ff9a9e;">Save / Sync</button>
+                </div>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; margin-bottom: 10px; text-align:left; border: 1px solid var(--glass-border);">
+                <strong style="color:#ffb6b9; font-size:12px;">UI & Sectors</strong>
+                <button class="btn-small" onclick="toggleDevSectors()" style="width:100%; margin-top:5px; padding: 6px;">Toggle Sector Overlay</button>
+                <div id="devSectorList" style="margin-top:5px; border-top:1px dashed var(--glass-border); max-height: 50px; overflow-y: auto;"></div>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; margin-bottom: 10px; text-align:left; border: 1px solid var(--glass-border);">
+                <strong style="color:#ffb6b9; font-size:12px;">Extra Actions</strong><br>
+                <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;">
+                    <button class="btn-small" onclick="forceRender()" style="flex:1; padding:4px;">Force Render</button>
+                    <button class="btn-small" onclick="copyAppState()" style="flex:1; padding:4px;">Copy State</button>
+                    <button class="btn-small" onclick="clearCurrentProfilePeriods()" style="color:#ff9a9e; border-color:rgba(255,154,158,0.4); flex:1 1 100%; padding:4px;">Wipe Active Profile</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COMMAND PROMPT & RTS LOADER -->
+    <div style="margin-top: 5px; position:relative;">
+        <div style="display:flex; justify-content:space-between; align-items:end; margin-bottom:2px;">
+            <strong style="color:#ffb6b9; font-size:12px;">JS Command Terminal</strong>
+            <label class="btn-small" style="padding:2px 8px; font-size:10px; cursor:pointer;">
+                Load .rts Script <input type="file" id="rtsFileInput" accept=".rts,.txt" style="display:none;" onchange="loadRTSFile(event)">
+            </label>
+        </div>
+        <div class="dev-terminal-output" id="devCmdOutput">RedTracker Dev Terminal v2.0<br>Type 'help' for predefined commands, or type any valid JS!<br></div>
+        <input type="text" id="devCmdInput" class="dev-terminal-input" placeholder="e.g. changeTheme('dark') or help" autocomplete="off" onkeydown="handleTerminalCommand(event)">
+    </div>
+
+    <div style="display:flex; gap:10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;">
+        <button class="modal-btn" style="background:#ff4757; color:white; flex:1; border:none; padding:10px; font-size:12px;" onclick="wipeAllData()">Factory Reset</button>
+        <button class="modal-btn modal-btn-secondary" onclick="disableDevMode()" style="flex:1; padding:10px; font-size:12px;">Exit Dev Mode</button>
+        <button class="modal-btn modal-btn-secondary" onclick="closeAllModals()" style="flex:1; padding:10px; font-size:12px;">Close Panel</button>
+    </div>
+</div>
+
+<!-- FEATURE TOUR OVERLAY & POINTING BOX -->
+<div class="tour-overlay" id="tourOverlay"></div>
+<div class="tour-box" id="tourBox">
+    <div class="tour-arrow" id="tourArrow"></div>
+    <h3><i class="fa-solid fa-star"></i> <span id="tourTitle">New Feature</span></h3>
+    <p id="tourDesc">Description of the new feature goes here.</p>
+    <div class="tour-controls">
+        <button class="tour-btn-skip" id="tourBtnSkip" onclick="endTour()">Skip</button>
+        <button class="tour-btn" id="tourBtnNext" onclick="nextTourStep()">Next <i class="fa-solid fa-arrow-right"></i></button>
+    </div>
+</div>
+
+<!-- CALENDAR TOOLTIP (INSPECTION MODE) -->
+<div id="calTooltip" class="cal-tooltip">
+    <h4 id="ttPhaseName">Phase</h4>
+    <div id="ttFertile" style="font-size:11px; color:#c084fc; font-weight:bold; margin-bottom:4px; display:none;">+ Fertile Window</div>
+    <div id="ttSympLabel" style="font-size: 10px; text-transform: uppercase; opacity:0.7; margin-top:8px;">Symptoms</div>
+    <div id="ttSympText" class="tt-symp">None</div>
+</div>
+
+<!-- Container -->
+<div class="container">
+    <div class="header">
+        <div>
+            <h1 id="mainTitleTxt" onclick="handleSecretClick('title')">RedTracker <span class="version-tag" id="mainVersionTag" onclick="event.stopPropagation(); handleSecretClick('version')">v3</span></h1>
+            <p class="credits" id="madeByTxt" onclick="handleSecretClick('credits')">Made by Dawidolowid</p>
+        </div>
+        <div class="toggles-container">
+            <select id="appLangSelect" class="lang-select" onchange="changeAppLanguage(this.value)">
+                <option value="en">EN</option><option value="pl">PL</option>
+            </select>
+            <select id="themeSelect" class="lang-select" onchange="changeTheme(this.value)">
+                <option value="glass" id="optThemeGlass">Glass Theme</option>
+                <option value="modern-light" id="optThemeLight">Light Theme</option>
+                <option value="modern-dark" id="optThemeDark">Dark Theme</option>
+            </select>
+            <a href="javascript:history.back()" class="back-btn"><i class="fa-solid fa-arrow-left"></i> <span id="btnBackTxt">Back</span></a>
+        </div>
+    </div>
+
+    <div class="layout">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebarNav" style="display: flex; flex-direction: column;">
+            
+            <div class="sidebar-section" id="sect-profile">
+                <div class="sect-header" onclick="toggleSection('sect-profile')">
+                    <span class="section-label" id="secProfileTxt">1. Profile Management</span>
+                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="sect-body">
+                    <select id="profileSelect" class="metric-dropdown" onchange="changeProfile()"></select>
+                    <div style="display: flex; gap: 8px; margin-top: 10px;">
+                        <button class="btn-main" onclick="openProfileModal(false)" style="padding: 10px; flex:2;"><i class="fa-solid fa-plus"></i> <span id="btnAddTxt">Add</span></button>
+                        <button class="btn-small" onclick="openProfileModal(true)" style="padding: 10px; flex:1;" title="Edit Profile"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn-small" onclick="deleteCurrentProfile()" style="padding: 10px; flex:1; color: #ff6b6b; border-color: rgba(255,107,107,0.3);" title="Delete Profile"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section" id="sect-calib" style="display: none;">
+                <div class="sect-header" onclick="toggleSection('sect-calib')">
+                    <span class="section-label" id="secCalibTxt">2. Cycle Calibration</span>
+                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="sect-body">
+                    <div class="config-row">
+                        <span style="font-size: 11px; font-weight: 600;" id="autoCalcTxtLabel">Auto-Calculate Cycle</span>
+                        <input type="checkbox" id="autoCalibrateCheck" onchange="toggleCalibration()">
+                    </div>
+                    <div class="config-row" id="manualCycleDiv" style="margin-top: 8px;">
+                        <span style="font-size: 11px; font-weight: 600;" id="manualCycleTxt">Manual Cycle Length</span>
+                        <input type="number" id="manualCycleInput" value="28" min="15" max="60" style="width: 60px; border-radius: 5px; border: none; padding: 4px; text-align: center;" onchange="updateManualCycle()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section" id="sect-log" style="display: none;">
+                <div class="sect-header" onclick="toggleSection('sect-log')">
+                    <span class="section-label" id="secLogTxt">3. Log New Period</span>
+                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                </div>
+                
+                <!-- STICKY QUICK ACTIONS (Outside the collapsible body) -->
+                <div class="quick-actions-grid sticky-on-mobile">
+                    <button id="qaTodayBtn" class="btn-main" style="padding: 15px; border-radius: 12px;"></button>
+                    <button id="qaYestBtn" class="btn-small" style="padding: 15px; border-radius: 12px; font-size: 13px;"></button>
+                </div>
+                
+                <!-- Collapsible content -->
+                <div class="sect-body">
+                    <div class="date-group">
+                        <label id="startDateTxt">Start Date</label>
+                        <input type="date" id="startDateInput" class="date-input">
+                    </div>
+                    <div class="date-group">
+                        <label id="endDateTxt">End Date (Optional)</label>
+                        <input type="date" id="endDateInput" class="date-input">
+                    </div>
+                    <button class="btn-main" onclick="logPeriodData()"><i class="fa-solid fa-calendar-check"></i> <span id="btnSaveEntryTxt">Save Entry</span></button>
+                    <div style="font-size: 11px; text-align: center; font-weight: 600; color: #ffb6b9;" id="editHintTxt">Tip: Click edit to add symptoms</div>
+                    <div class="date-list" id="dateList"></div>
+                </div>
+            </div>
+
+            <div class="sidebar-section" id="sect-view" style="display: none;">
+                <div class="sect-header" onclick="toggleSection('sect-view')">
+                    <span class="section-label" id="secViewTxt">4. View Options</span>
+                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="sect-body">
+                    <div class="chart-toggle">
+                        <button class="toggle-btn active" id="btn-bar" onclick="setChartType('bar')">Bar</button>
+                        <button class="toggle-btn" id="btn-line" onclick="setChartType('line')">Line</button>
+                    </div>
+                    <div class="config-row">
+                        <span style="font-size: 11px; font-weight: 600;" id="bgColorTxt">Background Color</span>
+                        <div class="custom-color-picker">
+                            <div class="color-preview" id="bgColorPreview" style="background: #1e1b4b"></div>
+                            <input type="color" id="bgColorPicker" value="#1e1b4b" onchange="document.getElementById('bgColorPreview').style.background = this.value; renderDashboard()">
+                        </div>
+                    </div>
+                    <div class="config-row">
+                        <span style="font-size: 11px; font-weight: 600;" id="inspectToggleTxt">Calendar Tooltip</span>
+                        <input type="checkbox" id="inspectToggleCheck" checked>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="file" id="importInput" style="display:none" accept=".json" onchange="importData(event)">
+                        <button class="btn-small" style="flex:1" onclick="document.getElementById('importInput').click()"><i class="fa-solid fa-file-import"></i> <span id="btnImportTxt">Import</span></button>
+                        <button class="btn-small" style="flex:1" onclick="exportData()"><i class="fa-solid fa-file-export"></i> <span id="btnExportTxt">Export</span></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section" id="sect-notes" style="display: none;">
+                <div class="sect-header" onclick="toggleSection('sect-notes')">
+                    <span class="section-label" id="secNotesTxt">5. Personal Notes</span>
+                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="sect-body">
+                    <textarea id="patientNotesInput" class="text-input" placeholder="Add personal notes here..." onchange="updatePatientNotes()"></textarea>
+                </div>
+            </div>
+
+            <div class="sidebar-section" id="sect-global">
+                <div class="sect-header" onclick="toggleSection('sect-global')">
+                    <span class="section-label" id="secGlobalTxt">6. Global Settings</span>
+                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="sect-body">
+                    <div class="config-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                        <strong style="font-size: 12px; color: #ffb6b9;" id="appModeTxt">App Mode</strong>
+                        <label style="display:flex; align-items:center; gap:8px; font-size: 13px; cursor: pointer;"><input type="radio" name="appModeRadio" value="self" onchange="changeAppMode(this.value)"> <span id="modeSelfTxt">Self-Tracking (Personal)</span></label>
+                        <label style="display:flex; align-items:center; gap:8px; font-size: 13px; cursor: pointer;"><input type="radio" name="appModeRadio" value="clinical" onchange="changeAppMode(this.value)"> <span id="modeClinicTxt">Clinical (Doctor/Clinic)</span></label>
+                    </div>
+                    <div class="date-group" id="globalProviderWrapper" style="display: none;">
+                        <label id="defProviderTxt">Default Attending Provider</label>
+                        <input type="text" id="globalProviderInput" class="text-input" placeholder="e.g. Dr. Smith" onchange="updateGlobalProvider()">
+                    </div>
+                </div>
+            </div>
+            
+            <button class="btn-small mobile-only" id="btnReorderMobile" onclick="openReorderModal()" style="margin-top: 10px; width: 100%; padding: 12px; font-size: 13px; border-color: rgba(255,255,255,0.3);"><i class="fa-solid fa-sort"></i> <span id="reorderBtnTxt">Customize Mobile Layout</span></button>
+
+        </div>
+
+        <!-- Workspace Content Wrapper -->
+        <div class="main-content">
+            <div class="chart-card" id="workspaceCard" style="display: none;">
+                <!-- Quick Stats -->
+                <div class="dashboard-stats" id="dashboardStats">
+                    <div class="stat-box">
+                        <h3 id="statLastTxt">Last Period</h3>
+                        <p id="statLastPeriod">--</p>
+                        <div class="subtext" id="statDaysAgo">---</div>
+                    </div>
+                    <div class="stat-box">
+                        <h3 id="statAvgDurTxt">Avg Duration</h3>
+                        <p id="statAvgPeriod">--</p>
+                        <div class="subtext" id="statDurSubTxt">Bleeding length</div>
+                    </div>
+                    <div class="stat-box">
+                        <h3 id="statAvgCycTxt">Avg Cycle</h3>
+                        <p id="statAvgCycle">--</p>
+                        <div class="subtext" id="statCalibrated">---</div>
+                    </div>
+                    <div class="stat-box">
+                        <h3 id="statNextTxt">Next Period</h3>
+                        <p id="statNextPeriod" style="color: #ff9a9e;">--</p>
+                        <div class="subtext" id="statDaysLeft">---</div>
+                    </div>
+                    <div class="stat-box">
+                        <h3 id="statOvuTxt">Ovulation</h3>
+                        <p id="statOvulation" style="color: #f9a826;">--</p>
+                        <div class="subtext" id="statOvuDaysLeft">---</div>
+                    </div>
+                </div>
+
+                <!-- Calendar & Phases -->
+                <div class="calendar-card" id="calendarCard">
+                    <div class="calendar-header-nav">
+                        <button class="cal-nav-btn" onclick="navMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h3 id="calMonthLabel">Month Year</h3>
+                        <button class="cal-nav-btn" onclick="navMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                    
+                    <div class="calendar-grid">
+                        <div class="cal-day-name" id="dayMo">MO</div><div class="cal-day-name" id="dayTu">TU</div><div class="cal-day-name" id="dayWe">WE</div>
+                        <div class="cal-day-name" id="dayTh">TH</div><div class="cal-day-name" id="dayFr">FR</div><div class="cal-day-name" id="daySa">SA</div><div class="cal-day-name" id="daySu">SU</div>
+                    </div>
+                    <div class="calendar-grid" id="calendarGridDates" style="margin-top: 15px;"></div>
+
+                    <div class="legend-container">
+                        <div class="legend-item"><div class="legend-dot phase-period"></div> <span id="legPeriod">Period</span></div>
+                        <div class="legend-item"><div class="legend-dot phase-follicular"></div> <span id="legFollicular">Follicular</span></div>
+                        <div class="legend-item"><div class="legend-dot legend-outline"></div> <span id="legFertile">Fertile Window</span></div>
+                        <div class="legend-item"><div class="legend-dot phase-ovulation"></div> <span id="legOvulation">Ovulation</span></div>
+                        <div class="legend-item"><div class="legend-dot phase-luteal"></div> <span id="legLuteal">Luteal</span></div>
+                    </div>
+
+                    <!-- Phase & Safety Status Box -->
+                    <div class="phase-status-box" id="todayStatusBox"></div>
+                </div>
+
+                <!-- Cycle Insights -->
+                <div class="insights-panel" id="insightsPanel">
+                    <h4><i class="fa-solid fa-stethoscope"></i> <span id="insightsTitleTxt">Health & Cycle Insights</span></h4>
+                    <ul id="insightsList"></ul>
+                </div>
+
+                <!-- Chart -->
+                <div id="exportFrame" class="export-frame">
+                    <h2 style="margin-top: 0; color: white; z-index: 10; font-size: 1.3em; text-align: center;" id="chartTitleText">Cycle & Period History</h2>
+                    <div class="chart-wrapper"><div class="canvas-sizer"><canvas id="mainChart"></canvas></div></div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-action" onclick="exportToPng()"><i class="fa-solid fa-image"></i> <span id="btnSavePngTxt">Save as PNG</span></button>
+                    <button class="btn-action" onclick="openPrintModal()" style="background: var(--accent); border: none; color: #333;"><i class="fa-solid fa-print"></i> <span id="btnPrintDataTxt">Print Data</span></button>
+                </div>
+            </div>
+
+            <!-- History & Symptoms Card -->
+            <div class="chart-card" id="historyCard" style="display: none; align-items: stretch;">
+                <h3 style="margin-top:0; margin-bottom: 5px; color: #ffd89b;"><i class="fa-solid fa-clipboard-list"></i> <span id="historyTitleTxt">Period History & Symptoms</span></h3>
+                <div id="historyList" class="history-list"></div>
+            </div>
+            
+            <div class="chart-card" id="welcomeCard" style="justify-content: center; min-height: 60vh;">
+                <div style="text-align: center; opacity: 0.7; padding: 20px;">
+                    <i class="fa-solid fa-heart-pulse" style="font-size: 5em; margin-bottom: 20px; color: #ff9a9e;"></i>
+                    <h2 id="welcomeTitleTxt">Welcome to RedTracker</h2>
+                    <p id="welcomeDescTxt">Add a profile from the left menu to start tracking.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="printArea"></div>
+
+<script>
+    Chart.register(ChartDataLabels);
+
+    const APP_VERSION = "3";
+    const TOUR_VERSION = 7; 
+    
+    const FEATURE_TOUR_CONFIG = {
+        7: [
+            {
+                targetId: "themeSelect",
+                title: { en: "Dark Mode & Bug Fixes", pl: "Ciemny Motyw i Poprawki" },
+                desc: { en: "Welcome to the latest patch! Try out the new true Black & Blue Dark Mode here. Save/Cancel buttons are fully working again.", pl: "Witaj w nowej poprawce! Wypróbuj prawdziwy Ciemny Motyw (Czarno-niebieski). Naprawiono również przyciski w wyskakujących oknach." }
+            },
+            {
+                targetId: "calendarCard",
+                title: { en: "Inspection Mode Hover", pl: "Nowy Tryb Inspekcji" },
+                desc: { en: "The calendar tooltip vanishes instantly the moment you move your mouse away. Much smoother!", pl: "Dymek z kalendarza znika teraz błyskawicznie, gdy tylko zjedziesz z niego myszką. Dużo płynniejsze!" }
+            },
+            {
+                targetId: "btnReorderMobile",
+                title: { en: "Customize Layout", pl: "Twój Układ (Tylko Mobile)" },
+                desc: { en: "On mobile, use this to Drag & Drop sections to rearrange them or hide the ones you don't use.", pl: "Na telefonie użyj tego przycisku by przesuwać (Drag & Drop) sekcje i chować te, z których nie korzystasz." }
+            }
+        ]
+    };
+
+    // --- Developer Mode Logic ---
+    let secretSequence = [];
+    const targetSequence = ['version', 'credits', 'title', 'version'];
+    let secretTimeout;
+
+    function handleSecretClick(elementName) {
+        clearTimeout(secretTimeout);
+        secretSequence.push(elementName);
+        if(secretSequence.length > 4) secretSequence.shift();
+
+        if(secretSequence.join(',') === targetSequence.join(',')) {
+            secretSequence = [];
+            enableDevMode();
+        }
+
+        secretTimeout = setTimeout(() => { secretSequence = []; }, 3000);
+    }
+
+    async function enableDevMode() {
+        localStorage.setItem('redTracker_devMode', 'true');
+        document.getElementById('devFloatBtn').style.display = 'flex';
+        await showDialog({ title: "Developer", message: "Developer Mode Unlocked!" });
+    }
+    
+    function disableDevMode() {
+        localStorage.removeItem('redTracker_devMode');
+        document.getElementById('devFloatBtn').style.display = 'none';
+        document.body.classList.remove('dev-show-sectors');
+        closeAllModals();
+    }
+    
+    function openDevModal() {
+        refreshSectorList();
+        document.getElementById('devModal').style.display = 'block';
+        document.getElementById('modalOverlay').style.display = 'block';
+        setTimeout(() => document.getElementById('devCmdInput').focus(), 100);
+    }
+
+    // --- NEW DEV TOOLS & COMMAND TERMINAL ---
+    function termLog(msg) {
+        const out = document.getElementById('devCmdOutput');
+        out.innerHTML += `<div>${msg}</div>`;
+        out.scrollTop = out.scrollHeight;
+    }
+
+    const cmdMap = {
+        help: () => termLog("Commands: clear, theme [name], shift [days], randomize [count] [regular|irregular|short|long], wipe, render, json. <br>OR TYPE ANY JAVASCRIPT!"),
+        clear: () => document.getElementById('devCmdOutput').innerHTML = '',
+        theme: (args) => { if(args[0]) { changeTheme(args[0]); termLog(`Theme -> ${args[0]}`); } },
+        shift: (args) => { if(args[0] && !isNaN(args[0])) { document.getElementById('devShiftDays').value = args[0]; shiftAllDates(true); } },
+        randomize: (args) => { 
+            if(args[0]) document.getElementById('devMockCount').value = args[0]; 
+            if(args[1]) document.getElementById('devMockPattern').value = args[1]; 
+            generateMockData(true); 
+        },
+        wipe: () => clearCurrentProfilePeriods(true),
+        render: () => forceRender(),
+        json: () => loadRawJson()
+    };
+
+    function executeCommand(cmdStr) {
+        cmdStr = cmdStr.trim();
+        if(!cmdStr || cmdStr.startsWith('//')) return;
+        termLog(`<span style="color:#fff;">> ${cmdStr}</span>`);
+        
+        const parts = cmdStr.split(/\s+/);
+        const cmd = parts.shift().toLowerCase();
+        
+        if(cmdMap[cmd]) {
+            try { cmdMap[cmd](parts); } catch(e) { termLog(`<span style="color:#ff4757;">Err: ${e.message}</span>`); }
+        } else {
+            // JS Evaluation Fallback
+            try {
+                let res = eval(cmdStr);
+                if(res !== undefined) termLog("-> " + JSON.stringify(res));
+                else termLog("-> OK");
+            } catch(e) {
+                termLog(`<span style="color:#ff4757;">JS Err: ${e.message}</span>`);
+            }
+        }
+    }
+
+    function handleTerminalCommand(e) {
+        if(e.key === 'Enter') {
+            const inputEl = document.getElementById('devCmdInput');
+            executeCommand(inputEl.value);
+            inputEl.value = '';
+        }
+    }
+
+    async function loadRTSFile(event) {
+        const file = event.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const lines = e.target.result.split('\n');
+            termLog(`<br><span style="color:#ffd89b;">--- Running Script: ${file.name} ---</span>`);
+            for(let line of lines) { executeCommand(line); }
+            termLog(`<span style="color:#ffd89b;">--- Script Finished ---</span><br>`);
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+
+    function refreshSectorList() {
+        const container = document.getElementById('devSectorList');
+        const sections = ['sect-profile', 'sect-calib', 'sect-log', 'sect-view', 'sect-notes', 'sect-global'];
+        let html = '<ul style="font-size:10px; text-align:left; padding-left:15px; margin:5px 0;">';
+        sections.forEach(id => {
+            const el = document.getElementById(id);
+            const isHidden = el ? window.getComputedStyle(el).display === 'none' : true;
+            html += `<li style="color:${isHidden ? '#ff9a9e' : '#a8edb3'}; margin-bottom:2px;"><strong>${id}</strong> - ${isHidden ? 'HIDDEN' : 'VISIBLE'}</li>`;
+        });
+        html += '</ul>';
+        container.innerHTML = html;
+    }
+
+    function toggleDevSectors() {
+        document.body.classList.toggle('dev-show-sectors');
+        termLog("Sector overlay " + (document.body.classList.contains('dev-show-sectors') ? "ENABLED" : "DISABLED"));
+    }
+
+    async function generateMockData(force = false) {
+        if(!appData.activeProfileId) return showDialog({title:"Error", message:"No active profile selected!"});
+        const p = appData.profiles.find(x => x.id === appData.activeProfileId);
+        
+        const count = parseInt(document.getElementById('devMockCount').value) || 6;
+        const cycLen = parseInt(document.getElementById('devMockCyc').value) || 28;
+        const bleedLen = parseInt(document.getElementById('devMockBleed').value) || 5;
+        const pattern = document.getElementById('devMockPattern').value;
+
+        if(!force) {
+            if(!await showDialog({title:"Warning", message:`Are you sure? This will OVERWRITE existing periods with ${count} random mock periods (Pattern: ${pattern}).`, type:"confirm"})) return;
+        }
+        
+        p.periods = [];
+        let currentStart = new Date();
+        const mockSymptoms = ['s_cramps', 's_headache', 's_fatigue', 's_bloating', 's_mood', 's_backache'];
+        
+        for(let i=0; i < count; i++) {
+            let actualCyc = cycLen;
+            
+            if (pattern === 'irregular') actualCyc += (Math.floor(Math.random() * 17) - 8); // +/- 8 days
+            else if (pattern === 'short') actualCyc = 19 + (Math.floor(Math.random() * 3) - 1);
+            else if (pattern === 'long') actualCyc = 42 + (Math.floor(Math.random() * 5) - 2);
+            else actualCyc += (Math.floor(Math.random() * 5) - 2); // Regular (+/- 2 days)
+            
+            currentStart.setDate(currentStart.getDate() - actualCyc);
+
+            let startStr = currentStart.toISOString().split('T')[0];
+            let endD = new Date(currentStart);
+            endD.setDate(endD.getDate() + bleedLen - 1);
+            let endStr = endD.toISOString().split('T')[0];
+
+            let sList = [];
+            if(Math.random() > 0.3) sList.push(mockSymptoms[Math.floor(Math.random()*mockSymptoms.length)]);
+            if(Math.random() > 0.7) sList.push(mockSymptoms[Math.floor(Math.random()*mockSymptoms.length)]);
+
+            p.periods.push({
+                id: 'mock_' + Date.now() + i,
+                start: startStr,
+                end: endStr,
+                symptoms: [...new Set(sList)]
+            });
+        }
+        p.periods.sort((a,b) => new Date(a.start) - new Date(b.start));
+        saveData();
+        renderDashboard();
+        termLog(`Generated ${count} mock periods.`);
+        if(!force) await showDialog({title:"Success", message:"Mock periods generated successfully!"});
+    }
+
+    async function shiftAllDates(force = false) {
+        if(!appData.activeProfileId) return;
+        const days = parseInt(document.getElementById('devShiftDays').value);
+        if(isNaN(days) || days === 0) return;
+        const p = appData.profiles.find(x => x.id === appData.activeProfileId);
+        if(!p.periods.length) return;
+        
+        p.periods.forEach(per => {
+            let dStart = new Date(per.start);
+            dStart.setDate(dStart.getDate() + days);
+            per.start = dStart.toISOString().split('T')[0];
+            
+            if(per.end) {
+                let dEnd = new Date(per.end);
+                dEnd.setDate(dEnd.getDate() + days);
+                per.end = dEnd.toISOString().split('T')[0];
+            }
+        });
+        saveData();
+        renderDashboard();
+        termLog(`Shifted all dates by ${days} days.`);
+        if(!force) showDialog({title:"Success", message:`Shifted all dates by ${days} days.`});
+    }
+
+    function loadRawJson() {
+        if(!appData.activeProfileId) return;
+        const p = appData.profiles.find(x => x.id === appData.activeProfileId);
+        document.getElementById('devRawJson').value = JSON.stringify(p, null, 2);
+        termLog("Loaded active profile JSON.");
+    }
+
+    async function saveRawJson() {
+        if(!appData.activeProfileId) return;
+        try {
+            const parsed = JSON.parse(document.getElementById('devRawJson').value);
+            if(!parsed.id || !parsed.periods) throw new Error("Invalid profile structure.");
+            
+            const idx = appData.profiles.findIndex(x => x.id === appData.activeProfileId);
+            appData.profiles[idx] = parsed;
+            saveData();
+            
+            // Re-render EVERYTHING
+            updateProfileDropdown(); 
+            loadProfileSettings(); 
+            updateAppTranslationUI();
+            updateLayout();
+            renderDashboard();
+            
+            termLog("Profile JSON manually updated.");
+            await showDialog({title:"Success", message:"Profile JSON applied instantly!"});
+        } catch(e) {
+            await showDialog({title:"Error", message:"Invalid JSON: " + e.message});
+        }
+    }
+
+    function forceRender() {
+        updateProfileDropdown();
+        loadProfileSettings();
+        updateLayout();
+        updateAppTranslationUI();
+        renderDashboard();
+        refreshSectorList();
+        termLog("Forced UI full re-render.");
+    }
+
+    async function copyAppState() {
+        try {
+            await navigator.clipboard.writeText(JSON.stringify(appData, null, 2));
+            termLog("Copied global state to clipboard.");
+            await showDialog({title: "Success", message: "App state copied to clipboard."});
+        } catch(e) {
+            await showDialog({title: "Error", message: "Failed to copy text. Check console."});
+        }
+    }
+
+    async function clearCurrentProfilePeriods(force = false) {
+        if(!appData.activeProfileId) return;
+        if(force || await showDialog({title: "Warning", message: "This will permanently wipe ALL periods for the CURRENT profile. Continue?", type: "confirm"})) {
+            const p = appData.profiles.find(x => x.id === appData.activeProfileId);
+            p.periods = [];
+            saveData();
+            renderDashboard();
+            termLog("Wiped all periods from active profile.");
+        }
+    }
+
+    function replayTutorial() {
+        localStorage.setItem('redTracker_tourVersion', '0');
+        location.reload();
+    }
+    
+    async function testTourStep() {
+        const target = document.getElementById('devTourTarget').value.trim();
+        if(!target || !document.getElementById(target)) return showDialog({title:"Error", message:"Invalid target ID or element is currently hidden."});
+        closeAllModals();
+        startTour([{
+            targetId: target,
+            title: { en: "Dev Test Highlight", pl: "Test Podświetlenia" },
+            desc: { en: "Highlighting element: " + target, pl: "Podświetlam element: " + target }
+        }]);
+    }
+    
+    async function wipeAllData() {
+        if(await showDialog({title: "DANGER", message: "Are you SURE? This will WIPE EVERYTHING including profiles, settings, and histories.", type: "confirm"})) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+
+    // --- Tour Logic Variables ---
+    let currentTourSteps = [];
+    let currentTourIndex = 0;
+    let tourActive = false;
+
+    // --- Tooltip Variables ---
+    let mouseX = 0;
+    let mouseY = 0;
+    let tooltipVisible = false;
+
+    // --- Section Reorder Logic ---
+    const defaultOrder = ['sect-profile', 'sect-calib', 'sect-log', 'sect-view', 'sect-notes', 'sect-global'];
+    let mobileOrder = JSON.parse(localStorage.getItem('redTracker_order')) || [...defaultOrder];
+
+    // --- Symptom Dictionaries ---
+    const defaultSymptoms = {
+        en: { s_cramps: "Cramps", s_headache: "Headache", s_fatigue: "Fatigue", s_backache: "Backache", s_bloating: "Bloating", s_mood: "Mood swings", s_breasts: "Tender breasts", s_energy: "High energy", s_ovupain: "Ovulation pain", s_acne: "Acne" },
+        pl: { s_cramps: "Skurcze", s_headache: "Ból głowy", s_fatigue: "Zmęczenie", s_backache: "Ból pleców", s_bloating: "Wzdęcia", s_mood: "Wahania nastroju", s_breasts: "Tkliwość piersi", s_energy: "Wysoka energia", s_ovupain: "Ból owulacyjny", s_acne: "Trądzik" }
+    };
+    
+    const phaseSymptoms = {
+        en: { period: "Cramps, Fatigue, Backache", follicular: "High energy, Clear focus", ovulation: "Ovulation pain, High libido, Clear discharge", luteal: "Bloating, Mood swings, Tender breasts, Cravings" },
+        pl: { period: "Skurcze, Zmęczenie, Ból pleców", follicular: "Wysoka energia, Lepsza koncentracja", ovulation: "Ból owulacyjny, Wysokie libido, Przezroczysty śluz", luteal: "Wzdęcia, Wahania nastroju, Tkliwość piersi, Apetyt" }
+    };
+
+    const i18n = {
+        en: {
+            btnBack: "Back", madeBy: "Made by Dawidolowid", lightModern: "Light / Modern",
+            themeGlass: "Glass Theme", themeLight: "Light Theme", themeDark: "Dark Theme",
+            secProfile: "1. Profile Management", btnAdd: "Add", btnSave: "Save", btnCancel: "Cancel", btnPrint: "Print",
+            secCalib: "2. Cycle Calibration", autoCalc: "Auto-Calculate Cycle", manualCycle: "Manual Cycle Length",
+            secLog: "3. Log New Period", startDate: "Start Date", endDate: "End Date (Optional)", btnSaveEntry: "Save Entry", editHint: "<i class='fa-solid fa-circle-info'></i> Tip: Click edit <i class='fa-solid fa-pen'></i> to add symptoms",
+            secView: "4. View Options", bgColor: "Background Color", inspectToggleTxt: "Calendar Tooltip", btnImport: "Import", btnExport: "Export",
+            
+            appMode: "App Mode", modeSelf: "Self-Tracking (Personal)", modeClinic: "Clinical (Doctor/Clinic)",
+            secGlobal: "6. Global Settings", defProvider: "Default Attending Provider",
+            secNotesSelf: "5. Personal Notes", secNotesClinic: "5. Patient Notes",
+            notesPlaceholderSelf: "Add personal notes here...", notesPlaceholderClinic: "Add medical or personal notes for this patient here...",
+            modalProfileTitleSelf: "My Profile", modalProfileTitleClinic: "Patient Profile",
+            nameReqSelf: "Profile Name (Required)", nameReqClinic: "Patient Name (Required)", codeOpt: "Patient Code / ID (Optional)",
+            
+            prOptNameSelf: "Profile Name", prOptNameClinic: "Patient Name", prOptSavedNotesSelf: "Saved Personal Notes", prOptSavedNotesClinic: "Saved Patient Notes",
+            prScpCurrentSelf: "Current Profile Only", prScpCurrentClinic: "Current Patient Only",
+            prScpSepSelf: "All Profiles (Separate Pages)", prScpSepClinic: "All Patients (Separate Pages)",
+            prScpContSelf: "All Profiles (Continuous List)", prScpContClinic: "All Patients (Continuous List)",
+            prPatNameSelf: "Profile:", prPatNameClinic: "Patient:", prSavedNotesSelf: "Saved Personal Notes:", prSavedNotesClinic: "Saved Patient Notes:",
+            prHandNotesSelf: "Additional Notes:", prHandNotesClinic: "Doctor / Personal Notes:", prTitle: "Print Settings", prLangLabel: "Print Language",
+            prWhatToPrint: "What to Print?", prOptCode: "Patient Code / ID", prOptStats: "Statistics (Averages)", prOptTable: "History Table (w/ Symptoms)",
+            prOptPred: "Future Predictions", prOptCalendar: "Current Calendar Month", prOptEmptyLines: "Empty lined space for handwritten notes", prLines: "Lines:", prScope: "Print Scope",
+            prGenOn: "Generated on:", prPatCode: "Patient Code / ID:", prAttProvider: "Attending Provider:", prTotEntries: "Total Entries",
+            prAvgCycle: "Avg Cycle Length", prAvgBleed: "Avg Bleeding Duration", prHistTitle: "Period History", thNum: "#", thStart: "Start Date",
+            thEnd: "End Date", thDur: "Duration", thSymp: "Symptoms", prNoEntries: "No entries logged", prPredTitle: "Predicted Upcoming Periods", thPred: "Prediction",
+            thExpStart: "Expected Start", thExpEnd: "Expected End", prCycPlus: "Cycle +",
+
+            statLast: "Last Period Started", statAvgDur: "Avg Period Duration", statDurSub: "Bleeding length",
+            statAvgCyc: "Avg Cycle Length", statNext: "Expected Next", statOvu: "Expected Ovulation", thOvulation: "Ovulation",
+            chartTitle: "Cycle & Period History", insightsTitle: "Health & Cycle Insights", btnSavePng: "Save as PNG", btnPrintData: "Print Data",
+            welcomeTitle: "Welcome to RedTracker", welcomeDesc: "Add a profile from the left menu to start tracking.",
+            
+            noProfiles: "No profiles", providerPlaceholder: "e.g. Dr. Smith", days: "days", autoCalcTxt: "(Auto-calculated)", needDataTxt: "(Need more data)", manualSetTxt: "(Manual setting)",
+            noData: "No Data", startedToday: "Started Today!", daysAgo: "%s days ago", expectedToday: "Expected Today",
+            daysLate: "%s days late", inDays: "In %s days", logStartMsg: "Log a start date",
+            quickStart: "Start (Today)", quickStartYest: "Start (Yesterday)", quickEnd: "End (Today)", quickEndYest: "End (Yesterday)", editPeriodTitle: "Edit Period",
+            
+            sympTitle: "Symptoms", newSymptomPlaceholder: "Add custom symptom...", historyTitle: "Period History & Symptoms", noSymptoms: "No symptoms logged", typicalSymptoms: "Typical symptoms for this phase:",
+            ttSympLabel: "Predicted Symptoms:", ttNone: "None", ttFertileWindow: "+ Fertile Window",
+            reorderBtnTxt: "Customize Mobile Layout", reorderTitleTxt: "Customize Sections", btnSaveReorderTxt: "Save", btnCancelReorderTxt: "Cancel",
+
+            alertError: "Error", alertSuccess: "Success", alertConfirm: "Confirmation", btnOk: "OK",
+            alertNameReq: "Name is required!", alertStartReq: "Start Date is required.", alertEndBefore: "End date cannot be before start date.",
+            alertExists: "Entry with this start date already exists!", confirmDelete: "Are you sure you want to delete this profile and all its data?",
+            alertImportOk: "Data imported successfully!", alertImportFail: "Invalid backup file.", alertImportErr: "Error reading file.", cannotEndFuture: "Cannot end period today because it started in the future.",
+            
+            dayMo: "MO", dayTu: "TU", dayWe: "WE", dayTh: "TH", dayFr: "FR", daySa: "SA", daySu: "SU",
+            legPeriod: "Period", legFollicular: "Follicular Phase", legFertile: "Fertile Window", legOvulation: "Ovulation", legLuteal: "Luteal Phase",
+            statusTitle: "Current Phase:", safeTitle: "Safe Window (Low Pregnancy Risk):", safeYes: "Yes", safeNo: "No",
+            lockWarning: "Safe Window is locked. Calibrate by logging at least 3 cycles to enable predictions.",
+            disclaimer: "*Disclaimer: App predictions are estimates based on standard algorithms. Do not use solely for contraception.",
+
+            insRegular: "Your cycle is highly regular. This is a sign of good reproductive health.", insIrregular: "Notice: Your cycle length varies significantly.",
+            insShort: "Warning: Your average cycle is unusually short (< 21 days).", insLong: "Warning: Your average cycle is unusually long (> 35 days).",
+            insProlonged: "Notice: Your average bleeding lasts longer than 8 days.", insNormal: "Everything looks standard based on your logged cycles.",
+            
+            tourBtnNext: "Next <i class='fa-solid fa-arrow-right'></i>", tourBtnDone: "Got it! <i class='fa-solid fa-check'></i>", tourBtnSkip: "Skip"
+        },
+        pl: {
+            btnBack: "Wróć", madeBy: "Stworzone przez Dawidolowid", lightModern: "Jasny / Modern",
+            themeGlass: "Motyw Glass", themeLight: "Jasny (Modern)", themeDark: "Ciemny (Niebieski)",
+            secProfile: "1. Zarządzanie Profilami", btnAdd: "Dodaj", btnSave: "Zapisz", btnCancel: "Anuluj", btnPrint: "Drukuj",
+            secCalib: "2. Kalibracja Cyklu", autoCalc: "Auto-Kalkulacja", manualCycle: "Ręczna dł. cyklu",
+            secLog: "3. Dodaj Miesiączkę", startDate: "Data Rozpoczęcia", endDate: "Data Zakończenia (Opcjonalne)", btnSaveEntry: "Zapisz", editHint: "<i class='fa-solid fa-circle-info'></i> Wskazówka: Kliknij edytuj <i class='fa-solid fa-pen'></i> by dodać objawy",
+            secView: "4. Wygląd", bgColor: "Kolor Tła", inspectToggleTxt: "Dymek Kalendarza", btnImport: "Import", btnExport: "Eksport",
+            
+            appMode: "Tryb Aplikacji", modeSelf: "Osobisty (Dla siebie)", modeClinic: "Kliniczny (Dla lekarzy)",
+            secGlobal: "6. Ustawienia Globalne", defProvider: "Domyślny Lekarz Prowadzący",
+            secNotesSelf: "5. Osobiste Notatki", secNotesClinic: "5. Notatki Pacjentki",
+            notesPlaceholderSelf: "Dodaj swoje osobiste notatki tutaj...", notesPlaceholderClinic: "Dodaj medyczne lub osobiste notatki dla tej pacjentki...",
+            modalProfileTitleSelf: "Mój Profil", modalProfileTitleClinic: "Profil Pacjentki",
+            nameReqSelf: "Nazwa Profilu (Wymagane)", nameReqClinic: "Imię Pacjentki (Wymagane)", codeOpt: "Kod / ID Pacjentki (Opcjonalne)",
+
+            prOptNameSelf: "Nazwa Profilu", prOptNameClinic: "Imię Pacjentki", prOptSavedNotesSelf: "Zapisane Notatki Osobiste", prOptSavedNotesClinic: "Zapisane Notatki Pacjentki",
+            prScpCurrentSelf: "Tylko obecny profil", prScpCurrentClinic: "Tylko obecna pacjentka", prScpSepSelf: "Wszystkie profile (Osobne strony)", prScpSepClinic: "Wszyscy pacjenci (Osobne strony)",
+            prScpContSelf: "Wszystkie profile (Ciągła lista)", prScpContClinic: "Wszyscy pacjenci (Ciągła lista)", prPatNameSelf: "Profil:", prPatNameClinic: "Pacjentka:",
+            prSavedNotesSelf: "Osobiste Notatki:", prSavedNotesClinic: "Notatki Pacjentki:", prHandNotesSelf: "Dodatkowe Notatki:", prHandNotesClinic: "Notatki Lekarza / Dodatkowe:",
+            prTitle: "Ustawienia Druku", prLangLabel: "Język Wydruku", prWhatToPrint: "Co wydrukować?", prOptCode: "Kod / ID Pacjentki", prOptStats: "Statystyki (Średnie)",
+            prOptTable: "Tabela Historii (z Objawami)", prOptPred: "Przewidywania", prOptCalendar: "Obecny Miesiąc Kalendarza", prOptEmptyLines: "Puste linie na notatki odręczne", prLines: "Linie:", prScope: "Zakres Druku",
+            prGenOn: "Wygenerowano:", prPatCode: "Kod / ID Pacjentki:", prAttProvider: "Lekarz Prowadzący:", prTotEntries: "Ilość wpisów", prAvgCycle: "Średni Cykl",
+            prAvgBleed: "Średnie Krwawienie", prHistTitle: "Historia Cykli", thNum: "Nr", thStart: "Początek", thEnd: "Koniec", thDur: "Trwanie", thSymp: "Objawy", prNoEntries: "Brak zapisanych wpisów",
+            prPredTitle: "Przewidywane Miesiączki", thPred: "Przewidywanie", thExpStart: "Spodziewany Start", thExpEnd: "Spodziewany Koniec", prCycPlus: "Cykl +",
+
+            statLast: "Ostatnia Miesiączka", statAvgDur: "Średnia Dł. Miesiączki", statDurSub: "Dni krwawienia",
+            statAvgCyc: "Średnia Dł. Cyklu", statNext: "Spodziewana Następna", statOvu: "Spodziewana Owulacja", thOvulation: "Owulacja",
+            chartTitle: "Historia Cykli", insightsTitle: "Zdrowie i Analiza Cyklu", btnSavePng: "Zapisz PNG", btnPrintData: "Drukuj Raport",
+            welcomeTitle: "Witaj w RedTracker", welcomeDesc: "Dodaj profil z menu po lewej stronie, aby zacząć.",
+
+            noProfiles: "Brak profili", providerPlaceholder: "np. Dr. Kowalski", days: "dni", autoCalcTxt: "(Auto-kalkulacja)", needDataTxt: "(Potrzeba więcej danych)", manualSetTxt: "(Ustawienie ręczne)",
+            noData: "Brak", startedToday: "Dzisiaj!", daysAgo: "%s dni temu", expectedToday: "Dzisiaj",
+            daysLate: "%s dni spóźnienia", inDays: "Za %s dni", logStartMsg: "Podaj datę startu",
+            quickStart: "Zacznij (Dziś)", quickStartYest: "Zacznij (Wczoraj)", quickEnd: "Zakończ (Dziś)", quickEndYest: "Zakończ (Wczoraj)", editPeriodTitle: "Edytuj Miesiączkę",
+            
+            sympTitle: "Objawy", newSymptomPlaceholder: "Dodaj własny objaw...", historyTitle: "Historia Miesiączek i Objawów", noSymptoms: "Brak zaznaczonych objawów", typicalSymptoms: "Typowe objawy w tej fazie:",
+            ttSympLabel: "Przewidywane Objawy:", ttNone: "Brak", ttFertileWindow: "+ Dni Płodne",
+            reorderBtnTxt: "Dostosuj układ mobilny", reorderTitleTxt: "Dostosuj Panele", btnSaveReorderTxt: "Zapisz", btnCancelReorderTxt: "Anuluj",
+
+            alertError: "Błąd", alertSuccess: "Sukces", alertConfirm: "Potwierdzenie", btnOk: "OK",
+            alertNameReq: "Imię jest wymagane!", alertStartReq: "Data rozpoczęcia jest wymagana.", alertEndBefore: "Data zakończenia nie może być przed datą startu.",
+            alertExists: "Wpis z tą datą startu już istnieje!", confirmDelete: "Czy na pewno chcesz usunąć ten profil i jego dane?",
+            alertImportOk: "Dane pomyślnie zaimportowane!", alertImportFail: "Nieprawidłowy plik kopii zapasowej.", alertImportErr: "Błąd odczytu pliku.", cannotEndFuture: "Nie można zakończyć miesiączki, data w przyszłości.",
+            
+            dayMo: "PN", dayTu: "WT", dayWe: "ŚR", dayTh: "CZ", dayFr: "PT", daySa: "SO", daySu: "ND",
+            legPeriod: "Miesiączka", legFollicular: "Faza Folikularna", legFertile: "Dni Płodne", legOvulation: "Owulacja", legLuteal: "Faza Lutealna",
+            statusTitle: "Obecna Faza:", safeTitle: "Okno Bezpieczne (Niskie ryzyko ciąży):", safeYes: "Tak", safeNo: "Nie",
+            lockWarning: "Okno Bezpieczne zablokowane. Zapisz co najmniej 3 pełne cykle, aby skalibrować algorytm.",
+            disclaimer: "*Uwaga: Przewidywania to tylko szacunki. Okno bezpieczne NIE JEST zalecane jako antykoncepcja dla nastolatek.",
+
+            insRegular: "Twój cykl jest bardzo regularny. To znak dobrego zdrowia reprodukcyjnego.", insIrregular: "Uwaga: Długość Twojego cyklu znacznie się waha.",
+            insShort: "Ostrzeżenie: Twój średni cykl jest nietypowo krótki (< 21 dni).", insLong: "Ostrzeżenie: Twój średni cykl jest nietypowo długi (> 35 dni).",
+            insProlonged: "Uwaga: Twoje średnie krwawienie trwa dłużej niż 8 dni.", insNormal: "Wszystko wygląda w normie na podstawie wprowadzonych danych.",
+            
+            tourBtnNext: "Dalej <i class='fa-solid fa-arrow-right'></i>", tourBtnDone: "Zrozumiałem! <i class='fa-solid fa-check'></i>", tourBtnSkip: "Pomiń"
+        }
+    };
+
+    let currentLang = 'en';
+    let appData = { appMode: 'self', globalProvider: "", profiles: [], activeProfileId: null };
+    let myChart = null; let currentChartType = 'bar'; let isEditingProfile = false; let viewedMonthDate = new Date();
+
+    function t(key, lang = currentLang) { return i18n[lang][key] || key; }
+    function setStaticText(id, key) { const el = document.getElementById(id); if(el) el.innerHTML = t(key); }
+
+    function getSymptomName(keyOrString, lang = currentLang) {
+        if (defaultSymptoms[lang][keyOrString]) return defaultSymptoms[lang][keyOrString];
+        return keyOrString;
+    }
+
+    function updateLayout() {
+        const isMobile = window.innerWidth <= 992;
+        const hasProfiles = appData.profiles.length > 0;
+        const hiddenSections = JSON.parse(localStorage.getItem('redTracker_hiddenSections')) || [];
+        
+        defaultOrder.forEach((id, index) => {
+            const el = document.getElementById(id);
+            if(!el) return;
+            
+            if (isMobile) {
+                const orderIndex = mobileOrder.indexOf(id);
+                el.style.order = orderIndex !== -1 ? orderIndex : index;
+                
+                if(!hasProfiles && id !== 'sect-profile' && id !== 'sect-global') {
+                    el.style.display = 'none';
+                } else if (hiddenSections.includes(id)) {
+                    el.style.display = 'none';
+                } else {
+                    el.style.display = 'flex';
+                }
+            } else {
+                el.style.order = index;
+                if(!hasProfiles && id !== 'sect-profile' && id !== 'sect-global') {
+                    el.style.display = 'none';
+                } else {
+                    el.style.display = 'flex';
+                }
+            }
+        });
+        
+        document.getElementById('welcomeCard').style.display = hasProfiles ? 'none' : 'flex';
+        document.getElementById('workspaceCard').style.display = hasProfiles ? 'flex' : 'none';
+        document.getElementById('historyCard').style.display = (hasProfiles && appData.profiles.find(p=>p.id===appData.activeProfileId)?.periods?.length > 0) ? 'flex' : 'none';
+    }
+
+    window.addEventListener('resize', updateLayout);
+
+    function updateAppTranslationUI() {
+        const isSelf = appData.appMode === 'self';
+
+        setStaticText('btnBackTxt', 'btnBack'); setStaticText('madeByTxt', 'madeBy'); 
+        
+        setStaticText('optThemeGlass', 'themeGlass'); setStaticText('optThemeLight', 'themeLight'); setStaticText('optThemeDark', 'themeDark');
+        
+        setStaticText('secProfileTxt', 'secProfile'); setStaticText('btnAddTxt', 'btnAdd');
+        setStaticText('secCalibTxt', 'secCalib'); setStaticText('autoCalcTxtLabel', 'autoCalc'); setStaticText('manualCycleTxt', 'manualCycle');
+        setStaticText('secLogTxt', 'secLog'); setStaticText('startDateTxt', 'startDate'); setStaticText('endDateTxt', 'endDate'); setStaticText('btnSaveEntryTxt', 'btnSaveEntry'); setStaticText('editHintTxt', 'editHint');
+        setStaticText('secViewTxt', 'secView'); setStaticText('bgColorTxt', 'bgColor'); setStaticText('inspectToggleTxt', 'inspectToggleTxt'); setStaticText('btnImportTxt', 'btnImport'); setStaticText('btnExportTxt', 'btnExport');
+        setStaticText('secGlobalTxt', 'secGlobal'); setStaticText('defProviderTxt', 'defProvider');
+        setStaticText('appModeTxt', 'appMode'); setStaticText('modeSelfTxt', 'modeSelf'); setStaticText('modeClinicTxt', 'modeClinic');
+        setStaticText('secNotesTxt', isSelf ? 'secNotesSelf' : 'secNotesClinic');
+        
+        const notesInput = document.getElementById('patientNotesInput'); if(notesInput) notesInput.placeholder = isSelf ? t('notesPlaceholderSelf') : t('notesPlaceholderClinic');
+        const nameInput = document.getElementById('personNameInput'); if(nameInput) nameInput.placeholder = isSelf ? t('nameReqSelf') : t('nameReqClinic');
+        const codeInput = document.getElementById('personCodeInput'); if(codeInput) codeInput.placeholder = t('codeOpt');
+        const provInput = document.getElementById('globalProviderInput'); if(provInput) provInput.placeholder = t('providerPlaceholder');
+        const sympInput = document.getElementById('newSymptomInput'); if(sympInput) sympInput.placeholder = t('newSymptomPlaceholder');
+
+        setStaticText('statLastTxt', 'statLast'); setStaticText('statAvgDurTxt', 'statAvgDur'); setStaticText('statDurSubTxt', 'statDurSub');
+        setStaticText('statAvgCycTxt', 'statAvgCyc'); setStaticText('statNextTxt', 'statNext'); setStaticText('statOvuTxt', 'statOvu'); 
+        setStaticText('chartTitleText', 'chartTitle'); setStaticText('insightsTitleTxt', 'insightsTitle'); setStaticText('historyTitleTxt', 'historyTitle');
+        setStaticText('btnSavePngTxt', 'btnSavePng'); setStaticText('btnPrintDataTxt', 'btnPrintData');
+        setStaticText('welcomeTitleTxt', 'welcomeTitle'); setStaticText('welcomeDescTxt', 'welcomeDesc');
+        
+        setStaticText('btnSaveTxt', 'btnSave'); setStaticText('btnCancelTxt', 'btnCancel'); setStaticText('btnCancelPrintTxt', 'btnCancel'); setStaticText('btnPrintTxt', 'btnPrint');
+        setStaticText('prTitleTxt', 'prTitle'); setStaticText('prLangLabelTxt', 'prLangLabel'); setStaticText('prWhatToPrintTxt', 'prWhatToPrint');
+        
+        setStaticText('prOptNameTxt', isSelf ? 'prOptNameSelf' : 'prOptNameClinic'); setStaticText('prOptCodeTxt', 'prOptCode');
+        setStaticText('prOptStatsTxt', 'prOptStats'); setStaticText('prOptTableTxt', 'prOptTable'); setStaticText('prOptPredTxt', 'prOptPred');
+        setStaticText('prOptCalendarTxt', 'prOptCalendar');
+        setStaticText('prOptSavedNotesTxt', isSelf ? 'prOptSavedNotesSelf' : 'prOptSavedNotesClinic');
+        setStaticText('prOptEmptyLinesTxt', 'prOptEmptyLines'); setStaticText('prLinesTxt', 'prLines');
+        setStaticText('prScopeTxt', 'prScope'); setStaticText('prScpCurrentTxt', isSelf ? 'prScpCurrentSelf' : 'prScpCurrentClinic');
+        setStaticText('prScpSepTxt', isSelf ? 'prScpSepSelf' : 'prScpSepClinic'); setStaticText('prScpContTxt', isSelf ? 'prScpContSelf' : 'prScpContClinic');
+        
+        setStaticText('editStartTxt', 'startDate'); setStaticText('editEndTxt', 'endDate'); setStaticText('sympTitleTxt', 'sympTitle');
+        setStaticText('btnSaveEntryEditTxt', 'btnSave'); setStaticText('btnCancelEntryEditTxt', 'btnCancel');
+        setStaticText('dialogBtnOk', 'btnOk'); setStaticText('dialogBtnCancel', 'btnCancel');
+        
+        setStaticText('reorderBtnTxt', 'reorderBtnTxt'); setStaticText('reorderTitleTxt', 'reorderTitleTxt');
+        setStaticText('btnSaveReorderTxt', 'btnSaveReorderTxt'); setStaticText('btnCancelReorderTxt', 'btnCancelReorderTxt');
+
+        ['dayMo','dayTu','dayWe','dayTh','dayFr','daySa','daySu'].forEach(k => setStaticText(k, k));
+        setStaticText('legPeriod', 'legPeriod'); setStaticText('legFollicular', 'legFollicular'); setStaticText('legFertile', 'legFertile');
+        setStaticText('legOvulation', 'legOvulation'); setStaticText('legLuteal', 'legLuteal');
+        setStaticText('ttSympLabel', 'ttSympLabel');
+
+        if(tourActive) {
+            setStaticText('tourBtnSkip', 'tourBtnSkip');
+            document.getElementById('tourBtnNext').innerHTML = (currentTourIndex < currentTourSteps.length - 1) ? t('tourBtnNext') : t('tourBtnDone');
+        }
+
+        renderDashboard();
+    }
+
+    function changeAppLanguage(lang) { currentLang = lang; localStorage.setItem('redTracker_lang', lang); document.getElementById('prLangSelect').value = lang; updateAppTranslationUI(); updateProfileDropdown(); }
+
+    function changeTheme(theme) {
+        document.body.classList.remove('modern-ui', 'modern-dark');
+        if (theme === 'modern-light') { document.body.classList.add('modern-ui'); } 
+        else if (theme === 'modern-dark') { document.body.classList.add('modern-dark'); }
+        document.getElementById('themeSelect').value = theme;
+        localStorage.setItem('redTracker_theme', theme);
+        setTimeout(() => { if (myChart) myChart.resize(); }, 450);
+    }
+
+    let dialogResolve = null;
+    function showDialog({ title, message, type = 'alert' }) {
+        return new Promise(resolve => {
+            dialogResolve = resolve; 
+            document.getElementById('dialogTitle').innerHTML = title; 
+            document.getElementById('dialogMessage').innerHTML = message;
+            document.getElementById('dialogBtnCancel').style.display = type === 'confirm' ? 'block' : 'none';
+            
+            // Bring overlay up so it dims the dev modal properly
+            document.getElementById('modalOverlay').style.zIndex = 5500;
+            
+            document.getElementById('modalOverlay').style.display = 'block'; 
+            document.getElementById('unifiedDialog').style.display = 'block';
+        });
+    }
+    
+    function closeAllModals() {
+        const modals = ['profileModal', 'printModal', 'editEntryModal', 'reorderModal', 'devModal'];
+        modals.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+        
+        document.getElementById('modalOverlay').style.zIndex = 999;
+        document.getElementById('modalOverlay').style.display = 'none';
+        
+        if (document.getElementById('unifiedDialog').style.display !== 'none') {
+            document.getElementById('unifiedDialog').style.display = 'none';
+            if (dialogResolve) { dialogResolve(false); dialogResolve = null; }
+        }
+    }
+    
+    function closeDialog(result) {
+        document.getElementById('unifiedDialog').style.display = 'none';
+        document.getElementById('modalOverlay').style.zIndex = 999;
+        
+        const otherModalsOpen = ['profileModal', 'printModal', 'editEntryModal', 'reorderModal', 'devModal'].some(id => document.getElementById(id).style.display === 'block');
+        if(!otherModalsOpen) { 
+            document.getElementById('modalOverlay').style.display = 'none'; 
+        }
+        
+        if(dialogResolve) { dialogResolve(result); dialogResolve = null; }
+    }
+
+    function toggleSection(sectId) {
+        if(window.innerWidth > 992) return; 
+        const sec = document.getElementById(sectId);
+        sec.classList.toggle('collapsed');
+    }
+
+    // --- REORDER & HIDE LOGIC ---
+    function openReorderModal() {
+        const container = document.getElementById('reorderListContainer');
+        container.innerHTML = '';
+        
+        const nameMap = {
+            'sect-profile': 'secProfile', 'sect-calib': 'secCalib', 'sect-log': 'secLog',
+            'sect-view': 'secView', 'sect-notes': 'secNotesSelf', 'sect-global': 'secGlobal'
+        };
+        if (appData.appMode === 'clinical') nameMap['sect-notes'] = 'secNotesClinic';
+
+        const hiddenSections = JSON.parse(localStorage.getItem('redTracker_hiddenSections')) || [];
+
+        mobileOrder.forEach((id, index) => {
+            if(!nameMap[id]) return;
+            const isHidden = hiddenSections.includes(id);
+            const div = document.createElement('div');
+            div.className = `reorder-item ${isHidden ? 'dimmed' : ''}`;
+            div.setAttribute('data-id', id);
+            
+            div.innerHTML = `
+                <div style="display:flex; align-items:center;">
+                    <div class="drag-handle" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i></div>
+                    <span>${t(nameMap[id])}</span>
+                </div>
+                <button onclick="toggleHideSection('${id}')" class="hide-btn" title="Toggle Visibility">
+                    <i class="fa-solid ${isHidden ? 'fa-eye-slash' : 'fa-eye'}"></i>
+                </button>
+            `;
+            container.appendChild(div);
+        });
+
+        initReorderDrag();
+        document.getElementById('reorderModal').style.display = 'block';
+        document.getElementById('modalOverlay').style.display = 'block';
+    }
+
+    function toggleHideSection(id) {
+        let hiddenSections = JSON.parse(localStorage.getItem('redTracker_hiddenSections')) || [];
+        if(hiddenSections.includes(id)) {
+            hiddenSections = hiddenSections.filter(x => x !== id);
+        } else {
+            hiddenSections.push(id);
+        }
+        localStorage.setItem('redTracker_hiddenSections', JSON.stringify(hiddenSections));
+        openReorderModal();
+        updateLayout();
+    }
+
+    function initReorderDrag() {
+        const items = document.querySelectorAll('.reorder-item');
+        let touchEl = null;
+
+        items.forEach((el) => {
+            const handle = el.querySelector('.drag-handle');
+            
+            handle.onmousedown = () => el.setAttribute('draggable', 'true');
+            el.ondragstart = (e) => {
+                e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => el.classList.add('dragging'), 0);
+            };
+            el.ondragover = (e) => {
+                e.preventDefault();
+                const bounding = el.getBoundingClientRect();
+                const offset = bounding.y + (bounding.height / 2);
+                if (e.clientY - offset > 0) {
+                    el.style.borderBottom = "2px solid #ff9a9e"; el.style.borderTop = "";
+                } else {
+                    el.style.borderTop = "2px solid #ff9a9e"; el.style.borderBottom = "";
+                }
+            };
+            el.ondragleave = () => { el.style.borderTop = ""; el.style.borderBottom = ""; };
+            el.ondrop = (e) => {
+                e.preventDefault();
+                el.style.borderTop = ""; el.style.borderBottom = "";
+                const draggingItem = document.querySelector('.reorder-item.dragging');
+                if (draggingItem && draggingItem !== el) {
+                    const bounding = el.getBoundingClientRect();
+                    const offset = bounding.y + (bounding.height / 2);
+                    if (e.clientY - offset > 0) el.after(draggingItem); else el.before(draggingItem);
+                    updateMobileOrderArray();
+                }
+            };
+            el.ondragend = () => { el.classList.remove('dragging'); el.removeAttribute('draggable'); };
+
+            handle.ontouchstart = (e) => { touchEl = el; el.classList.add('dragging'); };
+            handle.ontouchmove = (e) => {
+                if (!touchEl) return;
+                e.preventDefault();
+                const touch = e.touches[0];
+                const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (!target) return;
+                const targetItem = target.closest('.reorder-item');
+                if (targetItem && targetItem !== touchEl) {
+                    const bounding = targetItem.getBoundingClientRect();
+                    const offset = bounding.y + (bounding.height / 2);
+                    if (touch.clientY - offset > 0) targetItem.after(touchEl); else targetItem.before(touchEl);
+                }
+            };
+            handle.ontouchend = () => {
+                if (!touchEl) return;
+                touchEl.classList.remove('dragging');
+                touchEl = null;
+                updateMobileOrderArray();
+            };
+        });
+    }
+
+    function updateMobileOrderArray() {
+        const newDOM = document.querySelectorAll('#reorderListContainer .reorder-item');
+        mobileOrder = Array.from(newDOM).map(item => item.getAttribute('data-id'));
+    }
+
+    function saveReorder() {
+        localStorage.setItem('redTracker_order', JSON.stringify(mobileOrder));
+        updateLayout();
+        closeAllModals();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('mainVersionTag').innerText = `v${APP_VERSION}`;
+        const savedLang = localStorage.getItem('redTracker_lang'); if (savedLang) currentLang = savedLang;
+        document.getElementById('appLangSelect').value = currentLang; document.getElementById('prLangSelect').value = currentLang;
+        
+        const savedTheme = localStorage.getItem('redTracker_theme');
+        if (savedTheme) { changeTheme(savedTheme); } 
+        else if (localStorage.getItem('redTracker_modernUI') === 'true') { changeTheme('modern-light'); }
+        else { changeTheme('glass'); }
+
+        if (localStorage.getItem('redTracker_devMode') === 'true') {
+            document.getElementById('devFloatBtn').style.display = 'flex';
+        }
+
+        loadData();
+        document.getElementById('startDateInput').valueAsDate = new Date();
+        setTimeout(checkAndRunTour, 500); 
+    });
+
+    // --- CALENDAR TOOLTIP (INSPECTION MODE) ---
+    let tooltipTimeout;
+    function updateCalTooltipPosition(e) {
+        mouseX = e.clientX; mouseY = e.clientY;
+        if(tooltipVisible) positionCalTooltip();
+    }
+    function positionCalTooltip() {
+        const tt = document.getElementById('calTooltip');
+        let left = mouseX; let top = mouseY - 15;
+        if (left < 120) left = 120;
+        if (left > window.innerWidth - 120) left = window.innerWidth - 120;
+        tt.style.left = left + 'px'; tt.style.top = top + 'px';
+        tt.style.transform = `translate(-50%, -100%)`; 
+    }
+    function showCalTooltip(phase, isFertile, event) {
+        if(tourActive || !document.getElementById('inspectToggleCheck').checked) return;
+        clearTimeout(tooltipTimeout);
+        tooltipVisible = true;
+        
+        let pTxt = '---'; let pSympTxt = t('ttNone');
+        if(phase === 'period') { pTxt = t('legPeriod'); pSympTxt = phaseSymptoms[currentLang].period; }
+        else if(phase === 'follicular') { pTxt = t('legFollicular'); pSympTxt = phaseSymptoms[currentLang].follicular; }
+        else if(phase === 'ovulation') { pTxt = t('legOvulation'); pSympTxt = phaseSymptoms[currentLang].ovulation; }
+        else if(phase === 'luteal') { pTxt = t('legLuteal'); pSympTxt = phaseSymptoms[currentLang].luteal; }
+        
+        document.getElementById('ttPhaseName').innerText = pTxt;
+        const fertEl = document.getElementById('ttFertile');
+        if (isFertile && phase !== 'ovulation') { fertEl.style.display = 'block'; fertEl.innerText = t('ttFertileWindow'); } else { fertEl.style.display = 'none'; }
+        document.getElementById('ttSympText').innerText = pSympTxt;
+
+        const tt = document.getElementById('calTooltip');
+        tt.style.display = 'block';
+        setTimeout(() => tt.classList.add('visible'), 10);
+        positionCalTooltip();
+        
+        if(event) { event.stopPropagation(); }
+    }
+    function hideCalTooltip() {
+        if (!tooltipVisible) return;
+        tooltipVisible = false;
+        const tt = document.getElementById('calTooltip');
+        tt.classList.remove('visible');
+        tooltipTimeout = setTimeout(() => { if(!tooltipVisible) tt.style.display = 'none'; }, 200);
+    }
+    
+    // Automatically hide tooltip when moving mouse outside interactive elements or when scrolling on mobile
+    window.addEventListener('mousemove', (e) => {
+        if (tooltipVisible && !e.target.closest('.cal-day.interactive') && !e.target.closest('.cal-tooltip')) {
+            hideCalTooltip();
+        }
+        updateCalTooltipPosition(e);
+    });
+    window.addEventListener('scroll', hideCalTooltip, { passive: true });
+    window.addEventListener('touchmove', hideCalTooltip, { passive: true });
+
+    // --- FEATURE TOUR IMPLEMENTATION (POINTING) ---
+    function checkAndRunTour() {
+        const storedTourVer = parseInt(localStorage.getItem('redTracker_tourVersion') || '0');
+        if (storedTourVer === 0 && appData.profiles.length === 0) {
+            localStorage.setItem('redTracker_tourVersion', TOUR_VERSION);
+            return;
+        }
+        if (storedTourVer >= TOUR_VERSION) return;
+        if (FEATURE_TOUR_CONFIG[TOUR_VERSION]) { startTour(FEATURE_TOUR_CONFIG[TOUR_VERSION]); }
+        localStorage.setItem('redTracker_tourVersion', TOUR_VERSION);
+    }
+
+    function startTour(steps) {
+        currentTourSteps = steps; currentTourIndex = 0; tourActive = true;
+        document.body.classList.add('tour-active');
+        document.getElementById('tourOverlay').style.display = 'block';
+        setStaticText('tourBtnSkip', 'tourBtnSkip');
+        showTourStep();
+    }
+
+    function showTourStep() {
+        document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+        if(currentTourIndex >= currentTourSteps.length) { endTour(); return; }
+        
+        const step = currentTourSteps[currentTourIndex];
+        const targetEl = document.getElementById(step.targetId);
+        
+        document.getElementById('tourTitle').innerHTML = step.title[currentLang] || step.title['en'];
+        document.getElementById('tourDesc').innerHTML = step.desc[currentLang] || step.desc['en'];
+        const isLast = (currentTourIndex === currentTourSteps.length - 1);
+        document.getElementById('tourBtnNext').innerHTML = isLast ? t('tourBtnDone') : t('tourBtnNext');
+
+        if (targetEl && window.getComputedStyle(targetEl).display !== 'none') {
+            targetEl.classList.add('tour-highlight');
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => positionTourBox(targetEl), 300);
+        } else {
+            const box = document.getElementById('tourBox');
+            box.className = 'tour-box visible';
+            box.style.display = 'block';
+            box.style.top = '50%'; box.style.left = '50%'; box.style.transform = 'translate(-50%, -50%)';
+            document.getElementById('tourArrow').style.display = 'none';
+        }
+    }
+
+    function positionTourBox(targetEl) {
+        const rect = targetEl.getBoundingClientRect();
+        const box = document.getElementById('tourBox');
+        const arrow = document.getElementById('tourArrow');
+        box.style.display = 'block'; box.style.transform = 'none'; arrow.style.display = 'block';
+        
+        const boxRect = box.getBoundingClientRect();
+        let top, left; let arrowClass = 'arrow-top'; 
+        
+        if (rect.bottom + boxRect.height + 30 < window.innerHeight) {
+            top = rect.bottom + 20 + window.scrollY; arrowClass = 'arrow-top';
+        } else {
+            top = rect.top - boxRect.height - 20 + window.scrollY; arrowClass = 'arrow-bottom';
+        }
+        
+        left = rect.left + (rect.width / 2) - (boxRect.width / 2) + window.scrollX;
+        
+        const padding = 15;
+        if (left < padding) left = padding;
+        if (left + boxRect.width > window.innerWidth - padding) left = window.innerWidth - boxRect.width - padding;
+        
+        box.style.top = top + 'px'; box.style.left = left + 'px';
+        box.className = 'tour-box visible ' + arrowClass;
+        
+        let targetCenterAbs = rect.left + (rect.width / 2);
+        let arrowLeftPct = ((targetCenterAbs - left) / boxRect.width) * 100;
+        if(arrowLeftPct < 10) arrowLeftPct = 10; if(arrowLeftPct > 90) arrowLeftPct = 90;
+        arrow.style.left = arrowLeftPct + '%';
+    }
+
+    function nextTourStep() { currentTourIndex++; showTourStep(); }
+    function endTour() {
+        tourActive = false;
+        document.body.classList.remove('tour-active');
+        document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+        document.getElementById('tourOverlay').style.display = 'none';
+        const box = document.getElementById('tourBox');
+        box.classList.remove('visible');
+        setTimeout(() => box.style.display = 'none', 300);
+    }
+    // ------------------------------------
+
+    function loadData() {
+        const saved = localStorage.getItem('redTrackerData');
+        if (saved) {
+            try {
+                appData = JSON.parse(saved); 
+                appData.profiles.forEach(p => { 
+                    if(!p.periods && p.dates) { p.periods = p.dates.map((d,i) => ({id: 'old_'+i, start:d, end:null, symptoms:[]})); delete p.dates; } 
+                    if (p.code === undefined) p.code = ""; if (p.notes === undefined) p.notes = "";
+                    if (!p.customSymptoms) p.customSymptoms = [];
+                    p.periods.forEach(per => { if(!per.symptoms) per.symptoms = []; });
+                });
+                if(appData.globalProvider === undefined) appData.globalProvider = ""; if(appData.appMode === undefined) appData.appMode = "self";
+            } catch(e) { console.error(e); }
+        }
+        const modeRadios = document.getElementsByName('appModeRadio'); for(let r of modeRadios) { if(r.value === appData.appMode) r.checked = true; }
+        applyAppModeUI(); document.getElementById('globalProviderInput').value = appData.globalProvider;
+        updateProfileDropdown(); updateAppTranslationUI(); updateLayout();
+    }
+    function saveData() { localStorage.setItem('redTrackerData', JSON.stringify(appData)); renderDashboard(); }
+
+    function changeAppMode(mode) { appData.appMode = mode; saveData(); applyAppModeUI(); updateAppTranslationUI(); }
+    function applyAppModeUI() {
+        const isSelf = appData.appMode === 'self';
+        document.getElementById('personCodeWrapper').style.display = isSelf ? 'none' : 'block';
+        document.getElementById('globalProviderWrapper').style.display = isSelf ? 'none' : 'block';
+        document.getElementById('prShowCodeWrapper').style.display = isSelf ? 'none' : 'flex';
+    }
+    function updateGlobalProvider() { appData.globalProvider = document.getElementById('globalProviderInput').value.trim(); saveData(); }
+    function updatePatientNotes() { const p = appData.profiles.find(p => p.id === appData.activeProfileId); if(p) { p.notes = document.getElementById('patientNotesInput').value; saveData(); } }
+
+    function exportData() {
+        const blob = new Blob([JSON.stringify(appData, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob);
+        const link = document.createElement('a'); link.download = `RedTracker_Backup_${new Date().toISOString().split('T')[0]}.json`; link.href = url; link.click();
+    }
+    async function importData(event) {
+        const file = event.target.files[0]; if(!file) return; const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const parsed = JSON.parse(e.target.result);
+                if(parsed && parsed.profiles) {
+                    appData = parsed; if(appData.appMode === undefined) appData.appMode = "self"; saveData();
+                    const modeRadios = document.getElementsByName('appModeRadio'); for(let r of modeRadios) { if(r.value === appData.appMode) r.checked = true; }
+                    applyAppModeUI(); document.getElementById('globalProviderInput').value = appData.globalProvider || "";
+                    updateProfileDropdown(); updateAppTranslationUI(); await showDialog({title: t('alertSuccess'), message: t('alertImportOk')});
+                } else { await showDialog({title: t('alertError'), message: t('alertImportFail')}); }
+            } catch(err) { await showDialog({title: t('alertError'), message: t('alertImportErr')}); }
+        };
+        reader.readAsText(file); event.target.value = ''; 
+    }
+
+    function openProfileModal(editMode) {
+        isEditingProfile = editMode;
+        if (editMode) {
+            const profile = appData.profiles.find(p => p.id === appData.activeProfileId); if(!profile) return;
+            document.getElementById('personNameInput').value = profile.name; document.getElementById('personCodeInput').value = profile.code;
+            const tKey = appData.appMode === 'self' ? 'modalProfileTitleSelf' : 'modalProfileTitleClinic'; document.getElementById('profileModalTitle').innerHTML = `<i class="fa-solid fa-user-pen"></i> <span id="mTitleTxt">${t(tKey)}</span>`; 
+        } else {
+            document.getElementById('personNameInput').value = ''; document.getElementById('personCodeInput').value = '';
+            const tKey = appData.appMode === 'self' ? 'modalProfileTitleSelf' : 'modalProfileTitleClinic'; document.getElementById('profileModalTitle').innerHTML = `<i class="fa-solid fa-user-plus"></i> <span id="mTitleTxt">${t(tKey)}</span>`;
+        }
+        document.getElementById('profileModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block';
+    }
+
+    async function saveProfile() {
+        const name = document.getElementById('personNameInput').value.trim(); const code = document.getElementById('personCodeInput').value.trim();
+        if(!name) { await showDialog({title: t('alertError'), message: t('alertNameReq')}); return; }
+        if (isEditingProfile) { const p = appData.profiles.find(p => p.id === appData.activeProfileId); if(p) { p.name = name; p.code = code; } } 
+        else { const newProfile = { id: Date.now().toString(), name: name, code: code, notes: "", periods: [], autoCalibrate: true, manualCycle: 28, customSymptoms: [] }; appData.profiles.push(newProfile); appData.activeProfileId = newProfile.id; }
+        closeAllModals(); saveData(); updateProfileDropdown();
+    }
+
+    async function deleteCurrentProfile() {
+        if(!appData.activeProfileId) return;
+        if(await showDialog({title: t('alertConfirm'), message: t('confirmDelete'), type: 'confirm'})) {
+            appData.profiles = appData.profiles.filter(p => p.id !== appData.activeProfileId); appData.activeProfileId = appData.profiles.length > 0 ? appData.profiles[0].id : null; saveData(); updateProfileDropdown();
+        }
+    }
+
+    function updateProfileDropdown() {
+        const select = document.getElementById('profileSelect'); select.innerHTML = '';
+        if (appData.profiles.length === 0) {
+            select.innerHTML = `<option disabled selected>${t('noProfiles')}</option>`;
+            updateLayout();
+            return;
+        }
+        appData.profiles.forEach(p => { const opt = document.createElement('option'); opt.value = p.id; opt.innerText = p.name; if (p.id === appData.activeProfileId) opt.selected = true; select.appendChild(opt); });
+        
+        updateLayout();
+        loadProfileSettings(); renderDashboard();
+    }
+    function changeProfile() { appData.activeProfileId = document.getElementById('profileSelect').value; loadProfileSettings(); renderDashboard(); }
+    
+    function loadProfileSettings() {
+        const profile = appData.profiles.find(p => p.id === appData.activeProfileId); if(!profile) return;
+        document.getElementById('autoCalibrateCheck').checked = profile.autoCalibrate; document.getElementById('manualCycleInput').value = profile.manualCycle; document.getElementById('patientNotesInput').value = profile.notes || "";
+        toggleCalibrationUI();
+    }
+    function toggleCalibration() { const profile = appData.profiles.find(p => p.id === appData.activeProfileId); profile.autoCalibrate = document.getElementById('autoCalibrateCheck').checked; saveData(); toggleCalibrationUI(); }
+    function toggleCalibrationUI() { const isAuto = document.getElementById('autoCalibrateCheck').checked; document.getElementById('manualCycleDiv').style.opacity = isAuto ? '0.3' : '1'; document.getElementById('manualCycleInput').disabled = isAuto; }
+    function updateManualCycle() { const profile = appData.profiles.find(p => p.id === appData.activeProfileId); profile.manualCycle = parseInt(document.getElementById('manualCycleInput').value) || 28; saveData(); }
+
+    function getLocalDateStr(daysOffset = 0) { const d = new Date(); d.setDate(d.getDate() + daysOffset); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+    
+    async function startPeriodQuick(daysOffset) {
+        const dStr = getLocalDateStr(daysOffset); const p = appData.profiles.find(p => p.id === appData.activeProfileId);
+        if(p.periods.some(per => per.start === dStr)) { await showDialog({title: t('alertError'), message: t('alertExists')}); return; }
+        p.periods.push({ id: Date.now().toString(), start: dStr, end: null, symptoms: [] }); p.periods.sort((a,b) => new Date(a.start) - new Date(b.start)); saveData();
+    }
+    async function endPeriodQuick(id, daysOffset) { 
+        const p = appData.profiles.find(p => p.id === appData.activeProfileId); const per = p.periods.find(p => p.id === id); if(!per) return;
+        const dStr = getLocalDateStr(daysOffset); if(new Date(dStr) < new Date(per.start)) { await showDialog({title: t('alertError'), message: t('cannotEndFuture')}); return; }
+        per.end = dStr; saveData(); 
+    }
+    async function logPeriodData() {
+        const sVal = document.getElementById('startDateInput').value; const eVal = document.getElementById('endDateInput').value;
+        if(!sVal) { await showDialog({title: t('alertError'), message: t('alertStartReq')}); return; }
+        if(eVal && new Date(eVal) < new Date(sVal)) { await showDialog({title: t('alertError'), message: t('alertEndBefore')}); return; }
+        const p = appData.profiles.find(p => p.id === appData.activeProfileId);
+        if(p.periods.some(per => per.start === sVal)) { await showDialog({title: t('alertError'), message: t('alertExists')}); return; }
+        p.periods.push({ id: Date.now().toString(), start: sVal, end: eVal || null, symptoms: [] }); p.periods.sort((a,b) => new Date(a.start) - new Date(b.start)); document.getElementById('endDateInput').value = ''; saveData();
+    }
+    function removeEntry(id) { const p = appData.profiles.find(p => p.id === appData.activeProfileId); p.periods = p.periods.filter(per => per.id !== id); saveData(); }
+    
+    function renderSymptomsChecklist(activeSymptoms = []) {
+        const p = appData.profiles.find(prof => prof.id === appData.activeProfileId);
+        const container = document.getElementById('symptomsChecklist'); container.innerHTML = '';
+        
+        let allKeys = Object.keys(defaultSymptoms['en']);
+        let userSymps = p.customSymptoms || [];
+        
+        let fullList = [...allKeys, ...userSymps];
+        
+        fullList.forEach(key => {
+            const isChecked = activeSymptoms.includes(key);
+            const name = getSymptomName(key);
+            const lbl = document.createElement('label'); lbl.className = 'symptom-tag-label';
+            lbl.innerHTML = `<input type="checkbox" value="${key}" ${isChecked ? 'checked' : ''}> ${name}`;
+            container.appendChild(lbl);
+        });
+    }
+
+    function addCustomSymptom() {
+        const inp = document.getElementById('newSymptomInput'); const val = inp.value.trim();
+        if(!val) return;
+        const p = appData.profiles.find(prof => prof.id === appData.activeProfileId);
+        if(!p.customSymptoms) p.customSymptoms = [];
+        if(!p.customSymptoms.includes(val) && !Object.keys(defaultSymptoms['en']).includes(val)) {
+            p.customSymptoms.push(val); saveData();
+        }
+        
+        const currentlyChecked = Array.from(document.querySelectorAll('#symptomsChecklist input:checked')).map(el => el.value);
+        currentlyChecked.push(val);
+        
+        renderSymptomsChecklist(currentlyChecked);
+        inp.value = '';
+    }
+
+    function openEditEntryModal(id) {
+        const p = appData.profiles.find(p => p.id === appData.activeProfileId); const per = p.periods.find(p => p.id === id); if(!per) return;
+        document.getElementById('editEntryTitleTxt').innerHTML = `<i class="fa-solid fa-pen"></i> ${t('editPeriodTitle')}`;
+        document.getElementById('editEntryId').value = per.id; document.getElementById('editStartDate').value = per.start; document.getElementById('editEndDate').value = per.end || '';
+        document.getElementById('newSymptomInput').value = '';
+        renderSymptomsChecklist(per.symptoms || []);
+        
+        document.getElementById('editEntryModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block';
+    }
+
+    async function saveEntryEdit() {
+        const id = document.getElementById('editEntryId').value; const sVal = document.getElementById('editStartDate').value; const eVal = document.getElementById('editEndDate').value;
+        if(!sVal) { await showDialog({title: t('alertError'), message: t('alertStartReq')}); return; }
+        if(eVal && new Date(eVal) < new Date(sVal)) { await showDialog({title: t('alertError'), message: t('alertEndBefore')}); return; }
+        const p = appData.profiles.find(p => p.id === appData.activeProfileId); const per = p.periods.find(p => p.id === id);
+        if(sVal !== per.start && p.periods.some(x => x.id !== id && x.start === sVal)) { await showDialog({title: t('alertError'), message: t('alertExists')}); return; }
+        
+        const checkedSymps = Array.from(document.querySelectorAll('#symptomsChecklist input:checked')).map(el => el.value);
+        
+        per.start = sVal; per.end = eVal || null; per.symptoms = checkedSymps;
+        p.periods.sort((a,b) => new Date(a.start) - new Date(b.start)); closeAllModals(); saveData();
+    }
+
+    function calculateCycles(periods) { 
+        let l = []; 
+        for(let i=1; i < periods.length; i++) { 
+            let [y1,m1,d1] = periods[i-1].start.split('-'); let dt1 = new Date(y1, m1-1, d1);
+            let [y2,m2,d2] = periods[i].start.split('-'); let dt2 = new Date(y2, m2-1, d2);
+            l.push(Math.round(Math.abs(dt2 - dt1) / 86400000)); 
+        } 
+        return l; 
+    }
+    function calculateDurations(periods) { 
+        return periods.map(p => {
+            if(!p.end) return null;
+            let [y1,m1,d1] = p.start.split('-'); let dt1 = new Date(y1, m1-1, d1);
+            let [y2,m2,d2] = p.end.split('-'); let dt2 = new Date(y2, m2-1, d2);
+            return Math.round(Math.abs(dt2 - dt1) / 86400000) + 1;
+        }); 
+    }
+    function getAvg(arr) { const v = arr.filter(n => n !== null && !isNaN(n)); return v.length ? Math.round(v.reduce((a, b) => a + b, 0)/v.length) : 0; }
+    
+    function formatDate(val, lang = currentLang) { 
+        if(!val) return ''; 
+        let dObj = val;
+        if(typeof val === 'string') {
+            if(val.includes('-') && val.length === 10) { let [y,m,d] = val.split('-'); dObj = new Date(y, m-1, d); }
+            else { dObj = new Date(val); }
+        }
+        return dObj.toLocaleDateString(lang === 'pl'?'pl-PL':'en-US', {day:'2-digit', month:'short', year:'numeric'}); 
+    }
+
+    // --- PHASE & CALENDAR LOGIC ---
+    function getPhaseInfo(dateObj, profile, avgCycle, avgPeriod) {
+        let mainPhase = 'empty'; let isFertile = false;
+        if (!profile.periods || profile.periods.length === 0) return { mainPhase, isFertile };
+        
+        const targetTime = dateObj.getTime(); const periods = profile.periods;
+        let cStart = null, nextStart = null, pEnd = null;
+        
+        for (let i = 0; i < periods.length; i++) {
+            let [y,m,d] = periods[i].start.split('-'); let sDate = new Date(y, m-1, d); let s = sDate.getTime();
+            let eDate; if(periods[i].end) { let [ey,em,ed] = periods[i].end.split('-'); eDate = new Date(ey, em-1, ed); } 
+            else { eDate = new Date(sDate); eDate.setDate(eDate.getDate() + avgPeriod - 1); }
+            let e = eDate.getTime();
+            
+            let nSDate; if(i < periods.length - 1) { let [ny,nm,nd] = periods[i+1].start.split('-'); nSDate = new Date(ny, nm-1, nd); } 
+            else { nSDate = new Date(sDate); nSDate.setDate(nSDate.getDate() + avgCycle); }
+            let nS = nSDate.getTime();
+            
+            if (targetTime >= s && targetTime < nS) { cStart = s; nextStart = nS; pEnd = e; break; }
+        }
+        
+        if (!cStart) {
+            let [y,m,d] = periods[0].start.split('-'); let firstS = new Date(y, m-1, d).getTime();
+            if(targetTime < firstS) return { mainPhase, isFertile };
+            
+            let [ly,lm,ld] = periods[periods.length - 1].start.split('-'); let tempStart = new Date(ly, lm-1, ld);
+            let tempNext = new Date(tempStart); tempNext.setDate(tempNext.getDate() + avgCycle);
+            while (targetTime >= tempNext.getTime()) { tempStart.setDate(tempStart.getDate() + avgCycle); tempNext.setDate(tempNext.getDate() + avgCycle); }
+            cStart = tempStart.getTime(); nextStart = tempNext.getTime();
+            let peDate = new Date(tempStart); peDate.setDate(peDate.getDate() + avgPeriod - 1); pEnd = peDate.getTime();
+        }
+
+        let ovuDate = new Date(nextStart); ovuDate.setDate(ovuDate.getDate() - 14); let oD = ovuDate.getTime();
+        let fStartDate = new Date(ovuDate); fStartDate.setDate(fStartDate.getDate() - 5); let fStart = fStartDate.getTime();
+        let fEndDate = new Date(ovuDate); fEndDate.setDate(fEndDate.getDate() + 1); let fEnd = fEndDate.getTime();
+        
+        if (targetTime === oD) mainPhase = 'ovulation';
+        else if (targetTime >= cStart && targetTime <= pEnd) mainPhase = 'period';
+        else if (targetTime > pEnd && targetTime < oD) mainPhase = 'follicular'; 
+        else if (targetTime > oD && targetTime < nextStart) mainPhase = 'luteal';
+
+        if (targetTime >= fStart && targetTime <= fEnd) isFertile = true;
+
+        return { mainPhase, isFertile };
+    }
+
+    function navMonth(dir) { viewedMonthDate.setMonth(viewedMonthDate.getMonth() + dir); renderCalendarAndStatus(); }
+
+    function renderCalendarAndStatus() {
+        const profile = appData.profiles.find(p => p.id === appData.activeProfileId); if(!profile) return;
+        const durations = calculateDurations(profile.periods); const cycleLengths = calculateCycles(profile.periods);
+        let avgCycle = profile.manualCycle; let avgPeriod = getAvg(durations) || 5;
+        if (profile.autoCalibrate && cycleLengths.length > 0) avgCycle = getAvg(cycleLengths) || profile.manualCycle;
+
+        document.getElementById('calendarCard').style.display = 'block';
+        const m = viewedMonthDate.getMonth(); const y = viewedMonthDate.getFullYear();
+        document.getElementById('calMonthLabel').innerText = `${viewedMonthDate.toLocaleString(currentLang==='pl'?'pl-PL':'en-US', {month:'long'})} ${y}`.toUpperCase();
+        
+        const grid = document.getElementById('calendarGridDates'); grid.innerHTML = '';
+        let firstDay = new Date(y, m, 1).getDay(); firstDay = firstDay === 0 ? 6 : firstDay - 1;
+        const daysInM = new Date(y, m + 1, 0).getDate();
+        
+        for(let i=0; i<firstDay; i++) { const d = document.createElement('div'); d.className = 'cal-day cal-empty'; grid.appendChild(d); }
+        const todayObj = new Date(); todayObj.setHours(0,0,0,0); const todayMs = todayObj.getTime();
+        
+        for(let i=1; i<=daysInM; i++) {
+            const dateObj = new Date(y, m, i); const info = getPhaseInfo(dateObj, profile, avgCycle, avgPeriod);
+            const d = document.createElement('div'); d.className = `cal-day phase-${info.mainPhase} ${info.isFertile ? 'fertile-day' : ''}`; d.innerText = i;
+            if(dateObj.getTime() === todayMs) d.classList.add('cal-today');
+            
+            if(info.mainPhase !== 'empty') {
+                d.classList.add('interactive');
+                d.onmouseenter = (e) => showCalTooltip(info.mainPhase, info.isFertile, e);
+                d.onclick = (e) => { e.stopPropagation(); showCalTooltip(info.mainPhase, info.isFertile, e); };
+            }
+            grid.appendChild(d);
+        }
+
+        const infoToday = getPhaseInfo(todayObj, profile, avgCycle, avgPeriod);
+        let pTxt = ''; let pSympTxt = '';
+        if(infoToday.mainPhase === 'period') { pTxt = t('legPeriod'); pSympTxt = phaseSymptoms[currentLang].period; }
+        else if(infoToday.mainPhase === 'follicular') { pTxt = t('legFollicular'); pSympTxt = phaseSymptoms[currentLang].follicular; }
+        else if(infoToday.mainPhase === 'ovulation') { pTxt = t('legOvulation'); pSympTxt = phaseSymptoms[currentLang].ovulation; }
+        else if(infoToday.mainPhase === 'luteal') { pTxt = t('legLuteal'); pSympTxt = phaseSymptoms[currentLang].luteal; }
+        else pTxt = '---';
+        
+        if (infoToday.isFertile && infoToday.mainPhase !== 'ovulation') pTxt += ' + ' + t('legFertile');
+
+        let sHtml = `<div style="font-size:15px; margin-bottom:5px;"><strong>${t('statusTitle')}</strong> ${pTxt}</div>`;
+        if (pSympTxt) { sHtml += `<div class="phase-symptoms"><strong>${t('typicalSymptoms')}</strong> ${pSympTxt}</div>`; }
+
+        if (cycleLengths.length < 3) {
+            sHtml += `<div style="color:#ff6b6b; font-size:12px; margin-top:10px; font-weight:600;"><i class="fa-solid fa-lock"></i> ${t('lockWarning')}</div>`;
+        } else {
+            let safe = !infoToday.isFertile && infoToday.mainPhase !== 'period';
+            sHtml += `<div style="font-size:14px; margin-top:10px; margin-bottom:0px;"><strong>${t('safeTitle')}</strong> <span style="font-weight:700; color: ${safe ? '#16a34a' : '#f43f5e'}">${safe ? t('safeYes') : t('safeNo')}</span></div>`;
+            sHtml += `<div class="safety-warning"><i class="fa-solid fa-triangle-exclamation"></i> ${t('disclaimer')}</div>`;
+        }
+        document.getElementById('todayStatusBox').innerHTML = sHtml;
+    }
+
+    function generateInsights(cycleLengths, durations) {
+        const list = document.getElementById('insightsList'); list.innerHTML = '';
+        if (cycleLengths.length < 3) { document.getElementById('insightsPanel').style.display = 'none'; return; }
+        document.getElementById('insightsPanel').style.display = 'block';
+        let ins = []; const maxC = Math.max(...cycleLengths); const minC = Math.min(...cycleLengths);
+        if (maxC - minC <= 4) ins.push({ t: 'good', x: t('insRegular') }); else if (maxC - minC >= 9) ins.push({ t: 'warning', x: t('insIrregular') });
+        const avgC = getAvg(cycleLengths);
+        if (avgC < 21) ins.push({ t: 'warning', x: t('insShort') }); else if (avgC > 35) ins.push({ t: 'warning', x: t('insLong') });
+        const avgDur = getAvg(durations); if (avgDur > 8) ins.push({ t: 'warning', x: t('insProlonged') });
+        if (ins.length === 0) ins.push({ t: 'normal', x: t('insNormal') });
+        ins.forEach(i => { const li = document.createElement('li'); li.className = i.t; li.innerText = i.x; list.appendChild(li); });
+    }
+
+    function renderHistoryCard(profile, durations) {
+        const historyCard = document.getElementById('historyCard');
+        const historyList = document.getElementById('historyList');
+        historyList.innerHTML = '';
+        
+        if (!profile.periods || profile.periods.length === 0) { updateLayout(); return; }
+
+        [...profile.periods].reverse().forEach((p, idx) => {
+            const dur = durations[profile.periods.length - 1 - idx]; 
+            const div = document.createElement('div'); div.className = 'history-card-item';
+            
+            let dateRange = `${formatDate(p.start)}`;
+            if(p.end) dateRange += ` <i class="fa-solid fa-arrow-right" style="font-size:11px; opacity:0.6; margin:0 4px;"></i> ${formatDate(p.end)}`;
+            
+            let sympHtml = '';
+            if (p.symptoms && p.symptoms.length > 0) {
+                sympHtml = `<div class="hc-symptoms">` + p.symptoms.map(s => `<span class="hc-symp-badge">${getSymptomName(s)}</span>`).join('') + `</div>`;
+            } else {
+                sympHtml = `<div style="font-size:11px; opacity:0.5; font-style:italic;">${t('noSymptoms')}</div>`;
+            }
+
+            div.innerHTML = `
+                <div class="hc-header">
+                    <span class="hc-dates">${dateRange}</span>
+                    <span class="hc-dur">${dur > 0 ? dur : '-'} ${t('days')}</span>
+                </div>
+                ${sympHtml}
+            `;
+            historyList.appendChild(div);
+        });
+        
+        updateLayout();
+    }
+
+    function renderDashboard() {
+        const profile = appData.profiles.find(p => p.id === appData.activeProfileId); if(!profile) return;
+        const dList = document.getElementById('dateList'); dList.innerHTML = '';
+        
+        const activePeriod = profile.periods.find(p => !p.end); const btnToday = document.getElementById('qaTodayBtn'); const btnYest = document.getElementById('qaYestBtn');
+        if(activePeriod) {
+            btnToday.className = 'btn-main'; btnToday.style.background = 'rgba(255, 107, 107, 0.2)'; btnToday.style.color = '#ff6b6b'; btnToday.style.border = '1px solid rgba(255,107,107,0.4)'; btnToday.onclick = () => endPeriodQuick(activePeriod.id, 0); btnToday.innerHTML = `<i class="fa-solid fa-stop"></i> <span>${t('quickEnd')}</span>`;
+            btnYest.className = 'btn-main'; btnYest.style.background = 'transparent'; btnYest.style.color = '#ff6b6b'; btnYest.style.border = '1px dashed rgba(255,107,107,0.4)'; btnYest.onclick = () => endPeriodQuick(activePeriod.id, -1); btnYest.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> <span>${t('quickEndYest')}</span>`;
+        } else {
+            btnToday.className = 'btn-main'; btnToday.style.background = 'var(--accent)'; btnToday.style.color = '#333'; btnToday.style.border = 'none'; btnToday.onclick = () => startPeriodQuick(0); btnToday.innerHTML = `<i class="fa-solid fa-droplet"></i> <span>${t('quickStart')}</span>`;
+            btnYest.className = 'btn-small'; btnYest.style.background = ''; btnYest.style.color = ''; btnYest.style.border = ''; btnYest.style.padding = '15px'; btnYest.style.fontSize = '14px'; btnYest.onclick = () => startPeriodQuick(-1); btnYest.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> <span>${t('quickStartYest')}</span>`;
+        }
+
+        const durations = calculateDurations(profile.periods); const cycleLengths = calculateCycles(profile.periods);
+        [...profile.periods].reverse().forEach((p, idx) => {
+            const dur = durations[profile.periods.length - 1 - idx]; const div = document.createElement('div'); div.className = 'date-item';
+            let tHtml = `<span>${formatDate(p.start)}</span>`;
+            if(p.end) tHtml = `<div class="date-details"><span>${formatDate(p.start)} <i class="fa-solid fa-arrow-right" style="font-size:10px; opacity:0.5;"></i> ${formatDate(p.end)}</span><span class="date-sub">Duration: ${dur} ${t('days')}</span></div>`;
+            div.innerHTML = `${tHtml} <div style="display:flex; gap:5px;"><button onclick="openEditEntryModal('${p.id}')" style="color: #4CAF50;"><i class="fa-solid fa-pen"></i></button><button onclick="removeEntry('${p.id}')"><i class="fa-solid fa-xmark"></i></button></div>`;
+            dList.appendChild(div);
+        });
+
+        let avgCycle = profile.manualCycle; let avgPeriod = getAvg(durations);
+        if (profile.autoCalibrate && cycleLengths.length > 0) avgCycle = getAvg(cycleLengths) || profile.manualCycle;
+        generateInsights(cycleLengths, durations); renderCalendarAndStatus(); renderHistoryCard(profile, durations);
+
+        const lastEntry = profile.periods[profile.periods.length - 1];
+        if (lastEntry) {
+            let [ly, lm, ld] = lastEntry.start.split('-'); let lastDate = new Date(ly, lm-1, ld);
+            document.getElementById('statLastPeriod').innerText = formatDate(lastDate);
+            
+            const todayObj = new Date(); todayObj.setHours(0,0,0,0);
+            const diffD = Math.round((todayObj.getTime() - lastDate.getTime()) / 86400000);
+            document.getElementById('statDaysAgo').innerText = diffD === 0 ? t('startedToday') : t('daysAgo').replace('%s', diffD);
+
+            const nDate = new Date(lastDate); nDate.setDate(nDate.getDate() + avgCycle);
+            document.getElementById('statNextPeriod').innerText = formatDate(nDate);
+            const dLeft = Math.round((nDate.getTime() - todayObj.getTime()) / 86400000);
+            document.getElementById('statDaysLeft').innerText = dLeft < 0 ? t('daysLate').replace('%s', Math.abs(dLeft)) : (dLeft === 0 ? t('expectedToday') : t('inDays').replace('%s', dLeft));
+            document.getElementById('statDaysLeft').style.color = dLeft < 0 ? '#ff6b6b' : 'inherit';
+
+            const oDate = new Date(nDate); oDate.setDate(oDate.getDate() - 14);
+            document.getElementById('statOvulation').innerText = formatDate(oDate);
+            const oLeft = Math.round((oDate.getTime() - todayObj.getTime()) / 86400000);
+            document.getElementById('statOvuDaysLeft').innerText = oLeft < 0 ? t('daysAgo').replace('%s', Math.abs(oLeft)) : (oLeft === 0 ? t('expectedToday') : t('inDays').replace('%s', oLeft));
+        } else {
+            ['statLastPeriod','statNextPeriod','statOvulation'].forEach(id => document.getElementById(id).innerText = t('noData'));
+            ['statDaysLeft','statOvuDaysLeft'].forEach(id => document.getElementById(id).innerText = '---'); document.getElementById('statDaysAgo').innerText = t('logStartMsg');
+        }
+
+        document.getElementById('statAvgCycle').innerText = `${avgCycle} ${t('days')}`;
+        document.getElementById('statAvgPeriod').innerText = avgPeriod > 0 ? `${avgPeriod} ${t('days')}` : `-- ${t('days')}`;
+        document.getElementById('statCalibrated').innerText = profile.autoCalibrate ? (cycleLengths.length > 0 ? t('autoCalcTxt') : t('needDataTxt')) : t('manualSetTxt');
+        
+        updateChart(profile, cycleLengths, durations);
+    }
+
+    function setChartType(type) { currentChartType = type; document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active')); document.getElementById('btn-'+type).classList.add('active'); renderDashboard(); }
+
+    function updateChart(profile, cycleLengths, durations) {
+        const ctx = document.getElementById('mainChart').getContext('2d'); const bgHex = document.getElementById('bgColorPicker').value;
+        const colorC = (bgHex.match(/[\d.]+/g)||[]).length ? '#ffffff' : (parseInt(bgHex.replace('#',''), 16) > 0xffffff/2 ? '#000000' : '#ffffff');
+        document.getElementById('exportFrame').style.background = bgHex; document.getElementById('chartTitleText').style.color = colorC;
+        if (myChart) myChart.destroy(); if (profile.periods.length === 0) return;
+
+        const plotDurations = durations.slice(0, durations.length - 1); 
+        const datasets = [
+            { label: t('statAvgCyc').replace('Avg ', '').replace('Średnia ', ''), data: cycleLengths, backgroundColor: currentChartType === 'bar' ? '#ff9a9e' : 'rgba(255,154,158,0.2)', borderColor: '#ff9a9e', borderWidth: 2, borderRadius: currentChartType === 'bar' ? 6 : 0, fill: currentChartType === 'line', tension: 0.3 },
+            { label: t('statDurSub'), data: plotDurations, backgroundColor: currentChartType === 'bar' ? '#a18cd1' : 'transparent', borderColor: '#a18cd1', borderWidth: 2, borderRadius: currentChartType === 'bar' ? 6 : 0, type: currentChartType, tension: 0.3 }
+        ];
+
+        myChart = new Chart(ctx, {
+            type: currentChartType, data: { labels: cycleLengths.map((_, i) => `Cycle ${i+1}`), datasets: datasets },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: colorC, font: {family: 'Outfit'} } }, datalabels: { color: currentChartType==='bar'?'#fff':colorC, font: { weight: 'bold', family: 'Outfit'} } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: colorC } }, x: { grid: { display: false }, ticks: { color: colorC } } } }
+        });
+    }
+
+    async function exportToPng() {
+        const p = appData.profiles.find(p => p.id === appData.activeProfileId); const name = p ? p.name : "Chart";
+        const canvas = await html2canvas(document.getElementById('exportFrame'), { scale: 2, backgroundColor: null });
+        const link = document.createElement('a'); link.download = `RedTracker_${name}.png`; link.href = canvas.toDataURL('image/png', 1.0); link.click();
+    }
+
+    function openPrintModal() { if(appData.profiles.length === 0) return; document.getElementById('printModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block'; }
+
+    function buildPrintHTMLForProfile(profile, options, isLast) {
+        const prLang = options.lang; const isSelf = appData.appMode === 'self';
+        const durations = calculateDurations(profile.periods); const cycleLengths = calculateCycles(profile.periods);
+        let avgCycle = profile.manualCycle; let avgPeriod = getAvg(durations); if (profile.autoCalibrate && cycleLengths.length > 0) avgCycle = getAvg(cycleLengths);
+
+        let rowsHtml = '';
+        profile.periods.forEach((p, idx) => {
+            const dur = durations[idx] ? durations[idx] + ' ' + t('days', prLang) : '-';
+            const symps = p.symptoms && p.symptoms.length > 0 ? p.symptoms.map(s => getSymptomName(s, prLang)).join(', ') : '-';
+            rowsHtml += `<tr><td>${idx + 1}</td><td>${formatDate(p.start, prLang)}</td><td>${p.end ? formatDate(p.end, prLang) : '-'}</td><td>${dur}</td><td>${symps}</td></tr>`;
+        });
+
+        let predHtml = '';
+        if(options.showPredictions && profile.periods.length > 0) {
+            let [ly, lm, ld] = profile.periods[profile.periods.length - 1].start.split('-'); let lastDate = new Date(ly, lm-1, ld);
+            let predCycle = avgCycle || 28; let predPeriod = (avgPeriod && avgPeriod > 0) ? avgPeriod : 5;
+            let predRows = '';
+            for(let i=1; i<=3; i++) {
+                lastDate.setDate(lastDate.getDate() + predCycle);
+                let endDate = new Date(lastDate); endDate.setDate(endDate.getDate() + predPeriod - 1);
+                let ovuDate = new Date(lastDate); ovuDate.setDate(ovuDate.getDate() - 14);
+                predRows += `<tr><td>${t('prCycPlus', prLang)}${i}</td><td>${formatDate(ovuDate, prLang)}</td><td>${formatDate(lastDate, prLang)}</td><td>${formatDate(endDate, prLang)}</td></tr>`;
+            }
+            predHtml = `<h3>${t('prPredTitle', prLang)}</h3><table class="print-table" style="width: 100%;"><thead><tr><th>${t('thPred', prLang)}</th><th>${t('thOvulation', prLang)}</th><th>${t('thExpStart', prLang)}</th><th>${t('thExpEnd', prLang)}</th></tr></thead><tbody>${predRows}</tbody></table>`;
+        }
+
+        let calHtml = '';
+        if(options.showCalendar) {
+            const m = viewedMonthDate.getMonth(); const y = viewedMonthDate.getFullYear();
+            const mName = viewedMonthDate.toLocaleString(prLang==='pl'?'pl-PL':'en-US', {month:'long'}).toUpperCase();
+            let firstDay = new Date(y, m, 1).getDay(); firstDay = firstDay === 0 ? 6 : firstDay - 1;
+            const daysInM = new Date(y, m + 1, 0).getDate();
+            
+            calHtml += `<h3 style="margin-top: 30px;">Kalendarz / Calendar: ${mName} ${y}</h3>`;
+            calHtml += `<table class="print-table print-calendar"><thead><tr><th>${t('dayMo', prLang)}</th><th>${t('dayTu', prLang)}</th><th>${t('dayWe', prLang)}</th><th>${t('dayTh', prLang)}</th><th>${t('dayFr', prLang)}</th><th>${t('daySa', prLang)}</th><th>${t('daySu', prLang)}</th></tr></thead><tbody><tr>`;
+            
+            let dCount = 0;
+            for(let i=0; i<firstDay; i++) { calHtml += `<td></td>`; dCount++; }
+            for(let i=1; i<=daysInM; i++) {
+                const dObj = new Date(y, m, i); const info = getPhaseInfo(dObj, profile, avgCycle, avgPeriod);
+                let pName = '', pClass = '';
+                if(info.mainPhase === 'period') { pName = 'P'; pClass = 'bg-p-period'; }
+                else if(info.mainPhase === 'ovulation') { pName = 'O'; pClass = 'bg-p-ovulation'; }
+                else if(info.mainPhase === 'follicular') { pName = 'Fo'; pClass = 'bg-p-follicular'; }
+                else if(info.mainPhase === 'luteal') { pName = 'L'; pClass = 'bg-p-luteal'; }
+                
+                calHtml += `<td><span class="p-cal-num">${i}</span>${info.isFertile ? '<div class="p-cal-fertile">F</div>' : ''}${pName ? `<div class="p-cal-phase ${pClass}">${pName}</div>` : ''}</td>`;
+                dCount++; if(dCount % 7 === 0 && i !== daysInM) calHtml += `</tr><tr>`;
+            }
+            while(dCount % 7 !== 0) { calHtml += `<td></td>`; dCount++; }
+            calHtml += `</tr></tbody></table>`;
+            calHtml += `<div style="font-size:11px; margin-bottom:20px;"><strong>Legenda / Legend:</strong> <span style="color:#ff4757; font-weight:bold;">P</span> = ${t('legPeriod', prLang)} | <span style="color:#db2777; font-weight:bold;">Fo</span> = ${t('legFollicular', prLang)} | <span style="color:#9b59b6; font-weight:bold;">F</span> = ${t('legFertile', prLang)} | <span style="color:#ffa502; font-weight:bold;">O</span> = ${t('legOvulation', prLang)} | <span style="color:#16a34a; font-weight:bold;">L</span> = ${t('legLuteal', prLang)}</div>`;
+        }
+
+        let html = `<div class="print-patient-container"><div class="print-web-header">RedTracker <span class="print-version-tag">v3</span></div><p class="print-credits">${t('madeBy', prLang)}</p>`;
+
+        if(options.showName || (options.showCode && !isSelf) || (!isSelf && appData.globalProvider)) {
+            html += `<div class="print-info-block">`;
+            if(options.showName) html += `<h2>${isSelf ? t('prPatNameSelf', prLang) : t('prPatNameClinic', prLang)} <b>${profile.name}</b></h2>`;
+            if(!isSelf) {
+                if(options.showCode && profile.code) html += `<p>${t('prPatCode', prLang)} <b>${profile.code}</b></p>`;
+                if(appData.globalProvider) html += `<p>${t('prAttProvider', prLang)} <b>${appData.globalProvider}</b></p>`;
+            }
+            html += `<p style="color: #666; margin-top: 10px;">${t('prGenOn', prLang)} ${new Date().toLocaleDateString(prLang === 'pl' ? 'pl-PL' : 'en-US')}</p></div>`;
+        }
+
+        if(options.showStats) {
+            html += `<div class="print-stats"><div class="print-stat-box"><strong>${t('prTotEntries', prLang)}</strong><span style="font-size:24px;">${profile.periods.length}</span></div><div class="print-stat-box"><strong>${t('prAvgCycle', prLang)}</strong><span style="font-size:24px;">${avgCycle} ${t('days', prLang)}</span></div><div class="print-stat-box"><strong>${t('prAvgBleed', prLang)}</strong><span style="font-size:24px;">${avgPeriod > 0 ? avgPeriod + ' ' + t('days', prLang) : '-'}</span></div></div>`;
+        }
+
+        if(options.showTable) { html += `<h3>${t('prHistTitle', prLang)}</h3><table class="print-table"><thead><tr><th>${t('thNum', prLang)}</th><th>${t('thStart', prLang)}</th><th>${t('thEnd', prLang)}</th><th>${t('thDur', prLang)}</th><th>${t('thSymp', prLang)}</th></tr></thead><tbody>${rowsHtml || `<tr><td colspan="5" style="text-align:center;">${t('prNoEntries', prLang)}</td></tr>`}</tbody></table>`; }
+        if(options.showPredictions) { html += predHtml; }
+        if(options.showCalendar) { html += calHtml; }
+        if(options.showSavedNotes && profile.notes) { html += `<div class="print-notes" style="margin-top: 30px;"><h3>${isSelf ? t('prSavedNotesSelf', prLang) : t('prSavedNotesClinic', prLang)}</h3><div class="saved-notes-box">${profile.notes.replace(/\n/g, '<br>')}</div></div>`; }
+        
+        if(options.showNotes) {
+            let nHTML = ''; for(let i=0; i < options.noteLines; i++) { nHTML += `<div class="print-note-line"></div>`; }
+            html += `<div class="print-notes"><h3>${isSelf ? t('prHandNotesSelf', prLang) : t('prHandNotesClinic', prLang)}</h3>${nHTML}</div>`;
+        }
+        html += `</div>`;
+        if (!isLast && options.separatePages) { html += `<div class="page-break"></div>`; } else if (!isLast && !options.separatePages) { html += `<hr style="margin: 40px 0; border: 1px dashed #ccc;">`; }
+        return html;
+    }
+
+    function executePrint() {
+        closeAllModals(); let numLines = parseInt(document.getElementById('prNotesLines').value); if(isNaN(numLines) || numLines < 1) numLines = 1;
+        const opts = {
+            lang: document.getElementById('prLangSelect').value, showName: document.getElementById('prShowName').checked, showCode: document.getElementById('prShowCode').checked, showStats: document.getElementById('prShowStats').checked, showTable: document.getElementById('prShowTable').checked,
+            showPredictions: document.getElementById('prShowPredictions').checked, showCalendar: document.getElementById('prShowCalendar').checked, showSavedNotes: document.getElementById('prShowSavedNotes').checked, showNotes: document.getElementById('prShowNotes').checked, noteLines: numLines, separatePages: false
+        };
+        const scope = document.querySelector('input[name="printScope"]:checked').value; let profiles = [];
+        if (scope === 'current') { const p = appData.profiles.find(p => p.id === appData.activeProfileId); if(p) profiles.push(p); } else { profiles = [...appData.profiles]; if(scope === 'all_sep') opts.separatePages = true; }
+        let fHtml = ''; profiles.forEach((p, i) => { fHtml += buildPrintHTMLForProfile(p, opts, i === profiles.length - 1); });
+        document.getElementById('printArea').innerHTML = fHtml; window.print();
+    }
+</script>
+
+</body>
+</html>
