@@ -105,7 +105,7 @@
         .text-input::placeholder { color: rgba(255,255,255,0.4); }
         textarea.text-input { resize: vertical; min-height: 80px; }
         
-        .quick-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--glass-border); }
+        .quick-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--glass-border); position: relative; }
 
         .date-input { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.5); color: white; font-family: inherit; font-size: 14px; outline:none; color-scheme: dark;}
         .date-group { width: 100%; }
@@ -128,7 +128,7 @@
         .stat-box .subtext { font-size: 11px; opacity: 0.6; margin-top: 5px; word-wrap: break-word; }
 
         /* --- MINI CALENDAR & PHASES --- */
-        .calendar-card { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 20px; padding: 25px; order: 2; backdrop-filter: blur(10px); display: none; transition: all 0.4s ease; }
+        .calendar-card { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 20px; padding: 25px; order: 2; backdrop-filter: blur(10px); display: none; transition: all 0.4s ease; position: relative; overflow: hidden;}
         .calendar-header-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 10px;}
         .calendar-header-nav h3 { margin: 0; font-size: clamp(14px, 3.5vw, 18px); color: #fff; text-align: center; }
         .cal-nav-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white; padding: 8px 15px; border-radius: 10px; cursor: pointer; transition: 0.2s; font-weight: 600; display: flex; align-items: center; justify-content: center;}
@@ -169,7 +169,63 @@
         .cal-tooltip h4 { margin: 0 0 5px 0; color: #ffb6b9; font-size: 14px; }
         .cal-tooltip .tt-symp { font-style: italic; opacity: 0.8; font-size: 11px; margin-top: 5px;}
 
-        .insights-panel { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; backdrop-filter: blur(10px); order: 3; transition: all 0.4s ease; display: none; }
+        /* --- ICE ASSIST (WEATHER MODE) --- */
+        .weather-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            border-radius: 25px; padding: 25px; margin-bottom: 15px; width: 100%;
+            display: none; flex-direction: column; gap: 15px; order: 2.5; 
+            position: relative; overflow: hidden; color: white; transition: all 0.5s ease;
+        }
+        /* Weather States */
+        .weather-sunny { background: rgba(253, 224, 71, 0.15); border-color: rgba(253, 224, 71, 0.4); }
+        .weather-cloudy { background: rgba(156, 163, 175, 0.15); border-color: rgba(156, 163, 175, 0.4); }
+        .weather-rainy { background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.4); }
+        .weather-stormy { background: rgba(15, 23, 42, 0.6); border-color: #334155; }
+
+        .w-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; flex-wrap: wrap; gap: 10px; }
+        .w-title { font-size: 1.2em; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .weather-sunny .w-title { color: #fde047; } .weather-cloudy .w-title { color: #e5e7eb; } .weather-rainy .w-title { color: #93c5fd; } .weather-stormy .w-title { color: #94a3b8; }
+        
+        .w-icon-large { font-size: 2em; }
+        
+        .w-panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .w-panel { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .w-panel-title { font-size: 12px; opacity: 0.8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;}
+        .w-text { font-size: 14px; font-weight: 500; line-height: 1.4; }
+        .w-tips { list-style: none; padding: 0; margin: 0; font-size: 13.5px; }
+        .w-tips li { margin-bottom: 6px; display: flex; align-items: flex-start; gap: 8px; }
+        .w-tips li i { margin-top: 3px; opacity: 0.8; font-size: 12px;}
+
+        /* --- DATA PRIVATIZER (PRIVACY MODE) --- */
+        .privacy-blur {
+            filter: blur(12px) grayscale(50%);
+            pointer-events: none;
+            user-select: none;
+            transition: all 0.3s ease;
+        }
+        .privacy-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0, 0, 0, 0.4); z-index: 100;
+            border-radius: inherit;
+        }
+        .privacy-msg-box {
+            background: #ff9a9e; color: #1e1b4b; padding: 12px 20px;
+            border-radius: 15px; font-weight: bold; font-size: 14px;
+            display: flex; align-items: center; gap: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .privacy-quick-btn {
+            grid-column: 1 / -1; background: #ff9a9e; color: #1e1b4b;
+            padding: 15px; border-radius: 12px; text-align: center; font-weight: bold;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            font-size: 14px; border: none; cursor: not-allowed;
+        }
+
+        .insights-panel { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; backdrop-filter: blur(10px); order: 3; transition: all 0.4s ease; display: none; position: relative; overflow: hidden; }
         .insights-panel h4 { margin: 0 0 12px 0; color: #ffd89b; display: flex; align-items: center; gap: 8px; font-size: 15px;}
         .insights-panel ul { margin: 0; padding-left: 20px; font-size: 13px; opacity: 0.9; line-height: 1.6; }
         .insights-panel li { margin-bottom: 6px; }
@@ -278,9 +334,10 @@
             .header { flex-direction: column; text-align: center; gap: 15px; }
             .header h1 { justify-content: center; }
             .toggles-container { width: 100%; justify-content: center; }
-            .chart-card { padding: 25px; }
+            .chart-card, .weather-card { padding: 25px; }
             .export-frame { height: 380px; padding: 15px; }
             .stat-box { min-width: 45%; }
+            .w-panel-grid { grid-template-columns: 1fr; }
             
             .mobile-only { display: flex !important; }
             .sect-header { cursor: pointer; margin-bottom: 10px; }
@@ -321,6 +378,11 @@
         body.modern-ui .sect-header .section-label { color: #db2777; }
         body.modern-ui .sect-header .toggle-icon { color: #db2777; }
         body.modern-ui .chart-card { background: transparent; border: none; padding: 0; box-shadow: none;}
+        
+        body.modern-ui .weather-card { color: #0f172a; }
+        body.modern-ui .w-panel { background: rgba(255,255,255,0.6); border-color: #e2e8f0; }
+        body.modern-ui .weather-stormy { background: rgba(15, 23, 42, 0.1); }
+        
         body.modern-ui .stat-box { background: #ffffff; border-color: #fce7f3; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
         body.modern-ui .stat-box h3 { color: #db2777; }
         body.modern-ui .export-frame { border: 1px solid #e2e8f0; box-shadow: none; }
@@ -456,7 +518,7 @@
         #printArea { display: none; }
         @media print {
             body { background: white; color: black; margin: 0; padding: 0; font-family: "Outfit", sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .back-btn, .container, .modal-box, .modal-overlay, #printModal, #editEntryModal, .tour-overlay, .tour-box, .cal-tooltip, .dev-float-btn, #devModal { display: none !important; }
+            .back-btn, .container, .modal-box, .modal-overlay, #printModal, #editEntryModal, .tour-overlay, .tour-box, .cal-tooltip, .dev-float-btn, #devModal, .weather-card { display: none !important; }
             #printArea { display: block; }
             .page-break { page-break-after: always; break-after: page; }
             .print-patient-container { padding: 20px; }
@@ -765,7 +827,7 @@
                 </div>
                 
                 <!-- STICKY QUICK ACTIONS (Outside the collapsible body) -->
-                <div class="quick-actions-grid sticky-on-mobile">
+                <div class="quick-actions-grid sticky-on-mobile" id="quickActionsContainer">
                     <button id="qaTodayBtn" class="btn-main" style="padding: 15px; border-radius: 12px;"></button>
                     <button id="qaYestBtn" class="btn-small" style="padding: 15px; border-radius: 12px; font-size: 13px;"></button>
                 </div>
@@ -840,6 +902,25 @@
                         <label id="defProviderTxt">Default Attending Provider</label>
                         <input type="text" id="globalProviderInput" class="text-input" placeholder="e.g. Dr. Smith" onchange="updateGlobalProvider()">
                     </div>
+                    <div class="config-row" style="border-top: 1px solid rgba(255,154,158,0.3); padding-top:15px; margin-top:5px;">
+                        <span style="font-size: 12px; font-weight: 700; color:#ff9a9e;" id="privatizerTxt">Data Privatizer (Hide data)</span>
+                        <input type="checkbox" id="privatizerToggle" onchange="togglePrivatizer()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. ICE ASSIST (WEATHER MODE) Toggle -->
+            <div class="sidebar-section" id="sect-ice">
+                <div class="sect-header" onclick="toggleSection('sect-ice')">
+                    <span class="section-label" id="secIceTxt">7. Daily Forecast (Ice Assist)</span>
+                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="sect-body">
+                    <p style="font-size: 11px; opacity: 0.8;" id="iceSidebarDesc">Check your daily body-weather forecast.</p>
+                    <div class="config-row">
+                        <span style="font-size: 11px; font-weight: 600;" id="iceToggleTxt">Enable Daily Forecast</span>
+                        <input type="checkbox" id="iceToggleCheck" checked onchange="renderDashboard()">
+                    </div>
                 </div>
             </div>
             
@@ -893,7 +974,7 @@
                     </div>
                     <div class="calendar-grid" id="calendarGridDates" style="margin-top: 15px;"></div>
 
-                    <div class="legend-container">
+                    <div class="legend-container" id="calendarLegend">
                         <div class="legend-item"><div class="legend-dot phase-period"></div> <span id="legPeriod">Period</span></div>
                         <div class="legend-item"><div class="legend-dot phase-follicular"></div> <span id="legFollicular">Follicular</span></div>
                         <div class="legend-item"><div class="legend-dot legend-outline"></div> <span id="legFertile">Fertile Window</span></div>
@@ -905,14 +986,51 @@
                     <div class="phase-status-box" id="todayStatusBox"></div>
                 </div>
 
+                <!-- ICE ASSIST (WEATHER MODE) DASHBOARD CARD -->
+                <div class="weather-card" id="iceAssistCard">
+                    <div id="iceAssistOverlay" class="privacy-overlay" style="display: none;">
+                        <div class="privacy-msg-box"><i class="fa-solid fa-eye-slash"></i> <span id="privatizerMsgIce">Blocked by Data Privatizer</span></div>
+                    </div>
+                    <div id="iceAssistContent" style="width: 100%; display: flex; flex-direction: column; gap: 15px;">
+                        <div class="w-header">
+                            <div class="w-title" id="iceTitleTxt"><i class="fa-solid fa-cloud-sun"></i> Daily Forecast</div>
+                            <i id="weatherIconLarge" class="fa-solid fa-sun w-icon-large"></i>
+                        </div>
+                        <div class="w-panel-grid">
+                            <div class="w-panel">
+                                <div class="w-panel-title" id="iceEnergyTitleTxt"><i class="fa-solid fa-bolt"></i> Energy Level</div>
+                                <div class="w-text" id="iceEnergyText">High</div>
+                            </div>
+                            <div class="w-panel">
+                                <div class="w-panel-title" id="iceSocialTitleTxt"><i class="fa-solid fa-users"></i> Social Vibe</div>
+                                <div class="w-text" id="iceShieldText">Outgoing & Active</div>
+                            </div>
+                        </div>
+                        <div class="w-panel" style="margin-top: 0;">
+                            <div class="w-panel-title" id="iceRecTitleTxt"><i class="fa-solid fa-hand-holding-heart"></i> Suggestions for today</div>
+                            <ul id="iceRecsContainer" class="w-tips">
+                                <!-- JS Generated -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Cycle Insights -->
                 <div class="insights-panel" id="insightsPanel">
-                    <h4><i class="fa-solid fa-stethoscope"></i> <span id="insightsTitleTxt">Health & Cycle Insights</span></h4>
-                    <ul id="insightsList"></ul>
+                    <div id="insightsOverlay" class="privacy-overlay" style="display: none;">
+                        <div class="privacy-msg-box"><i class="fa-solid fa-eye-slash"></i> <span class="privatizerMsgGen">Blocked by Data Privatizer</span></div>
+                    </div>
+                    <div id="insightsContent">
+                        <h4><i class="fa-solid fa-stethoscope"></i> <span id="insightsTitleTxt">Health & Cycle Insights</span></h4>
+                        <ul id="insightsList"></ul>
+                    </div>
                 </div>
 
                 <!-- Chart -->
                 <div id="exportFrame" class="export-frame">
+                    <div id="chartOverlay" class="privacy-overlay" style="display: none; border-radius: 25px;">
+                        <div class="privacy-msg-box"><i class="fa-solid fa-eye-slash"></i> <span class="privatizerMsgGen">Blocked by Data Privatizer</span></div>
+                    </div>
                     <h2 style="margin-top: 0; color: white; z-index: 10; font-size: 1.3em; text-align: center;" id="chartTitleText">Cycle & Period History</h2>
                     <div class="chart-wrapper"><div class="canvas-sizer"><canvas id="mainChart"></canvas></div></div>
                 </div>
@@ -948,22 +1066,18 @@
     const APP_VERSION = "3";
     const TOUR_VERSION = 7; 
     
+    // Feature tour skipped for brevity as it's the same
     const FEATURE_TOUR_CONFIG = {
         7: [
             {
-                targetId: "themeSelect",
-                title: { en: "Dark Mode & Bug Fixes", pl: "Ciemny Motyw i Poprawki" },
-                desc: { en: "Welcome to the latest patch! Try out the new true Black & Blue Dark Mode here. Save/Cancel buttons are fully working again.", pl: "Witaj w nowej poprawce! Wypróbuj prawdziwy Ciemny Motyw (Czarno-niebieski). Naprawiono również przyciski w wyskakujących oknach." }
+                targetId: "privatizerToggle",
+                title: { en: "Data Privatizer", pl: "Ukrywacz Danych" },
+                desc: { en: "Hide sensitive cycle info instantly with one click if someone is looking over your shoulder.", pl: "Ukryj wrażliwe dane cyklu jednym kliknięciem, jeśli ktoś patrzy Ci przez ramię." }
             },
             {
-                targetId: "calendarCard",
-                title: { en: "Inspection Mode Hover", pl: "Nowy Tryb Inspekcji" },
-                desc: { en: "The calendar tooltip vanishes instantly the moment you move your mouse away. Much smoother!", pl: "Dymek z kalendarza znika teraz błyskawicznie, gdy tylko zjedziesz z niego myszką. Dużo płynniejsze!" }
-            },
-            {
-                targetId: "btnReorderMobile",
-                title: { en: "Customize Layout", pl: "Twój Układ (Tylko Mobile)" },
-                desc: { en: "On mobile, use this to Drag & Drop sections to rearrange them or hide the ones you don't use.", pl: "Na telefonie użyj tego przycisku by przesuwać (Drag & Drop) sekcje i chować te, z których nie korzystasz." }
+                targetId: "iceAssistCard",
+                title: { en: "Daily Forecast", pl: "Dzienna Prognoza" },
+                desc: { en: "New weather-based logic gives you clear suggestions and energy vibes based on your cycle phase.", pl: "Nowy moduł pogodowy daje Ci jasne sugestie i wskazuje poziom energii na podstawie Twojego cyklu." }
             }
         ]
     };
@@ -1014,7 +1128,7 @@
     }
 
     const cmdMap = {
-        help: () => termLog("Commands: clear, theme [name], shift [days], randomize [count] [regular|irregular|short|long], wipe, render, json. <br>OR TYPE ANY JAVASCRIPT!"),
+        help: () => termLog("Commands: clear, theme [name], shift [days], randomize [count] [type], wipe, render, json, ice. <br>OR TYPE ANY JAVASCRIPT!"),
         clear: () => document.getElementById('devCmdOutput').innerHTML = '',
         theme: (args) => { if(args[0]) { changeTheme(args[0]); termLog(`Theme -> ${args[0]}`); } },
         shift: (args) => { if(args[0] && !isNaN(args[0])) { document.getElementById('devShiftDays').value = args[0]; shiftAllDates(true); } },
@@ -1025,7 +1139,17 @@
         },
         wipe: () => clearCurrentProfilePeriods(true),
         render: () => forceRender(),
-        json: () => loadRawJson()
+        json: () => loadRawJson(),
+        ice: () => {
+            if(window.__iceDebugState) {
+                termLog(`<span style="color:#00b4d8;">[WEATHER ASSIST TERMINAL]</span>`);
+                termLog(`Phase Logic: ${window.__iceDebugState.phase}`);
+                termLog(`ACTIVE_FLAGS (Symptoms): <span style="color:#ff9a9e">${window.__iceDebugState.symptoms.length ? window.__iceDebugState.symptoms.join(', ') : 'NONE'}</span>`);
+                termLog(`SYSTEM_STATUS: <strong style="color:#fff;">${window.__iceDebugState.status}</strong>`);
+            } else {
+                termLog("<span style='color:#ff4757;'>ERR: WEATHER MODULE OFFLINE OR NO DATA</span>");
+            }
+        }
     };
 
     function executeCommand(cmdStr) {
@@ -1039,7 +1163,6 @@
         if(cmdMap[cmd]) {
             try { cmdMap[cmd](parts); } catch(e) { termLog(`<span style="color:#ff4757;">Err: ${e.message}</span>`); }
         } else {
-            // JS Evaluation Fallback
             try {
                 let res = eval(cmdStr);
                 if(res !== undefined) termLog("-> " + JSON.stringify(res));
@@ -1074,7 +1197,7 @@
 
     function refreshSectorList() {
         const container = document.getElementById('devSectorList');
-        const sections = ['sect-profile', 'sect-calib', 'sect-log', 'sect-view', 'sect-notes', 'sect-global'];
+        const sections = ['sect-profile', 'sect-calib', 'sect-log', 'sect-view', 'sect-notes', 'sect-global', 'sect-ice'];
         let html = '<ul style="font-size:10px; text-align:left; padding-left:15px; margin:5px 0;">';
         sections.forEach(id => {
             const el = document.getElementById(id);
@@ -1105,7 +1228,7 @@
         
         p.periods = [];
         let currentStart = new Date();
-        const mockSymptoms = ['s_cramps', 's_headache', 's_fatigue', 's_bloating', 's_mood', 's_backache'];
+        const mockSymptoms = ['s_cramps', 's_headache', 's_fatigue', 's_bloating', 's_mood', 's_backache', 's_acne'];
         
         for(let i=0; i < count; i++) {
             let actualCyc = cycLen;
@@ -1181,12 +1304,7 @@
             appData.profiles[idx] = parsed;
             saveData();
             
-            // Re-render EVERYTHING
-            updateProfileDropdown(); 
-            loadProfileSettings(); 
-            updateAppTranslationUI();
-            updateLayout();
-            renderDashboard();
+            updateProfileDropdown(); loadProfileSettings(); updateAppTranslationUI(); updateLayout(); renderDashboard();
             
             termLog("Profile JSON manually updated.");
             await showDialog({title:"Success", message:"Profile JSON applied instantly!"});
@@ -1195,57 +1313,31 @@
         }
     }
 
-    function forceRender() {
-        updateProfileDropdown();
-        loadProfileSettings();
-        updateLayout();
-        updateAppTranslationUI();
-        renderDashboard();
-        refreshSectorList();
-        termLog("Forced UI full re-render.");
-    }
+    function forceRender() { updateProfileDropdown(); loadProfileSettings(); updateLayout(); updateAppTranslationUI(); renderDashboard(); refreshSectorList(); }
 
     async function copyAppState() {
-        try {
-            await navigator.clipboard.writeText(JSON.stringify(appData, null, 2));
-            termLog("Copied global state to clipboard.");
-            await showDialog({title: "Success", message: "App state copied to clipboard."});
-        } catch(e) {
-            await showDialog({title: "Error", message: "Failed to copy text. Check console."});
-        }
+        try { await navigator.clipboard.writeText(JSON.stringify(appData, null, 2)); await showDialog({title: "Success", message: "App state copied to clipboard."}); } catch(e) { }
     }
 
     async function clearCurrentProfilePeriods(force = false) {
         if(!appData.activeProfileId) return;
         if(force || await showDialog({title: "Warning", message: "This will permanently wipe ALL periods for the CURRENT profile. Continue?", type: "confirm"})) {
-            const p = appData.profiles.find(x => x.id === appData.activeProfileId);
-            p.periods = [];
-            saveData();
-            renderDashboard();
-            termLog("Wiped all periods from active profile.");
+            const p = appData.profiles.find(x => x.id === appData.activeProfileId); p.periods = []; saveData(); renderDashboard();
         }
     }
 
-    function replayTutorial() {
-        localStorage.setItem('redTracker_tourVersion', '0');
-        location.reload();
-    }
+    function replayTutorial() { localStorage.setItem('redTracker_tourVersion', '0'); location.reload(); }
     
     async function testTourStep() {
         const target = document.getElementById('devTourTarget').value.trim();
         if(!target || !document.getElementById(target)) return showDialog({title:"Error", message:"Invalid target ID or element is currently hidden."});
         closeAllModals();
-        startTour([{
-            targetId: target,
-            title: { en: "Dev Test Highlight", pl: "Test Podświetlenia" },
-            desc: { en: "Highlighting element: " + target, pl: "Podświetlam element: " + target }
-        }]);
+        startTour([{ targetId: target, title: { en: "Dev Test Highlight", pl: "Test Podświetlenia" }, desc: { en: "Highlighting element: " + target, pl: "Podświetlam element: " + target } }]);
     }
     
     async function wipeAllData() {
         if(await showDialog({title: "DANGER", message: "Are you SURE? This will WIPE EVERYTHING including profiles, settings, and histories.", type: "confirm"})) {
-            localStorage.clear();
-            location.reload();
+            localStorage.clear(); location.reload();
         }
     }
 
@@ -1255,12 +1347,10 @@
     let tourActive = false;
 
     // --- Tooltip Variables ---
-    let mouseX = 0;
-    let mouseY = 0;
-    let tooltipVisible = false;
+    let mouseX = 0; let mouseY = 0; let tooltipVisible = false;
 
     // --- Section Reorder Logic ---
-    const defaultOrder = ['sect-profile', 'sect-calib', 'sect-log', 'sect-view', 'sect-notes', 'sect-global'];
+    const defaultOrder = ['sect-profile', 'sect-calib', 'sect-log', 'sect-view', 'sect-notes', 'sect-global', 'sect-ice'];
     let mobileOrder = JSON.parse(localStorage.getItem('redTracker_order')) || [...defaultOrder];
 
     // --- Symptom Dictionaries ---
@@ -1290,6 +1380,9 @@
             modalProfileTitleSelf: "My Profile", modalProfileTitleClinic: "Patient Profile",
             nameReqSelf: "Profile Name (Required)", nameReqClinic: "Patient Name (Required)", codeOpt: "Patient Code / ID (Optional)",
             
+            secIce: "7. Daily Forecast", iceToggle: "Enable Daily Forecast", iceDesc: "Check your daily body-weather forecast.",
+            privatizerTxt: "Data Privatizer (Hide data)", privatizerMsg: "Blocked by Data Privatizer",
+
             prOptNameSelf: "Profile Name", prOptNameClinic: "Patient Name", prOptSavedNotesSelf: "Saved Personal Notes", prOptSavedNotesClinic: "Saved Patient Notes",
             prScpCurrentSelf: "Current Profile Only", prScpCurrentClinic: "Current Patient Only",
             prScpSepSelf: "All Profiles (Separate Pages)", prScpSepClinic: "All Patients (Separate Pages)",
@@ -1332,7 +1425,12 @@
             insShort: "Warning: Your average cycle is unusually short (< 21 days).", insLong: "Warning: Your average cycle is unusually long (> 35 days).",
             insProlonged: "Notice: Your average bleeding lasts longer than 8 days.", insNormal: "Everything looks standard based on your logged cycles.",
             
-            tourBtnNext: "Next <i class='fa-solid fa-arrow-right'></i>", tourBtnDone: "Got it! <i class='fa-solid fa-check'></i>", tourBtnSkip: "Skip"
+            tourBtnNext: "Next <i class='fa-solid fa-arrow-right'></i>", tourBtnDone: "Got it! <i class='fa-solid fa-check'></i>", tourBtnSkip: "Skip",
+
+            weatherSunny: "Sunny", weatherCloudy: "Cloudy", weatherRainy: "Rainy", weatherStormy: "Stormy",
+            energyHigh: "High & Bright", energyMed: "Balanced", energyLow: "Low & Drained", energyCrit: "Critical (Recharge needed)",
+            socialOut: "Outgoing & Active", socialChill: "Chill & Easygoing", socialSpace: "Need Some Space", socialDnd: "Do Not Disturb",
+            iceRecTitle: "Suggestions for today", iceEnergyTitle: "Energy Level", iceSocialTitle: "Social Vibe", iceCardTitle: "Daily Forecast"
         },
         pl: {
             btnBack: "Wróć", madeBy: "Stworzone przez Dawidolowid", lightModern: "Jasny / Modern",
@@ -1348,6 +1446,9 @@
             notesPlaceholderSelf: "Dodaj swoje osobiste notatki tutaj...", notesPlaceholderClinic: "Dodaj medyczne lub osobiste notatki dla tej pacjentki...",
             modalProfileTitleSelf: "Mój Profil", modalProfileTitleClinic: "Profil Pacjentki",
             nameReqSelf: "Nazwa Profilu (Wymagane)", nameReqClinic: "Imię Pacjentki (Wymagane)", codeOpt: "Kod / ID Pacjentki (Opcjonalne)",
+
+            secIce: "7. Dzienna Prognoza", iceToggle: "Włącz Dzienną Prognozę", iceDesc: "Sprawdź prognozę pogody dla swojego organizmu.",
+            privatizerTxt: "Data Privatizer (Ukryj dane)", privatizerMsg: "Zablokowane przez Data Privatizer",
 
             prOptNameSelf: "Nazwa Profilu", prOptNameClinic: "Imię Pacjentki", prOptSavedNotesSelf: "Zapisane Notatki Osobiste", prOptSavedNotesClinic: "Zapisane Notatki Pacjentki",
             prScpCurrentSelf: "Tylko obecny profil", prScpCurrentClinic: "Tylko obecna pacjentka", prScpSepSelf: "Wszystkie profile (Osobne strony)", prScpSepClinic: "Wszyscy pacjenci (Osobne strony)",
@@ -1388,20 +1489,32 @@
             insShort: "Ostrzeżenie: Twój średni cykl jest nietypowo krótki (< 21 dni).", insLong: "Ostrzeżenie: Twój średni cykl jest nietypowo długi (> 35 dni).",
             insProlonged: "Uwaga: Twoje średnie krwawienie trwa dłużej niż 8 dni.", insNormal: "Wszystko wygląda w normie na podstawie wprowadzonych danych.",
             
-            tourBtnNext: "Dalej <i class='fa-solid fa-arrow-right'></i>", tourBtnDone: "Zrozumiałem! <i class='fa-solid fa-check'></i>", tourBtnSkip: "Pomiń"
+            tourBtnNext: "Dalej <i class='fa-solid fa-arrow-right'></i>", tourBtnDone: "Zrozumiałem! <i class='fa-solid fa-check'></i>", tourBtnSkip: "Pomiń",
+
+            weatherSunny: "Słonecznie", weatherCloudy: "Pochmurnie", weatherRainy: "Deszczowo", weatherStormy: "Burzowo",
+            energyHigh: "Wysoka & Promienna", energyMed: "Zrównoważona", energyLow: "Niska & Wyczerpana", energyCrit: "Krytyczna (Potrzebny reset)",
+            socialOut: "Towarzyska & Aktywna", socialChill: "Na luzie", socialSpace: "Potrzebuję przestrzeni", socialDnd: "Nie przeszkadzać",
+            iceRecTitle: "Sugestie na dziś", iceEnergyTitle: "Poziom Energii", iceSocialTitle: "Nawigacja Społeczna", iceCardTitle: "Dzienna Prognoza"
         }
     };
 
     let currentLang = 'en';
     let appData = { appMode: 'self', globalProvider: "", profiles: [], activeProfileId: null };
     let myChart = null; let currentChartType = 'bar'; let isEditingProfile = false; let viewedMonthDate = new Date();
+    let isPrivatizerActive = false;
 
     function t(key, lang = currentLang) { return i18n[lang][key] || key; }
     function setStaticText(id, key) { const el = document.getElementById(id); if(el) el.innerHTML = t(key); }
+    function getSymptomName(keyOrString, lang = currentLang) { if (defaultSymptoms[lang][keyOrString]) return defaultSymptoms[lang][keyOrString]; return keyOrString; }
 
-    function getSymptomName(keyOrString, lang = currentLang) {
-        if (defaultSymptoms[lang][keyOrString]) return defaultSymptoms[lang][keyOrString];
-        return keyOrString;
+    function getPrivacyText(text) {
+        if (!isPrivatizerActive || text === null || text === undefined) return text;
+        return text.toString().replace(/[a-zA-Z0-9]/g, 'X');
+    }
+
+    function togglePrivatizer() {
+        isPrivatizerActive = document.getElementById('privatizerToggle').checked;
+        renderDashboard();
     }
 
     function updateLayout() {
@@ -1455,6 +1568,11 @@
         setStaticText('secGlobalTxt', 'secGlobal'); setStaticText('defProviderTxt', 'defProvider');
         setStaticText('appModeTxt', 'appMode'); setStaticText('modeSelfTxt', 'modeSelf'); setStaticText('modeClinicTxt', 'modeClinic');
         setStaticText('secNotesTxt', isSelf ? 'secNotesSelf' : 'secNotesClinic');
+        setStaticText('secIceTxt', 'secIce'); setStaticText('iceToggleTxt', 'iceToggle'); setStaticText('iceSidebarDesc', 'iceDesc');
+        
+        setStaticText('privatizerTxt', 'privatizerTxt'); 
+        document.getElementById('privatizerMsgIce').innerText = t('privatizerMsg');
+        document.querySelectorAll('.privatizerMsgGen').forEach(el => el.innerText = t('privatizerMsg'));
         
         const notesInput = document.getElementById('patientNotesInput'); if(notesInput) notesInput.placeholder = isSelf ? t('notesPlaceholderSelf') : t('notesPlaceholderClinic');
         const nameInput = document.getElementById('personNameInput'); if(nameInput) nameInput.placeholder = isSelf ? t('nameReqSelf') : t('nameReqClinic');
@@ -1485,6 +1603,11 @@
         
         setStaticText('reorderBtnTxt', 'reorderBtnTxt'); setStaticText('reorderTitleTxt', 'reorderTitleTxt');
         setStaticText('btnSaveReorderTxt', 'btnSaveReorderTxt'); setStaticText('btnCancelReorderTxt', 'btnCancelReorderTxt');
+
+        setStaticText('iceTitleTxt', 'iceCardTitle'); document.getElementById('iceTitleTxt').innerHTML = '<i class="fa-solid fa-cloud-sun"></i> ' + t('iceCardTitle');
+        setStaticText('iceEnergyTitleTxt', 'iceEnergyTitle'); document.getElementById('iceEnergyTitleTxt').innerHTML = '<i class="fa-solid fa-bolt"></i> ' + t('iceEnergyTitle');
+        setStaticText('iceSocialTitleTxt', 'iceSocialTitle'); document.getElementById('iceSocialTitleTxt').innerHTML = '<i class="fa-solid fa-users"></i> ' + t('iceSocialTitle');
+        setStaticText('iceRecTitleTxt', 'iceRecTitle'); document.getElementById('iceRecTitleTxt').innerHTML = '<i class="fa-solid fa-hand-holding-heart"></i> ' + t('iceRecTitle');
 
         ['dayMo','dayTu','dayWe','dayTh','dayFr','daySa','daySu'].forEach(k => setStaticText(k, k));
         setStaticText('legPeriod', 'legPeriod'); setStaticText('legFollicular', 'legFollicular'); setStaticText('legFertile', 'legFertile');
@@ -1517,10 +1640,7 @@
             document.getElementById('dialogTitle').innerHTML = title; 
             document.getElementById('dialogMessage').innerHTML = message;
             document.getElementById('dialogBtnCancel').style.display = type === 'confirm' ? 'block' : 'none';
-            
-            // Bring overlay up so it dims the dev modal properly
             document.getElementById('modalOverlay').style.zIndex = 5500;
-            
             document.getElementById('modalOverlay').style.display = 'block'; 
             document.getElementById('unifiedDialog').style.display = 'block';
         });
@@ -1528,14 +1648,9 @@
     
     function closeAllModals() {
         const modals = ['profileModal', 'printModal', 'editEntryModal', 'reorderModal', 'devModal'];
-        modals.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.style.display = 'none';
-        });
-        
+        modals.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
         document.getElementById('modalOverlay').style.zIndex = 999;
         document.getElementById('modalOverlay').style.display = 'none';
-        
         if (document.getElementById('unifiedDialog').style.display !== 'none') {
             document.getElementById('unifiedDialog').style.display = 'none';
             if (dialogResolve) { dialogResolve(false); dialogResolve = null; }
@@ -1545,12 +1660,8 @@
     function closeDialog(result) {
         document.getElementById('unifiedDialog').style.display = 'none';
         document.getElementById('modalOverlay').style.zIndex = 999;
-        
         const otherModalsOpen = ['profileModal', 'printModal', 'editEntryModal', 'reorderModal', 'devModal'].some(id => document.getElementById(id).style.display === 'block');
-        if(!otherModalsOpen) { 
-            document.getElementById('modalOverlay').style.display = 'none'; 
-        }
-        
+        if(!otherModalsOpen) { document.getElementById('modalOverlay').style.display = 'none'; }
         if(dialogResolve) { dialogResolve(result); dialogResolve = null; }
     }
 
@@ -1562,122 +1673,62 @@
 
     // --- REORDER & HIDE LOGIC ---
     function openReorderModal() {
-        const container = document.getElementById('reorderListContainer');
-        container.innerHTML = '';
-        
-        const nameMap = {
-            'sect-profile': 'secProfile', 'sect-calib': 'secCalib', 'sect-log': 'secLog',
-            'sect-view': 'secView', 'sect-notes': 'secNotesSelf', 'sect-global': 'secGlobal'
-        };
+        const container = document.getElementById('reorderListContainer'); container.innerHTML = '';
+        const nameMap = { 'sect-profile': 'secProfile', 'sect-calib': 'secCalib', 'sect-log': 'secLog', 'sect-view': 'secView', 'sect-notes': 'secNotesSelf', 'sect-global': 'secGlobal', 'sect-ice': 'secIce' };
         if (appData.appMode === 'clinical') nameMap['sect-notes'] = 'secNotesClinic';
-
         const hiddenSections = JSON.parse(localStorage.getItem('redTracker_hiddenSections')) || [];
-
         mobileOrder.forEach((id, index) => {
             if(!nameMap[id]) return;
-            const isHidden = hiddenSections.includes(id);
-            const div = document.createElement('div');
-            div.className = `reorder-item ${isHidden ? 'dimmed' : ''}`;
-            div.setAttribute('data-id', id);
-            
-            div.innerHTML = `
-                <div style="display:flex; align-items:center;">
-                    <div class="drag-handle" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i></div>
-                    <span>${t(nameMap[id])}</span>
-                </div>
-                <button onclick="toggleHideSection('${id}')" class="hide-btn" title="Toggle Visibility">
-                    <i class="fa-solid ${isHidden ? 'fa-eye-slash' : 'fa-eye'}"></i>
-                </button>
-            `;
+            const isHidden = hiddenSections.includes(id); const div = document.createElement('div');
+            div.className = `reorder-item ${isHidden ? 'dimmed' : ''}`; div.setAttribute('data-id', id);
+            div.innerHTML = `<div style="display:flex; align-items:center;"><div class="drag-handle" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i></div><span>${t(nameMap[id])}</span></div><button onclick="toggleHideSection('${id}')" class="hide-btn" title="Toggle Visibility"><i class="fa-solid ${isHidden ? 'fa-eye-slash' : 'fa-eye'}"></i></button>`;
             container.appendChild(div);
         });
-
-        initReorderDrag();
-        document.getElementById('reorderModal').style.display = 'block';
-        document.getElementById('modalOverlay').style.display = 'block';
+        initReorderDrag(); document.getElementById('reorderModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block';
     }
 
     function toggleHideSection(id) {
         let hiddenSections = JSON.parse(localStorage.getItem('redTracker_hiddenSections')) || [];
-        if(hiddenSections.includes(id)) {
-            hiddenSections = hiddenSections.filter(x => x !== id);
-        } else {
-            hiddenSections.push(id);
-        }
+        if(hiddenSections.includes(id)) { hiddenSections = hiddenSections.filter(x => x !== id); } else { hiddenSections.push(id); }
         localStorage.setItem('redTracker_hiddenSections', JSON.stringify(hiddenSections));
-        openReorderModal();
-        updateLayout();
+        openReorderModal(); updateLayout();
     }
 
     function initReorderDrag() {
-        const items = document.querySelectorAll('.reorder-item');
-        let touchEl = null;
-
+        const items = document.querySelectorAll('.reorder-item'); let touchEl = null;
         items.forEach((el) => {
             const handle = el.querySelector('.drag-handle');
-            
             handle.onmousedown = () => el.setAttribute('draggable', 'true');
-            el.ondragstart = (e) => {
-                e.dataTransfer.effectAllowed = 'move';
-                setTimeout(() => el.classList.add('dragging'), 0);
-            };
+            el.ondragstart = (e) => { e.dataTransfer.effectAllowed = 'move'; setTimeout(() => el.classList.add('dragging'), 0); };
             el.ondragover = (e) => {
-                e.preventDefault();
-                const bounding = el.getBoundingClientRect();
-                const offset = bounding.y + (bounding.height / 2);
-                if (e.clientY - offset > 0) {
-                    el.style.borderBottom = "2px solid #ff9a9e"; el.style.borderTop = "";
-                } else {
-                    el.style.borderTop = "2px solid #ff9a9e"; el.style.borderBottom = "";
-                }
+                e.preventDefault(); const bounding = el.getBoundingClientRect(); const offset = bounding.y + (bounding.height / 2);
+                if (e.clientY - offset > 0) { el.style.borderBottom = "2px solid #ff9a9e"; el.style.borderTop = ""; } else { el.style.borderTop = "2px solid #ff9a9e"; el.style.borderBottom = ""; }
             };
             el.ondragleave = () => { el.style.borderTop = ""; el.style.borderBottom = ""; };
             el.ondrop = (e) => {
-                e.preventDefault();
-                el.style.borderTop = ""; el.style.borderBottom = "";
-                const draggingItem = document.querySelector('.reorder-item.dragging');
+                e.preventDefault(); el.style.borderTop = ""; el.style.borderBottom = ""; const draggingItem = document.querySelector('.reorder-item.dragging');
                 if (draggingItem && draggingItem !== el) {
-                    const bounding = el.getBoundingClientRect();
-                    const offset = bounding.y + (bounding.height / 2);
-                    if (e.clientY - offset > 0) el.after(draggingItem); else el.before(draggingItem);
-                    updateMobileOrderArray();
+                    const bounding = el.getBoundingClientRect(); const offset = bounding.y + (bounding.height / 2);
+                    if (e.clientY - offset > 0) el.after(draggingItem); else el.before(draggingItem); updateMobileOrderArray();
                 }
             };
             el.ondragend = () => { el.classList.remove('dragging'); el.removeAttribute('draggable'); };
 
             handle.ontouchstart = (e) => { touchEl = el; el.classList.add('dragging'); };
             handle.ontouchmove = (e) => {
-                if (!touchEl) return;
-                e.preventDefault();
-                const touch = e.touches[0];
-                const target = document.elementFromPoint(touch.clientX, touch.clientY);
-                if (!target) return;
+                if (!touchEl) return; e.preventDefault(); const touch = e.touches[0]; const target = document.elementFromPoint(touch.clientX, touch.clientY); if (!target) return;
                 const targetItem = target.closest('.reorder-item');
                 if (targetItem && targetItem !== touchEl) {
-                    const bounding = targetItem.getBoundingClientRect();
-                    const offset = bounding.y + (bounding.height / 2);
+                    const bounding = targetItem.getBoundingClientRect(); const offset = bounding.y + (bounding.height / 2);
                     if (touch.clientY - offset > 0) targetItem.after(touchEl); else targetItem.before(touchEl);
                 }
             };
-            handle.ontouchend = () => {
-                if (!touchEl) return;
-                touchEl.classList.remove('dragging');
-                touchEl = null;
-                updateMobileOrderArray();
-            };
+            handle.ontouchend = () => { if (!touchEl) return; touchEl.classList.remove('dragging'); touchEl = null; updateMobileOrderArray(); };
         });
     }
 
-    function updateMobileOrderArray() {
-        const newDOM = document.querySelectorAll('#reorderListContainer .reorder-item');
-        mobileOrder = Array.from(newDOM).map(item => item.getAttribute('data-id'));
-    }
-
-    function saveReorder() {
-        localStorage.setItem('redTracker_order', JSON.stringify(mobileOrder));
-        updateLayout();
-        closeAllModals();
-    }
+    function updateMobileOrderArray() { const newDOM = document.querySelectorAll('#reorderListContainer .reorder-item'); mobileOrder = Array.from(newDOM).map(item => item.getAttribute('data-id')); }
+    function saveReorder() { localStorage.setItem('redTracker_order', JSON.stringify(mobileOrder)); updateLayout(); closeAllModals(); }
 
     window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('mainVersionTag').innerText = `v${APP_VERSION}`;
@@ -1689,33 +1740,23 @@
         else if (localStorage.getItem('redTracker_modernUI') === 'true') { changeTheme('modern-light'); }
         else { changeTheme('glass'); }
 
-        if (localStorage.getItem('redTracker_devMode') === 'true') {
-            document.getElementById('devFloatBtn').style.display = 'flex';
-        }
+        if (localStorage.getItem('redTracker_devMode') === 'true') { document.getElementById('devFloatBtn').style.display = 'flex'; }
 
         loadData();
         document.getElementById('startDateInput').valueAsDate = new Date();
         setTimeout(checkAndRunTour, 500); 
     });
 
-    // --- CALENDAR TOOLTIP (INSPECTION MODE) ---
     let tooltipTimeout;
-    function updateCalTooltipPosition(e) {
-        mouseX = e.clientX; mouseY = e.clientY;
-        if(tooltipVisible) positionCalTooltip();
-    }
+    function updateCalTooltipPosition(e) { mouseX = e.clientX; mouseY = e.clientY; if(tooltipVisible) positionCalTooltip(); }
     function positionCalTooltip() {
-        const tt = document.getElementById('calTooltip');
-        let left = mouseX; let top = mouseY - 15;
-        if (left < 120) left = 120;
-        if (left > window.innerWidth - 120) left = window.innerWidth - 120;
-        tt.style.left = left + 'px'; tt.style.top = top + 'px';
-        tt.style.transform = `translate(-50%, -100%)`; 
+        const tt = document.getElementById('calTooltip'); let left = mouseX; let top = mouseY - 15;
+        if (left < 120) left = 120; if (left > window.innerWidth - 120) left = window.innerWidth - 120;
+        tt.style.left = left + 'px'; tt.style.top = top + 'px'; tt.style.transform = `translate(-50%, -100%)`; 
     }
     function showCalTooltip(phase, isFertile, event) {
-        if(tourActive || !document.getElementById('inspectToggleCheck').checked) return;
-        clearTimeout(tooltipTimeout);
-        tooltipVisible = true;
+        if(tourActive || !document.getElementById('inspectToggleCheck').checked || isPrivatizerActive) return;
+        clearTimeout(tooltipTimeout); tooltipVisible = true;
         
         let pTxt = '---'; let pSympTxt = t('ttNone');
         if(phase === 'period') { pTxt = t('legPeriod'); pSympTxt = phaseSymptoms[currentLang].period; }
@@ -1728,117 +1769,73 @@
         if (isFertile && phase !== 'ovulation') { fertEl.style.display = 'block'; fertEl.innerText = t('ttFertileWindow'); } else { fertEl.style.display = 'none'; }
         document.getElementById('ttSympText').innerText = pSympTxt;
 
-        const tt = document.getElementById('calTooltip');
-        tt.style.display = 'block';
-        setTimeout(() => tt.classList.add('visible'), 10);
-        positionCalTooltip();
-        
+        const tt = document.getElementById('calTooltip'); tt.style.display = 'block';
+        setTimeout(() => tt.classList.add('visible'), 10); positionCalTooltip();
         if(event) { event.stopPropagation(); }
     }
     function hideCalTooltip() {
-        if (!tooltipVisible) return;
-        tooltipVisible = false;
-        const tt = document.getElementById('calTooltip');
-        tt.classList.remove('visible');
+        if (!tooltipVisible) return; tooltipVisible = false;
+        const tt = document.getElementById('calTooltip'); tt.classList.remove('visible');
         tooltipTimeout = setTimeout(() => { if(!tooltipVisible) tt.style.display = 'none'; }, 200);
     }
     
-    // Automatically hide tooltip when moving mouse outside interactive elements or when scrolling on mobile
     window.addEventListener('mousemove', (e) => {
-        if (tooltipVisible && !e.target.closest('.cal-day.interactive') && !e.target.closest('.cal-tooltip')) {
-            hideCalTooltip();
-        }
+        if (tooltipVisible && !e.target.closest('.cal-day.interactive') && !e.target.closest('.cal-tooltip')) { hideCalTooltip(); }
         updateCalTooltipPosition(e);
     });
     window.addEventListener('scroll', hideCalTooltip, { passive: true });
     window.addEventListener('touchmove', hideCalTooltip, { passive: true });
 
-    // --- FEATURE TOUR IMPLEMENTATION (POINTING) ---
     function checkAndRunTour() {
         const storedTourVer = parseInt(localStorage.getItem('redTracker_tourVersion') || '0');
-        if (storedTourVer === 0 && appData.profiles.length === 0) {
-            localStorage.setItem('redTracker_tourVersion', TOUR_VERSION);
-            return;
-        }
+        if (storedTourVer === 0 && appData.profiles.length === 0) { localStorage.setItem('redTracker_tourVersion', TOUR_VERSION); return; }
         if (storedTourVer >= TOUR_VERSION) return;
         if (FEATURE_TOUR_CONFIG[TOUR_VERSION]) { startTour(FEATURE_TOUR_CONFIG[TOUR_VERSION]); }
         localStorage.setItem('redTracker_tourVersion', TOUR_VERSION);
     }
 
     function startTour(steps) {
-        currentTourSteps = steps; currentTourIndex = 0; tourActive = true;
-        document.body.classList.add('tour-active');
-        document.getElementById('tourOverlay').style.display = 'block';
-        setStaticText('tourBtnSkip', 'tourBtnSkip');
-        showTourStep();
+        currentTourSteps = steps; currentTourIndex = 0; tourActive = true; document.body.classList.add('tour-active');
+        document.getElementById('tourOverlay').style.display = 'block'; setStaticText('tourBtnSkip', 'tourBtnSkip'); showTourStep();
     }
 
     function showTourStep() {
         document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
         if(currentTourIndex >= currentTourSteps.length) { endTour(); return; }
-        
-        const step = currentTourSteps[currentTourIndex];
-        const targetEl = document.getElementById(step.targetId);
-        
-        document.getElementById('tourTitle').innerHTML = step.title[currentLang] || step.title['en'];
-        document.getElementById('tourDesc').innerHTML = step.desc[currentLang] || step.desc['en'];
-        const isLast = (currentTourIndex === currentTourSteps.length - 1);
-        document.getElementById('tourBtnNext').innerHTML = isLast ? t('tourBtnDone') : t('tourBtnNext');
+        const step = currentTourSteps[currentTourIndex]; const targetEl = document.getElementById(step.targetId);
+        document.getElementById('tourTitle').innerHTML = step.title[currentLang] || step.title['en']; document.getElementById('tourDesc').innerHTML = step.desc[currentLang] || step.desc['en'];
+        const isLast = (currentTourIndex === currentTourSteps.length - 1); document.getElementById('tourBtnNext').innerHTML = isLast ? t('tourBtnDone') : t('tourBtnNext');
 
         if (targetEl && window.getComputedStyle(targetEl).display !== 'none') {
-            targetEl.classList.add('tour-highlight');
-            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            setTimeout(() => positionTourBox(targetEl), 300);
+            targetEl.classList.add('tour-highlight'); targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => positionTourBox(targetEl), 300);
         } else {
-            const box = document.getElementById('tourBox');
-            box.className = 'tour-box visible';
-            box.style.display = 'block';
-            box.style.top = '50%'; box.style.left = '50%'; box.style.transform = 'translate(-50%, -50%)';
-            document.getElementById('tourArrow').style.display = 'none';
+            const box = document.getElementById('tourBox'); box.className = 'tour-box visible'; box.style.display = 'block';
+            box.style.top = '50%'; box.style.left = '50%'; box.style.transform = 'translate(-50%, -50%)'; document.getElementById('tourArrow').style.display = 'none';
         }
     }
 
     function positionTourBox(targetEl) {
-        const rect = targetEl.getBoundingClientRect();
-        const box = document.getElementById('tourBox');
-        const arrow = document.getElementById('tourArrow');
+        const rect = targetEl.getBoundingClientRect(); const box = document.getElementById('tourBox'); const arrow = document.getElementById('tourArrow');
         box.style.display = 'block'; box.style.transform = 'none'; arrow.style.display = 'block';
+        const boxRect = box.getBoundingClientRect(); let top, left; let arrowClass = 'arrow-top'; 
         
-        const boxRect = box.getBoundingClientRect();
-        let top, left; let arrowClass = 'arrow-top'; 
-        
-        if (rect.bottom + boxRect.height + 30 < window.innerHeight) {
-            top = rect.bottom + 20 + window.scrollY; arrowClass = 'arrow-top';
-        } else {
-            top = rect.top - boxRect.height - 20 + window.scrollY; arrowClass = 'arrow-bottom';
-        }
+        if (rect.bottom + boxRect.height + 30 < window.innerHeight) { top = rect.bottom + 20 + window.scrollY; arrowClass = 'arrow-top'; } 
+        else { top = rect.top - boxRect.height - 20 + window.scrollY; arrowClass = 'arrow-bottom'; }
         
         left = rect.left + (rect.width / 2) - (boxRect.width / 2) + window.scrollX;
+        const padding = 15; if (left < padding) left = padding; if (left + boxRect.width > window.innerWidth - padding) left = window.innerWidth - boxRect.width - padding;
         
-        const padding = 15;
-        if (left < padding) left = padding;
-        if (left + boxRect.width > window.innerWidth - padding) left = window.innerWidth - boxRect.width - padding;
-        
-        box.style.top = top + 'px'; box.style.left = left + 'px';
-        box.className = 'tour-box visible ' + arrowClass;
-        
-        let targetCenterAbs = rect.left + (rect.width / 2);
-        let arrowLeftPct = ((targetCenterAbs - left) / boxRect.width) * 100;
-        if(arrowLeftPct < 10) arrowLeftPct = 10; if(arrowLeftPct > 90) arrowLeftPct = 90;
-        arrow.style.left = arrowLeftPct + '%';
+        box.style.top = top + 'px'; box.style.left = left + 'px'; box.className = 'tour-box visible ' + arrowClass;
+        let targetCenterAbs = rect.left + (rect.width / 2); let arrowLeftPct = ((targetCenterAbs - left) / boxRect.width) * 100;
+        if(arrowLeftPct < 10) arrowLeftPct = 10; if(arrowLeftPct > 90) arrowLeftPct = 90; arrow.style.left = arrowLeftPct + '%';
     }
 
     function nextTourStep() { currentTourIndex++; showTourStep(); }
     function endTour() {
-        tourActive = false;
-        document.body.classList.remove('tour-active');
-        document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
-        document.getElementById('tourOverlay').style.display = 'none';
-        const box = document.getElementById('tourBox');
-        box.classList.remove('visible');
+        tourActive = false; document.body.classList.remove('tour-active'); document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+        document.getElementById('tourOverlay').style.display = 'none'; const box = document.getElementById('tourBox'); box.classList.remove('visible');
         setTimeout(() => box.style.display = 'none', 300);
     }
-    // ------------------------------------
 
     function loadData() {
         const saved = localStorage.getItem('redTrackerData');
@@ -1848,8 +1845,7 @@
                 appData.profiles.forEach(p => { 
                     if(!p.periods && p.dates) { p.periods = p.dates.map((d,i) => ({id: 'old_'+i, start:d, end:null, symptoms:[]})); delete p.dates; } 
                     if (p.code === undefined) p.code = ""; if (p.notes === undefined) p.notes = "";
-                    if (!p.customSymptoms) p.customSymptoms = [];
-                    p.periods.forEach(per => { if(!per.symptoms) per.symptoms = []; });
+                    if (!p.customSymptoms) p.customSymptoms = []; p.periods.forEach(per => { if(!per.symptoms) per.symptoms = []; });
                 });
                 if(appData.globalProvider === undefined) appData.globalProvider = ""; if(appData.appMode === undefined) appData.appMode = "self";
             } catch(e) { console.error(e); }
@@ -1920,15 +1916,9 @@
 
     function updateProfileDropdown() {
         const select = document.getElementById('profileSelect'); select.innerHTML = '';
-        if (appData.profiles.length === 0) {
-            select.innerHTML = `<option disabled selected>${t('noProfiles')}</option>`;
-            updateLayout();
-            return;
-        }
+        if (appData.profiles.length === 0) { select.innerHTML = `<option disabled selected>${t('noProfiles')}</option>`; updateLayout(); return; }
         appData.profiles.forEach(p => { const opt = document.createElement('option'); opt.value = p.id; opt.innerText = p.name; if (p.id === appData.activeProfileId) opt.selected = true; select.appendChild(opt); });
-        
-        updateLayout();
-        loadProfileSettings(); renderDashboard();
+        updateLayout(); loadProfileSettings(); renderDashboard();
     }
     function changeProfile() { appData.activeProfileId = document.getElementById('profileSelect').value; loadProfileSettings(); renderDashboard(); }
     
@@ -1944,11 +1934,13 @@
     function getLocalDateStr(daysOffset = 0) { const d = new Date(); d.setDate(d.getDate() + daysOffset); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
     
     async function startPeriodQuick(daysOffset) {
+        if(isPrivatizerActive) return;
         const dStr = getLocalDateStr(daysOffset); const p = appData.profiles.find(p => p.id === appData.activeProfileId);
         if(p.periods.some(per => per.start === dStr)) { await showDialog({title: t('alertError'), message: t('alertExists')}); return; }
         p.periods.push({ id: Date.now().toString(), start: dStr, end: null, symptoms: [] }); p.periods.sort((a,b) => new Date(a.start) - new Date(b.start)); saveData();
     }
     async function endPeriodQuick(id, daysOffset) { 
+        if(isPrivatizerActive) return;
         const p = appData.profiles.find(p => p.id === appData.activeProfileId); const per = p.periods.find(p => p.id === id); if(!per) return;
         const dStr = getLocalDateStr(daysOffset); if(new Date(dStr) < new Date(per.start)) { await showDialog({title: t('alertError'), message: t('cannotEndFuture')}); return; }
         per.end = dStr; saveData(); 
@@ -1966,44 +1958,28 @@
     function renderSymptomsChecklist(activeSymptoms = []) {
         const p = appData.profiles.find(prof => prof.id === appData.activeProfileId);
         const container = document.getElementById('symptomsChecklist'); container.innerHTML = '';
-        
-        let allKeys = Object.keys(defaultSymptoms['en']);
-        let userSymps = p.customSymptoms || [];
-        
-        let fullList = [...allKeys, ...userSymps];
-        
+        let allKeys = Object.keys(defaultSymptoms['en']); let userSymps = p.customSymptoms || []; let fullList = [...allKeys, ...userSymps];
         fullList.forEach(key => {
-            const isChecked = activeSymptoms.includes(key);
-            const name = getSymptomName(key);
+            const isChecked = activeSymptoms.includes(key); const name = getSymptomName(key);
             const lbl = document.createElement('label'); lbl.className = 'symptom-tag-label';
-            lbl.innerHTML = `<input type="checkbox" value="${key}" ${isChecked ? 'checked' : ''}> ${name}`;
-            container.appendChild(lbl);
+            lbl.innerHTML = `<input type="checkbox" value="${key}" ${isChecked ? 'checked' : ''}> ${name}`; container.appendChild(lbl);
         });
     }
 
     function addCustomSymptom() {
-        const inp = document.getElementById('newSymptomInput'); const val = inp.value.trim();
-        if(!val) return;
+        const inp = document.getElementById('newSymptomInput'); const val = inp.value.trim(); if(!val) return;
         const p = appData.profiles.find(prof => prof.id === appData.activeProfileId);
         if(!p.customSymptoms) p.customSymptoms = [];
-        if(!p.customSymptoms.includes(val) && !Object.keys(defaultSymptoms['en']).includes(val)) {
-            p.customSymptoms.push(val); saveData();
-        }
-        
+        if(!p.customSymptoms.includes(val) && !Object.keys(defaultSymptoms['en']).includes(val)) { p.customSymptoms.push(val); saveData(); }
         const currentlyChecked = Array.from(document.querySelectorAll('#symptomsChecklist input:checked')).map(el => el.value);
-        currentlyChecked.push(val);
-        
-        renderSymptomsChecklist(currentlyChecked);
-        inp.value = '';
+        currentlyChecked.push(val); renderSymptomsChecklist(currentlyChecked); inp.value = '';
     }
 
     function openEditEntryModal(id) {
         const p = appData.profiles.find(p => p.id === appData.activeProfileId); const per = p.periods.find(p => p.id === id); if(!per) return;
         document.getElementById('editEntryTitleTxt').innerHTML = `<i class="fa-solid fa-pen"></i> ${t('editPeriodTitle')}`;
         document.getElementById('editEntryId').value = per.id; document.getElementById('editStartDate').value = per.start; document.getElementById('editEndDate').value = per.end || '';
-        document.getElementById('newSymptomInput').value = '';
-        renderSymptomsChecklist(per.symptoms || []);
-        
+        document.getElementById('newSymptomInput').value = ''; renderSymptomsChecklist(per.symptoms || []);
         document.getElementById('editEntryModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block';
     }
 
@@ -2013,9 +1989,7 @@
         if(eVal && new Date(eVal) < new Date(sVal)) { await showDialog({title: t('alertError'), message: t('alertEndBefore')}); return; }
         const p = appData.profiles.find(p => p.id === appData.activeProfileId); const per = p.periods.find(p => p.id === id);
         if(sVal !== per.start && p.periods.some(x => x.id !== id && x.start === sVal)) { await showDialog({title: t('alertError'), message: t('alertExists')}); return; }
-        
         const checkedSymps = Array.from(document.querySelectorAll('#symptomsChecklist input:checked')).map(el => el.value);
-        
         per.start = sVal; per.end = eVal || null; per.symptoms = checkedSymps;
         p.periods.sort((a,b) => new Date(a.start) - new Date(b.start)); closeAllModals(); saveData();
     }
@@ -2026,25 +2000,20 @@
             let [y1,m1,d1] = periods[i-1].start.split('-'); let dt1 = new Date(y1, m1-1, d1);
             let [y2,m2,d2] = periods[i].start.split('-'); let dt2 = new Date(y2, m2-1, d2);
             l.push(Math.round(Math.abs(dt2 - dt1) / 86400000)); 
-        } 
-        return l; 
+        } return l; 
     }
     function calculateDurations(periods) { 
         return periods.map(p => {
-            if(!p.end) return null;
-            let [y1,m1,d1] = p.start.split('-'); let dt1 = new Date(y1, m1-1, d1);
-            let [y2,m2,d2] = p.end.split('-'); let dt2 = new Date(y2, m2-1, d2);
+            if(!p.end) return null; let [y1,m1,d1] = p.start.split('-'); let dt1 = new Date(y1, m1-1, d1); let [y2,m2,d2] = p.end.split('-'); let dt2 = new Date(y2, m2-1, d2);
             return Math.round(Math.abs(dt2 - dt1) / 86400000) + 1;
         }); 
     }
     function getAvg(arr) { const v = arr.filter(n => n !== null && !isNaN(n)); return v.length ? Math.round(v.reduce((a, b) => a + b, 0)/v.length) : 0; }
     
     function formatDate(val, lang = currentLang) { 
-        if(!val) return ''; 
-        let dObj = val;
+        if(!val) return ''; let dObj = val;
         if(typeof val === 'string') {
-            if(val.includes('-') && val.length === 10) { let [y,m,d] = val.split('-'); dObj = new Date(y, m-1, d); }
-            else { dObj = new Date(val); }
+            if(val.includes('-') && val.length === 10) { let [y,m,d] = val.split('-'); dObj = new Date(y, m-1, d); } else { dObj = new Date(val); }
         }
         return dObj.toLocaleDateString(lang === 'pl'?'pl-PL':'en-US', {day:'2-digit', month:'short', year:'numeric'}); 
     }
@@ -2060,12 +2029,10 @@
         for (let i = 0; i < periods.length; i++) {
             let [y,m,d] = periods[i].start.split('-'); let sDate = new Date(y, m-1, d); let s = sDate.getTime();
             let eDate; if(periods[i].end) { let [ey,em,ed] = periods[i].end.split('-'); eDate = new Date(ey, em-1, ed); } 
-            else { eDate = new Date(sDate); eDate.setDate(eDate.getDate() + avgPeriod - 1); }
-            let e = eDate.getTime();
+            else { eDate = new Date(sDate); eDate.setDate(eDate.getDate() + avgPeriod - 1); } let e = eDate.getTime();
             
             let nSDate; if(i < periods.length - 1) { let [ny,nm,nd] = periods[i+1].start.split('-'); nSDate = new Date(ny, nm-1, nd); } 
-            else { nSDate = new Date(sDate); nSDate.setDate(nSDate.getDate() + avgCycle); }
-            let nS = nSDate.getTime();
+            else { nSDate = new Date(sDate); nSDate.setDate(nSDate.getDate() + avgCycle); } let nS = nSDate.getTime();
             
             if (targetTime >= s && targetTime < nS) { cStart = s; nextStart = nS; pEnd = e; break; }
         }
@@ -2073,7 +2040,6 @@
         if (!cStart) {
             let [y,m,d] = periods[0].start.split('-'); let firstS = new Date(y, m-1, d).getTime();
             if(targetTime < firstS) return { mainPhase, isFertile };
-            
             let [ly,lm,ld] = periods[periods.length - 1].start.split('-'); let tempStart = new Date(ly, lm-1, ld);
             let tempNext = new Date(tempStart); tempNext.setDate(tempNext.getDate() + avgCycle);
             while (targetTime >= tempNext.getTime()) { tempStart.setDate(tempStart.getDate() + avgCycle); tempNext.setDate(tempNext.getDate() + avgCycle); }
@@ -2091,7 +2057,6 @@
         else if (targetTime > oD && targetTime < nextStart) mainPhase = 'luteal';
 
         if (targetTime >= fStart && targetTime <= fEnd) isFertile = true;
-
         return { mainPhase, isFertile };
     }
 
@@ -2105,7 +2070,7 @@
 
         document.getElementById('calendarCard').style.display = 'block';
         const m = viewedMonthDate.getMonth(); const y = viewedMonthDate.getFullYear();
-        document.getElementById('calMonthLabel').innerText = `${viewedMonthDate.toLocaleString(currentLang==='pl'?'pl-PL':'en-US', {month:'long'})} ${y}`.toUpperCase();
+        document.getElementById('calMonthLabel').innerText = `${viewedMonthDate.toLocaleString(currentLang==='pl'?'pl-PL':'en-US', {month:'long'})} ${getPrivacyText(y)}`.toUpperCase();
         
         const grid = document.getElementById('calendarGridDates'); grid.innerHTML = '';
         let firstDay = new Date(y, m, 1).getDay(); firstDay = firstDay === 0 ? 6 : firstDay - 1;
@@ -2114,46 +2079,169 @@
         for(let i=0; i<firstDay; i++) { const d = document.createElement('div'); d.className = 'cal-day cal-empty'; grid.appendChild(d); }
         const todayObj = new Date(); todayObj.setHours(0,0,0,0); const todayMs = todayObj.getTime();
         
+        const allPhases = ['phase-period', 'phase-follicular', 'phase-ovulation', 'phase-luteal'];
+
         for(let i=1; i<=daysInM; i++) {
             const dateObj = new Date(y, m, i); const info = getPhaseInfo(dateObj, profile, avgCycle, avgPeriod);
-            const d = document.createElement('div'); d.className = `cal-day phase-${info.mainPhase} ${info.isFertile ? 'fertile-day' : ''}`; d.innerText = i;
-            if(dateObj.getTime() === todayMs) d.classList.add('cal-today');
+            const d = document.createElement('div'); d.innerText = getPrivacyText(i);
             
-            if(info.mainPhase !== 'empty') {
-                d.classList.add('interactive');
-                d.onmouseenter = (e) => showCalTooltip(info.mainPhase, info.isFertile, e);
-                d.onclick = (e) => { e.stopPropagation(); showCalTooltip(info.mainPhase, info.isFertile, e); };
+            if (isPrivatizerActive) {
+                // Randomize visually to hide real data
+                let rPhase = allPhases[Math.floor(Math.random() * allPhases.length)];
+                let rFertile = Math.random() > 0.8 ? 'fertile-day' : '';
+                d.className = `cal-day ${rPhase} ${rFertile}`;
+            } else {
+                d.className = `cal-day phase-${info.mainPhase} ${info.isFertile ? 'fertile-day' : ''}`;
+                if(info.mainPhase !== 'empty') {
+                    d.classList.add('interactive');
+                    d.onmouseenter = (e) => showCalTooltip(info.mainPhase, info.isFertile, e);
+                    d.onclick = (e) => { e.stopPropagation(); showCalTooltip(info.mainPhase, info.isFertile, e); };
+                }
             }
+
+            if(dateObj.getTime() === todayMs) d.classList.add('cal-today');
             grid.appendChild(d);
         }
 
-        const infoToday = getPhaseInfo(todayObj, profile, avgCycle, avgPeriod);
-        let pTxt = ''; let pSympTxt = '';
-        if(infoToday.mainPhase === 'period') { pTxt = t('legPeriod'); pSympTxt = phaseSymptoms[currentLang].period; }
-        else if(infoToday.mainPhase === 'follicular') { pTxt = t('legFollicular'); pSympTxt = phaseSymptoms[currentLang].follicular; }
-        else if(infoToday.mainPhase === 'ovulation') { pTxt = t('legOvulation'); pSympTxt = phaseSymptoms[currentLang].ovulation; }
-        else if(infoToday.mainPhase === 'luteal') { pTxt = t('legLuteal'); pSympTxt = phaseSymptoms[currentLang].luteal; }
-        else pTxt = '---';
-        
-        if (infoToday.isFertile && infoToday.mainPhase !== 'ovulation') pTxt += ' + ' + t('legFertile');
+        const legend = document.getElementById('calendarLegend');
+        const statusBox = document.getElementById('todayStatusBox');
 
-        let sHtml = `<div style="font-size:15px; margin-bottom:5px;"><strong>${t('statusTitle')}</strong> ${pTxt}</div>`;
-        if (pSympTxt) { sHtml += `<div class="phase-symptoms"><strong>${t('typicalSymptoms')}</strong> ${pSympTxt}</div>`; }
-
-        if (cycleLengths.length < 3) {
-            sHtml += `<div style="color:#ff6b6b; font-size:12px; margin-top:10px; font-weight:600;"><i class="fa-solid fa-lock"></i> ${t('lockWarning')}</div>`;
+        if (isPrivatizerActive) {
+            legend.style.display = 'none';
+            statusBox.style.display = 'none';
         } else {
-            let safe = !infoToday.isFertile && infoToday.mainPhase !== 'period';
-            sHtml += `<div style="font-size:14px; margin-top:10px; margin-bottom:0px;"><strong>${t('safeTitle')}</strong> <span style="font-weight:700; color: ${safe ? '#16a34a' : '#f43f5e'}">${safe ? t('safeYes') : t('safeNo')}</span></div>`;
-            sHtml += `<div class="safety-warning"><i class="fa-solid fa-triangle-exclamation"></i> ${t('disclaimer')}</div>`;
+            legend.style.display = 'flex';
+            statusBox.style.display = 'block';
+
+            const infoToday = getPhaseInfo(todayObj, profile, avgCycle, avgPeriod);
+            let pTxt = ''; let pSympTxt = '';
+            if(infoToday.mainPhase === 'period') { pTxt = t('legPeriod'); pSympTxt = phaseSymptoms[currentLang].period; }
+            else if(infoToday.mainPhase === 'follicular') { pTxt = t('legFollicular'); pSympTxt = phaseSymptoms[currentLang].follicular; }
+            else if(infoToday.mainPhase === 'ovulation') { pTxt = t('legOvulation'); pSympTxt = phaseSymptoms[currentLang].ovulation; }
+            else if(infoToday.mainPhase === 'luteal') { pTxt = t('legLuteal'); pSympTxt = phaseSymptoms[currentLang].luteal; }
+            else pTxt = '---';
+            
+            if (infoToday.isFertile && infoToday.mainPhase !== 'ovulation') pTxt += ' + ' + t('legFertile');
+
+            let sHtml = `<div style="font-size:15px; margin-bottom:5px;"><strong>${t('statusTitle')}</strong> ${pTxt}</div>`;
+            if (pSympTxt) { sHtml += `<div class="phase-symptoms"><strong>${t('typicalSymptoms')}</strong> ${pSympTxt}</div>`; }
+
+            if (cycleLengths.length < 3) {
+                sHtml += `<div style="color:#ff6b6b; font-size:12px; margin-top:10px; font-weight:600;"><i class="fa-solid fa-lock"></i> ${t('lockWarning')}</div>`;
+            } else {
+                let safe = !infoToday.isFertile && infoToday.mainPhase !== 'period';
+                sHtml += `<div style="font-size:14px; margin-top:10px; margin-bottom:0px;"><strong>${t('safeTitle')}</strong> <span style="font-weight:700; color: ${safe ? '#16a34a' : '#f43f5e'}">${safe ? t('safeYes') : t('safeNo')}</span></div>`;
+                sHtml += `<div class="safety-warning"><i class="fa-solid fa-triangle-exclamation"></i> ${t('disclaimer')}</div>`;
+            }
+            statusBox.innerHTML = sHtml;
         }
-        document.getElementById('todayStatusBox').innerHTML = sHtml;
+    }
+
+    // --- ICE ASSIST (WEATHER) LOGIC ---
+    function updateIceAssist(profile, cycleLengths, durations) {
+        const isEnabled = document.getElementById('iceToggleCheck').checked;
+        const card = document.getElementById('iceAssistCard');
+        
+        if (!isEnabled || !profile || profile.periods.length === 0) {
+            card.style.display = 'none';
+            return;
+        }
+        card.style.display = 'flex';
+
+        const content = document.getElementById('iceAssistContent');
+        const overlay = document.getElementById('iceAssistOverlay');
+
+        if (isPrivatizerActive) {
+            content.classList.add('privacy-blur');
+            overlay.style.display = 'flex';
+            return;
+        } else {
+            content.classList.remove('privacy-blur');
+            overlay.style.display = 'none';
+        }
+
+        let avgCycle = profile.manualCycle; let avgPeriod = getAvg(durations) || 5;
+        if (profile.autoCalibrate && cycleLengths.length > 0) avgCycle = getAvg(cycleLengths) || profile.manualCycle;
+        
+        const todayObj = new Date(); todayObj.setHours(0,0,0,0);
+        const infoToday = getPhaseInfo(todayObj, profile, avgCycle, avgPeriod);
+        
+        let activeSymptoms = [];
+        profile.periods.forEach(p => {
+            let s = new Date(p.start).setHours(0,0,0,0);
+            let e = p.end ? new Date(p.end).setHours(0,0,0,0) : new Date().setHours(23,59,59,999);
+            if (todayObj.getTime() >= s && todayObj.getTime() <= e) {
+                activeSymptoms = activeSymptoms.concat(p.symptoms || []);
+            }
+        });
+        activeSymptoms = [...new Set(activeSymptoms)];
+
+        let status = 'Sunny'; // Sunny, Cloudy, Rainy, Stormy
+        let energy = t('energyHigh');
+        let social = t('socialOut');
+        let icon = 'fa-sun';
+        let recs = [];
+
+        const severeSymp = ['s_cramps', 's_fatigue', 's_headache', 's_backache'];
+        const mildSymp = ['s_mood', 's_bloating', 's_acne', 's_breasts', 's_ovupain'];
+
+        let hasSevere = activeSymptoms.some(s => severeSymp.includes(s));
+        let hasMild = activeSymptoms.some(s => mildSymp.includes(s));
+
+        // Logic
+        if (infoToday.mainPhase === 'period' && hasSevere) {
+            status = 'Stormy'; energy = t('energyCrit'); social = t('socialDnd'); icon = 'fa-cloud-bolt';
+            recs.push({icon: 'fa-bed', text: currentLang==='pl'?'Twój organizm potrzebuje odpoczynku. Zwolnij.':'Your body needs rest. Slow down.'});
+            if(activeSymptoms.includes('s_cramps')) recs.push({icon: 'fa-fire-burner', text: currentLang==='pl'?'Termofor lub ciepły prysznic przyniosą ulgę.':'Heating pad or a warm shower will bring relief.'});
+            recs.push({icon: 'fa-cookie-bite', text: currentLang==='pl'?'Zjedz coś dobrego bez wyrzutów sumienia.':'Have your favorite snack guilt-free.'});
+        } 
+        else if (infoToday.mainPhase === 'period' || hasSevere) {
+            status = 'Rainy'; energy = t('energyLow'); social = t('socialSpace'); icon = 'fa-cloud-showers-heavy';
+            recs.push({icon: 'fa-mug-hot', text: currentLang==='pl'?'Zadbaj o nawodnienie, ciepła herbata to dobry pomysł.':'Stay hydrated, warm tea is a good idea.'});
+            recs.push({icon: 'fa-couch', text: currentLang==='pl'?'Zarezerwuj wieczór tylko dla siebie.':'Reserve the evening just for yourself.'});
+            if(activeSymptoms.includes('s_headache')) recs.push({icon: 'fa-eye-low-vision', text: currentLang==='pl'?'Unikaj jasnego światła i głośnych dźwięków.':'Avoid bright lights and loud noises.'});
+        }
+        else if (infoToday.mainPhase === 'luteal' || hasMild) {
+            status = 'Cloudy'; energy = t('energyMed'); social = t('socialChill'); icon = 'fa-cloud';
+            recs.push({icon: 'fa-spa', text: currentLang==='pl'?'Bądź dla siebie wyrozumiała, to czas wahań nastroju.':'Be gentle with yourself, moods may swing.'});
+            if(activeSymptoms.includes('s_acne')) recs.push({icon: 'fa-spray-can-sparkles', text: currentLang==='pl'?'Zadbaj o delikatną rutynę pielęgnacji skóry.':'Focus on a gentle skincare routine.'});
+            recs.push({icon: 'fa-person-walking', text: currentLang==='pl'?'Lekki spacer pomoże na ewentualne wzdęcia.':'A light walk will help with any bloating.'});
+        }
+        else {
+            status = 'Sunny'; energy = t('energyHigh'); social = t('socialOut'); icon = 'fa-sun';
+            recs.push({icon: 'fa-rocket', text: currentLang==='pl'?'Świetny czas na realizację dużych projektów!':'Great time to tackle big projects!'});
+            recs.push({icon: 'fa-dumbbell', text: currentLang==='pl'?'Masz dużo siły, wypróbuj mocniejszy trening.':'You have high stamina, try a harder workout.'});
+            recs.push({icon: 'fa-champagne-glasses', text: currentLang==='pl'?'Idealny moment na spotkania z przyjaciółmi.':'Perfect moment for hanging out with friends.'});
+        }
+
+        card.className = `weather-card weather-${status.toLowerCase()}`;
+        document.getElementById('weatherIconLarge').className = `fa-solid ${icon} w-icon-large`;
+        document.getElementById('iceEnergyText').innerText = energy;
+        document.getElementById('iceShieldText').innerText = social;
+        
+        document.getElementById('iceRecsContainer').innerHTML = recs.map(r => `<li><i class="fa-solid ${r.icon}"></i> <span>${r.text}</span></li>`).join('');
+        
+        window.__iceDebugState = { status, energy, shield: social, recs: recs.map(r=>r.text), phase: infoToday.mainPhase, symptoms: activeSymptoms };
     }
 
     function generateInsights(cycleLengths, durations) {
+        const panel = document.getElementById('insightsPanel');
         const list = document.getElementById('insightsList'); list.innerHTML = '';
-        if (cycleLengths.length < 3) { document.getElementById('insightsPanel').style.display = 'none'; return; }
-        document.getElementById('insightsPanel').style.display = 'block';
+        if (cycleLengths.length < 3) { panel.style.display = 'none'; return; }
+        panel.style.display = 'block';
+
+        const content = document.getElementById('insightsContent');
+        const overlay = document.getElementById('insightsOverlay');
+
+        if(isPrivatizerActive) {
+            content.classList.add('privacy-blur');
+            overlay.style.display = 'flex';
+            return;
+        } else {
+            content.classList.remove('privacy-blur');
+            overlay.style.display = 'none';
+        }
+
         let ins = []; const maxC = Math.max(...cycleLengths); const minC = Math.min(...cycleLengths);
         if (maxC - minC <= 4) ins.push({ t: 'good', x: t('insRegular') }); else if (maxC - minC >= 9) ins.push({ t: 'warning', x: t('insIrregular') });
         const avgC = getAvg(cycleLengths);
@@ -2174,20 +2262,22 @@
             const dur = durations[profile.periods.length - 1 - idx]; 
             const div = document.createElement('div'); div.className = 'history-card-item';
             
-            let dateRange = `${formatDate(p.start)}`;
-            if(p.end) dateRange += ` <i class="fa-solid fa-arrow-right" style="font-size:11px; opacity:0.6; margin:0 4px;"></i> ${formatDate(p.end)}`;
+            let dateRange = `${getPrivacyText(formatDate(p.start))}`;
+            if(p.end) dateRange += ` <i class="fa-solid fa-arrow-right" style="font-size:11px; opacity:0.6; margin:0 4px;"></i> ${getPrivacyText(formatDate(p.end))}`;
             
             let sympHtml = '';
             if (p.symptoms && p.symptoms.length > 0) {
-                sympHtml = `<div class="hc-symptoms">` + p.symptoms.map(s => `<span class="hc-symp-badge">${getSymptomName(s)}</span>`).join('') + `</div>`;
+                sympHtml = `<div class="hc-symptoms">` + p.symptoms.map(s => `<span class="hc-symp-badge">${getPrivacyText(getSymptomName(s))}</span>`).join('') + `</div>`;
             } else {
-                sympHtml = `<div style="font-size:11px; opacity:0.5; font-style:italic;">${t('noSymptoms')}</div>`;
+                sympHtml = `<div style="font-size:11px; opacity:0.5; font-style:italic;">${getPrivacyText(t('noSymptoms'))}</div>`;
             }
+
+            let durText = dur > 0 ? getPrivacyText(dur) : '-';
 
             div.innerHTML = `
                 <div class="hc-header">
                     <span class="hc-dates">${dateRange}</span>
-                    <span class="hc-dur">${dur > 0 ? dur : '-'} ${t('days')}</span>
+                    <span class="hc-dur">${durText} ${getPrivacyText(t('days'))}</span>
                 </div>
                 ${sympHtml}
             `;
@@ -2201,55 +2291,67 @@
         const profile = appData.profiles.find(p => p.id === appData.activeProfileId); if(!profile) return;
         const dList = document.getElementById('dateList'); dList.innerHTML = '';
         
-        const activePeriod = profile.periods.find(p => !p.end); const btnToday = document.getElementById('qaTodayBtn'); const btnYest = document.getElementById('qaYestBtn');
-        if(activePeriod) {
-            btnToday.className = 'btn-main'; btnToday.style.background = 'rgba(255, 107, 107, 0.2)'; btnToday.style.color = '#ff6b6b'; btnToday.style.border = '1px solid rgba(255,107,107,0.4)'; btnToday.onclick = () => endPeriodQuick(activePeriod.id, 0); btnToday.innerHTML = `<i class="fa-solid fa-stop"></i> <span>${t('quickEnd')}</span>`;
-            btnYest.className = 'btn-main'; btnYest.style.background = 'transparent'; btnYest.style.color = '#ff6b6b'; btnYest.style.border = '1px dashed rgba(255,107,107,0.4)'; btnYest.onclick = () => endPeriodQuick(activePeriod.id, -1); btnYest.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> <span>${t('quickEndYest')}</span>`;
+        const activePeriod = profile.periods.find(p => !p.end); 
+        const qaContainer = document.getElementById('quickActionsContainer');
+        
+        if (isPrivatizerActive) {
+            qaContainer.innerHTML = `<button class="privacy-quick-btn" disabled><i class="fa-solid fa-eye-slash"></i> ${t('privatizerMsg')}</button>`;
         } else {
-            btnToday.className = 'btn-main'; btnToday.style.background = 'var(--accent)'; btnToday.style.color = '#333'; btnToday.style.border = 'none'; btnToday.onclick = () => startPeriodQuick(0); btnToday.innerHTML = `<i class="fa-solid fa-droplet"></i> <span>${t('quickStart')}</span>`;
-            btnYest.className = 'btn-small'; btnYest.style.background = ''; btnYest.style.color = ''; btnYest.style.border = ''; btnYest.style.padding = '15px'; btnYest.style.fontSize = '14px'; btnYest.onclick = () => startPeriodQuick(-1); btnYest.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> <span>${t('quickStartYest')}</span>`;
+            qaContainer.innerHTML = `<button id="qaTodayBtn" class="btn-main" style="padding: 15px; border-radius: 12px;"></button><button id="qaYestBtn" class="btn-small" style="padding: 15px; border-radius: 12px; font-size: 13px;"></button>`;
+            const btnToday = document.getElementById('qaTodayBtn'); const btnYest = document.getElementById('qaYestBtn');
+            if(activePeriod) {
+                btnToday.className = 'btn-main'; btnToday.style.background = 'rgba(255, 107, 107, 0.2)'; btnToday.style.color = '#ff6b6b'; btnToday.style.border = '1px solid rgba(255,107,107,0.4)'; btnToday.onclick = () => endPeriodQuick(activePeriod.id, 0); btnToday.innerHTML = `<i class="fa-solid fa-stop"></i> <span>${t('quickEnd')}</span>`;
+                btnYest.className = 'btn-main'; btnYest.style.background = 'transparent'; btnYest.style.color = '#ff6b6b'; btnYest.style.border = '1px dashed rgba(255,107,107,0.4)'; btnYest.onclick = () => endPeriodQuick(activePeriod.id, -1); btnYest.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> <span>${t('quickEndYest')}</span>`;
+            } else {
+                btnToday.className = 'btn-main'; btnToday.style.background = 'var(--accent)'; btnToday.style.color = '#333'; btnToday.style.border = 'none'; btnToday.onclick = () => startPeriodQuick(0); btnToday.innerHTML = `<i class="fa-solid fa-droplet"></i> <span>${t('quickStart')}</span>`;
+                btnYest.className = 'btn-small'; btnYest.style.background = ''; btnYest.style.color = ''; btnYest.style.border = ''; btnYest.style.padding = '15px'; btnYest.style.fontSize = '14px'; btnYest.onclick = () => startPeriodQuick(-1); btnYest.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> <span>${t('quickStartYest')}</span>`;
+            }
         }
 
         const durations = calculateDurations(profile.periods); const cycleLengths = calculateCycles(profile.periods);
         [...profile.periods].reverse().forEach((p, idx) => {
             const dur = durations[profile.periods.length - 1 - idx]; const div = document.createElement('div'); div.className = 'date-item';
-            let tHtml = `<span>${formatDate(p.start)}</span>`;
-            if(p.end) tHtml = `<div class="date-details"><span>${formatDate(p.start)} <i class="fa-solid fa-arrow-right" style="font-size:10px; opacity:0.5;"></i> ${formatDate(p.end)}</span><span class="date-sub">Duration: ${dur} ${t('days')}</span></div>`;
-            div.innerHTML = `${tHtml} <div style="display:flex; gap:5px;"><button onclick="openEditEntryModal('${p.id}')" style="color: #4CAF50;"><i class="fa-solid fa-pen"></i></button><button onclick="removeEntry('${p.id}')"><i class="fa-solid fa-xmark"></i></button></div>`;
+            let tHtml = `<span>${getPrivacyText(formatDate(p.start))}</span>`;
+            if(p.end) tHtml = `<div class="date-details"><span>${getPrivacyText(formatDate(p.start))} <i class="fa-solid fa-arrow-right" style="font-size:10px; opacity:0.5;"></i> ${getPrivacyText(formatDate(p.end))}</span><span class="date-sub">Duration: ${getPrivacyText(dur)} ${getPrivacyText(t('days'))}</span></div>`;
+            div.innerHTML = `${tHtml} <div style="display:flex; gap:5px;"><button onclick="openEditEntryModal('${p.id}')" style="color: #4CAF50;" ${isPrivatizerActive?'disabled style="opacity:0.2;"':''}><i class="fa-solid fa-pen"></i></button><button onclick="removeEntry('${p.id}')" ${isPrivatizerActive?'disabled style="opacity:0.2;"':''}><i class="fa-solid fa-xmark"></i></button></div>`;
             dList.appendChild(div);
         });
 
         let avgCycle = profile.manualCycle; let avgPeriod = getAvg(durations);
         if (profile.autoCalibrate && cycleLengths.length > 0) avgCycle = getAvg(cycleLengths) || profile.manualCycle;
-        generateInsights(cycleLengths, durations); renderCalendarAndStatus(); renderHistoryCard(profile, durations);
+        
+        generateInsights(cycleLengths, durations); 
+        renderCalendarAndStatus(); 
+        renderHistoryCard(profile, durations);
+        updateIceAssist(profile, cycleLengths, durations);
 
         const lastEntry = profile.periods[profile.periods.length - 1];
         if (lastEntry) {
             let [ly, lm, ld] = lastEntry.start.split('-'); let lastDate = new Date(ly, lm-1, ld);
-            document.getElementById('statLastPeriod').innerText = formatDate(lastDate);
+            document.getElementById('statLastPeriod').innerText = getPrivacyText(formatDate(lastDate));
             
             const todayObj = new Date(); todayObj.setHours(0,0,0,0);
             const diffD = Math.round((todayObj.getTime() - lastDate.getTime()) / 86400000);
-            document.getElementById('statDaysAgo').innerText = diffD === 0 ? t('startedToday') : t('daysAgo').replace('%s', diffD);
+            document.getElementById('statDaysAgo').innerText = diffD === 0 ? getPrivacyText(t('startedToday')) : getPrivacyText(t('daysAgo').replace('%s', diffD));
 
-            const nDate = new Date(lastDate); nDate.setDate(nDate.getDate() + avgCycle);
-            document.getElementById('statNextPeriod').innerText = formatDate(nDate);
+            const nDate = new Date(lastDate); nDate.setDate(lastDate.getDate() + avgCycle);
+            document.getElementById('statNextPeriod').innerText = getPrivacyText(formatDate(nDate));
             const dLeft = Math.round((nDate.getTime() - todayObj.getTime()) / 86400000);
-            document.getElementById('statDaysLeft').innerText = dLeft < 0 ? t('daysLate').replace('%s', Math.abs(dLeft)) : (dLeft === 0 ? t('expectedToday') : t('inDays').replace('%s', dLeft));
+            document.getElementById('statDaysLeft').innerText = dLeft < 0 ? getPrivacyText(t('daysLate').replace('%s', Math.abs(dLeft))) : (dLeft === 0 ? getPrivacyText(t('expectedToday')) : getPrivacyText(t('inDays').replace('%s', dLeft)));
             document.getElementById('statDaysLeft').style.color = dLeft < 0 ? '#ff6b6b' : 'inherit';
 
             const oDate = new Date(nDate); oDate.setDate(oDate.getDate() - 14);
-            document.getElementById('statOvulation').innerText = formatDate(oDate);
+            document.getElementById('statOvulation').innerText = getPrivacyText(formatDate(oDate));
             const oLeft = Math.round((oDate.getTime() - todayObj.getTime()) / 86400000);
-            document.getElementById('statOvuDaysLeft').innerText = oLeft < 0 ? t('daysAgo').replace('%s', Math.abs(oLeft)) : (oLeft === 0 ? t('expectedToday') : t('inDays').replace('%s', oLeft));
+            document.getElementById('statOvuDaysLeft').innerText = oLeft < 0 ? getPrivacyText(t('daysAgo').replace('%s', Math.abs(oLeft))) : (oLeft === 0 ? getPrivacyText(t('expectedToday')) : getPrivacyText(t('inDays').replace('%s', oLeft)));
         } else {
-            ['statLastPeriod','statNextPeriod','statOvulation'].forEach(id => document.getElementById(id).innerText = t('noData'));
-            ['statDaysLeft','statOvuDaysLeft'].forEach(id => document.getElementById(id).innerText = '---'); document.getElementById('statDaysAgo').innerText = t('logStartMsg');
+            ['statLastPeriod','statNextPeriod','statOvulation'].forEach(id => document.getElementById(id).innerText = getPrivacyText(t('noData')));
+            ['statDaysLeft','statOvuDaysLeft'].forEach(id => document.getElementById(id).innerText = '---'); document.getElementById('statDaysAgo').innerText = getPrivacyText(t('logStartMsg'));
         }
 
-        document.getElementById('statAvgCycle').innerText = `${avgCycle} ${t('days')}`;
-        document.getElementById('statAvgPeriod').innerText = avgPeriod > 0 ? `${avgPeriod} ${t('days')}` : `-- ${t('days')}`;
-        document.getElementById('statCalibrated').innerText = profile.autoCalibrate ? (cycleLengths.length > 0 ? t('autoCalcTxt') : t('needDataTxt')) : t('manualSetTxt');
+        document.getElementById('statAvgCycle').innerText = `${getPrivacyText(avgCycle)} ${getPrivacyText(t('days'))}`;
+        document.getElementById('statAvgPeriod').innerText = avgPeriod > 0 ? `${getPrivacyText(avgPeriod)} ${getPrivacyText(t('days'))}` : `-- ${getPrivacyText(t('days'))}`;
+        document.getElementById('statCalibrated').innerText = getPrivacyText(profile.autoCalibrate ? (cycleLengths.length > 0 ? t('autoCalcTxt') : t('needDataTxt')) : t('manualSetTxt'));
         
         updateChart(profile, cycleLengths, durations);
     }
@@ -2260,6 +2362,18 @@
         const ctx = document.getElementById('mainChart').getContext('2d'); const bgHex = document.getElementById('bgColorPicker').value;
         const colorC = (bgHex.match(/[\d.]+/g)||[]).length ? '#ffffff' : (parseInt(bgHex.replace('#',''), 16) > 0xffffff/2 ? '#000000' : '#ffffff');
         document.getElementById('exportFrame').style.background = bgHex; document.getElementById('chartTitleText').style.color = colorC;
+        
+        const overlay = document.getElementById('chartOverlay');
+        const canvasWrap = document.querySelector('.chart-wrapper');
+
+        if (isPrivatizerActive) {
+            overlay.style.display = 'flex';
+            canvasWrap.classList.add('privacy-blur');
+        } else {
+            overlay.style.display = 'none';
+            canvasWrap.classList.remove('privacy-blur');
+        }
+
         if (myChart) myChart.destroy(); if (profile.periods.length === 0) return;
 
         const plotDurations = durations.slice(0, durations.length - 1); 
@@ -2270,17 +2384,21 @@
 
         myChart = new Chart(ctx, {
             type: currentChartType, data: { labels: cycleLengths.map((_, i) => `Cycle ${i+1}`), datasets: datasets },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: colorC, font: {family: 'Outfit'} } }, datalabels: { color: currentChartType==='bar'?'#fff':colorC, font: { weight: 'bold', family: 'Outfit'} } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: colorC } }, x: { grid: { display: false }, ticks: { color: colorC } } } }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: colorC, font: {family: 'Outfit'} } }, datalabels: { color: currentChartType==='bar'?'#fff':colorC, font: { weight: 'bold', family: 'Outfit'}, formatter: function(value) { return isPrivatizerActive ? 'X' : value; } } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: colorC, callback: function(value) { return isPrivatizerActive ? 'X' : value; } } }, x: { grid: { display: false }, ticks: { color: colorC } } } }
         });
     }
 
     async function exportToPng() {
+        if(isPrivatizerActive) { await showDialog({title: t('alertError'), message: "Disable Data Privatizer to export PNG."}); return; }
         const p = appData.profiles.find(p => p.id === appData.activeProfileId); const name = p ? p.name : "Chart";
         const canvas = await html2canvas(document.getElementById('exportFrame'), { scale: 2, backgroundColor: null });
         const link = document.createElement('a'); link.download = `RedTracker_${name}.png`; link.href = canvas.toDataURL('image/png', 1.0); link.click();
     }
 
-    function openPrintModal() { if(appData.profiles.length === 0) return; document.getElementById('printModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block'; }
+    function openPrintModal() { 
+        if(isPrivatizerActive) { showDialog({title: t('alertError'), message: "Disable Data Privatizer to print."}); return; }
+        if(appData.profiles.length === 0) return; document.getElementById('printModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block'; 
+    }
 
     function buildPrintHTMLForProfile(profile, options, isLast) {
         const prLang = options.lang; const isSelf = appData.appMode === 'self';
