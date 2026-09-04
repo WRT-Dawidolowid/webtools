@@ -197,6 +197,13 @@
         .card-actions { margin-top: auto; }
         .action-row { display: flex; gap: 10px; align-items: center; width: 100%; }
 
+        .btn-cs { 
+            flex: 1; padding: 12px; background: var(--accent); border: none; filter: brightness(0.7);
+            border-radius: 12px; color: white; font-weight: 700; font-size: 14px;
+            cursor: pointer; transition: 0.3s; display: flex; 
+            justify-content: center; align-items: center; gap: 8px; text-decoration: none;
+        }
+
         .btn-main { 
             flex: 1; padding: 12px; background: var(--accent); border: none; 
             border-radius: 12px; color: white; font-weight: 700; font-size: 14px;
@@ -452,7 +459,7 @@
 
             <div class="separator"><i class="fa-solid fa-wand-magic-sparkles"></i> Tools for Analysis</div>
 
-            <div class="tool-card" style="grid-column: span 3;">
+            <div class="tool-card" style="grid-column: span 2;">
                 <div>
                     <h3><i class="fa-solid fa-futbol"></i> Velocity <span class="badge badge-beta">Beta</span></h3>
                     <p>Schedule, analyze, and visualize your sports match with ease.</p>
@@ -471,6 +478,17 @@
                             <button class="btn-text flex-1" onclick="toggleVersions('velocity', false)"><i class="fa-solid fa-arrow-left"></i> Go Back</button>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div class="tool-card" style= "grid-column: span 1;">
+                <div>
+                    <h3><i class="fa-solid fa-explosion"></i> Force<span class="badge badge-cs">COMING SOON</span></h3>
+                    <p>Calculate impact force, kinetic energy, and body mass momentum.</p>
+                </div>
+                <div class="card-actions action-row">
+                    <a class="btn-cs">Coming Soon</a>
+                    <!-- <button class="btn-icon square" onclick="copyUrl('')" title="Copy Link"><i class="fa-solid fa-link"></i></button> -->
                 </div>
             </div>
 
@@ -632,7 +650,7 @@
             const isMobile = window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
 
             document.querySelectorAll('.tool-card').forEach(card => {
-                const links = card.querySelectorAll('a.btn-main, a.v-btn');
+                const links = card.querySelectorAll('a.btn-main, a.v-btn, a.btn-cs');
                 let hasVisibleLink = false;
 
                 links.forEach(link => {
@@ -710,7 +728,7 @@
             
             // Auto-inject PC ONLY / PARTIAL badges dynamically based on the "best available" version
             document.querySelectorAll('.tool-card').forEach(card => {
-                const links = card.querySelectorAll('a.btn-main, a.v-btn');
+                const links = card.querySelectorAll('a.btn-main, a.v-btn, a.btn-cs');
                 let hasCompatible = false;
                 let hasPartial = false;
                 let hasPcOnly = false;
