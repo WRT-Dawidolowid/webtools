@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Force v1 - Collision Physics</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+/* 
+====================================================================
+CHARTSTUDIO BASE STYLES
+====================================================================
+*/
+:root{--glass:rgba(255,255,255,0.1);--glass-border:rgba(255,255,255,0.2);--accent:linear-gradient(135deg,#ffd89b 0%,#19547b 100%);--sidebar-bg:rgba(0,0,0,0.45);--default-navy:#1e1b4b;}
+body,input,button,select,textarea,div[contenteditable]{font-family:"Outfit",sans-serif;box-sizing:border-box;}*,*::before,*::after{box-sizing:inherit;}
+body{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;margin:0;padding:20px;min-height:100vh;overflow-x:hidden;transition:background .4s ease,color .4s ease;}
+.container{max-width:1750px;width:98%;margin:0 auto;padding:30px;background:rgba(255,255,255,0.07);border-radius:35px;backdrop-filter:blur(25px);box-shadow:0 25px 60px rgba(0,0,0,0.4);border:1px solid var(--glass-border);transition:all .4s ease;}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;transition:all .4s;}.header h1{margin:0;font-size:2.2em;letter-spacing:-1px;display:flex;align-items:baseline;gap:10px;}.version-tag{font-size:.4em;opacity:.7;font-weight:600;background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:7px;color:#ffd89b;}.credits{margin:0;font-size:.9em;opacity:.5;font-weight:400;}
+.back-btn{text-decoration:none;padding:12px 24px;border-radius:15px;background:rgba(0,0,0,0.3);color:#fff;border:1px solid var(--glass-border);font-size:14px;font-weight:600;transition:.3s;display:flex;align-items:center;gap:8px;}.back-btn:hover{background:rgba(0,0,0,0.5);transform:translateX(-3px);}
+.toggles-container{display:flex;gap:15px;}.header-center{display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.2);padding:10px 20px;border-radius:20px;border:1px solid var(--glass-border);transition:all .4s;}.ui-switch-label{display:flex;align-items:center;gap:12px;cursor:pointer;margin:0;}.ui-switch{position:relative;width:46px;height:24px;}.ui-switch input{opacity:0;width:0;height:0;}.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:rgba(0,0,0,0.5);transition:.4s;border-radius:34px;border:1px solid var(--glass-border);}.slider:before{position:absolute;content:"";height:16px;width:16px;left:3px;bottom:3px;background-color:#ffd89b;transition:.4s;border-radius:50%;}.ui-switch input:checked+.slider{background-color:rgba(255,216,155,0.3);border-color:#ffd89b;}.ui-switch input:checked+.slider:before{transform:translateX(22px);background-color:#fff;}
+.layout{display:grid;grid-template-columns:350px minmax(0,1fr);gap:30px;transition:all .4s ease;align-items:start;}.sidebar{background:var(--sidebar-bg);padding:25px;border-radius:25px;border:1px solid var(--glass-border);display:flex;flex-direction:column;gap:20px;transition:all .4s ease;}
+.section-label{color:#ffd89b;font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:1.5px;display:block;margin-bottom:8px;transition:all .3s;}
+.btn-main{width:100%;padding:15px;background:var(--accent);border:none;border-radius:12px;color:#fff;font-weight:700;cursor:pointer;transition:.3s;display:flex;justify-content:center;align-items:center;gap:8px;}
+.config-row{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.05);padding:12px;border-radius:12px;transition:all .3s;margin-bottom:8px;}
+input[type="range"]{width:100%;margin:8px 0;accent-color:#ffd89b;cursor:pointer;}
+input[type="checkbox"]{accent-color:#ffd89b;cursor:pointer;}
+select{background:rgba(0,0,0,0.5);color:#fff;border:1px solid var(--glass-border);padding:8px 12px;border-radius:8px;font-family:inherit;font-size:13px;outline:none;cursor:pointer;width:100%;}
+.btn-small{background:rgba(255,255,255,0.1);border:1px solid var(--glass-border);color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;transition:.2s;}.btn-small:hover{background:rgba(255,255,255,0.2);}
+.origin-box{font-size:12px;margin-top:12px;padding:12px;background:rgba(0,0,0,0.2);border-radius:10px;border:1px dashed var(--glass-border);text-align:center;transition:all .3s;}.origin-title{opacity:.7;}.origin-value{color:#ffd89b;font-weight:700;font-size:13px;display:inline-block;margin-top:4px;}
+.chart-card{background:rgba(0,0,0,0.2);border-radius:35px;padding:35px;border:1px solid var(--glass-border);display:flex;flex-direction:column;position:relative;justify-content:flex-start;align-items:stretch;transition:all .4s ease;min-height:600px;gap:20px;overflow-x:auto;}
+.workspace-nav{display:flex;width:100%;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.3);padding:15px 25px;border-radius:20px;border:1px solid var(--glass-border);transition:all .4s;z-index:50;flex-wrap:wrap;gap:10px;}
+.export-frame{background:var(--default-navy);border-radius:25px;padding:30px;width:100%;height:auto;aspect-ratio:16 / 9;margin:0 auto;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 15px 40px rgba(0,0,0,0.5);position:relative;overflow:hidden;transition:background .4s ease;}
+.settings-wrapper{display:flex;width:100%;gap:20px;overflow:hidden;margin-top:10px;}.half-panel{flex:1;background:rgba(0,0,0,0.2);padding:20px;border-radius:20px;border:1px solid var(--glass-border);overflow:hidden;}
+
+/* MODERN UI */
+body.modern-ui{background:#f8fafc;color:#0f172a;}body.modern-ui .container{background:#fff;border:1px solid #e2e8f0;border-radius:20px;box-shadow:0 20px 40px rgba(0,0,0,0.05);padding:25px;backdrop-filter:none;}body.modern-ui .header{border-bottom:1px solid #e2e8f0;padding-bottom:25px;margin-bottom:25px;}body.modern-ui .header-center{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:12px;}body.modern-ui .ui-switch-label span{color:#475569;}body.modern-ui .slider{background-color:#cbd5e1;border-color:#94a3b8;}body.modern-ui .ui-switch input:checked+.slider{background-color:#3b82f6;border-color:#3b82f6;}body.modern-ui .ui-switch input:checked+.slider:before{background-color:#fff;}body.modern-ui .back-btn{background:#f1f5f9;border-color:#e2e8f0;color:#0f172a;border-radius:10px;}body.modern-ui .back-btn:hover{background:#e2e8f0;}
+body.modern-ui .layout{grid-template-columns:minmax(0,1fr) 350px;}body.modern-ui .sidebar{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:20px;gap:25px;grid-column:2;box-shadow:0 5px 20px rgba(0,0,0,0.03);}body.modern-ui .section-label{color:#64748b;font-size:10px;font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:12px;}body.modern-ui .section-label::before{content:'';width:6px;height:6px;background:#3b82f6;border-radius:50%;box-shadow:0 0 8px #3b82f6;display:inline-block;}body.modern-ui .btn-main{background:#3b82f6;border-radius:10px;font-weight:600;font-size:14px;padding:12px;}body.modern-ui .btn-main:hover{background:#2563eb;}
+body.modern-ui .config-row{background:transparent;border:1px solid #e2e8f0;border-radius:10px;}body.modern-ui select{background:#f8fafc;border:1px solid #e2e8f0;color:#0f172a;}
+body.modern-ui .origin-box{background:#f8fafc;border-color:#cbd5e1;}body.modern-ui .origin-title{color:#64748b;opacity:1;}body.modern-ui .origin-value{color:#3b82f6;}
+body.modern-ui .chart-card{background:transparent!important;border:none!important;border-radius:0!important;box-shadow:none!important;outline:none!important;padding:0;gap:15px;grid-column:1;grid-row:1;overflow-x:auto;align-items:stretch;}
+body.modern-ui .workspace-nav{background:#fff;border:1px solid #e2e8f0;color:#0f172a;border-radius:16px;}
+body.modern-ui .export-frame{border-radius:16px;border:1px solid #e2e8f0;box-shadow:none;background:#f8fafc;}
+body.modern-ui .half-panel{background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 5px 20px rgba(0,0,0,0.02);}body.modern-ui .half-panel>div{color:#64748b!important;}
+
+/* DARK MODE */
+body.modern-ui.dark-mode{background:#090a0f;color:#fff;}body.modern-ui.dark-mode .container{background:#12141a;border-color:#222631;box-shadow:0 20px 50px rgba(0,0,0,0.6);}body.modern-ui.dark-mode .sidebar{background:#171a21;border-color:#222631;box-shadow:none;}body.modern-ui.dark-mode .header{border-bottom-color:#222631;}body.modern-ui.dark-mode .header-center{background:#171a21;border-color:#222631;}body.modern-ui.dark-mode .ui-switch-label span{color:#94a3b8;}body.modern-ui.dark-mode .slider{background-color:#0f1115;border-color:#222631;}body.modern-ui.dark-mode .back-btn{background:#171a21;border-color:#222631;color:#fff;}body.modern-ui.dark-mode .back-btn:hover{background:#222631;}
+body.modern-ui.dark-mode .config-row{border-color:#222631;}body.modern-ui.dark-mode select{background:#0f1115;border-color:#222631;color:#fff;}
+body.modern-ui.dark-mode .origin-box{background:#0f1115;border-color:#333a4a;}body.modern-ui.dark-mode .origin-title{color:#94a3b8;}body.modern-ui.dark-mode .origin-value{color:#ffd89b;}
+body.modern-ui.dark-mode .workspace-nav{background:#171a21;border-color:#222631;color:#fff;}
+body.modern-ui.dark-mode .export-frame{border-color:#222631;background:#090a0f;}
+body.modern-ui.dark-mode .half-panel{background:#171a21;border-color:#222631;box-shadow:none;}body.modern-ui.dark-mode .half-panel>div{color:#ffd89b!important;}
+
+@media (max-width:992px){body{padding:10px;}.container{padding:15px;border-radius:20px;}.header{flex-direction:column;align-items:stretch;text-align:center;gap:15px;margin-bottom:20px;}.header h1{justify-content:center;font-size:1.8em;flex-wrap:wrap;}.toggles-container{justify-content:center;flex-wrap:wrap;margin-bottom:10px;}.back-btn{justify-content:center;}.layout{display:flex;flex-direction:column;gap:20px;}body.modern-ui .layout{display:flex;flex-direction:column;}body.modern-ui .sidebar{order:1;}body.modern-ui .chart-card{order:2;margin-top:0;}.sidebar{width:100%;padding:20px;border-radius:20px;}.chart-card{width:100%;padding:15px;border-radius:20px;overflow-x:auto!important;overflow-y:visible!important;min-height:600px;}.export-frame{height:auto!important;min-height:400px;margin-bottom:10px;}.settings-wrapper{flex-direction:column;gap:15px;}}
+
+/* 
+====================================================================
+FORCE SPECIFIC STYLES
+====================================================================
+*/
+.input-header { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.input-val { color: #ffd89b; }
+body.modern-ui .input-val { color: #3b82f6; }
+body.modern-ui.dark-mode .input-val { color: #ffd89b; }
+
+.stat-val { font-weight: 700; color: #ffd89b; font-size: 15px;}
+body.modern-ui .stat-val { color: #3b82f6; }
+body.modern-ui.dark-mode .stat-val { color: #ffd89b; }
+
+.progress-track { background: rgba(255,255,255,0.1); border-radius: 10px; height: 16px; border: 1px solid var(--glass-border); overflow: hidden; margin-top: 8px; width: 100%; position: relative;}
+.progress-fill { background: var(--accent); height: 100%; width: 0%; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 10px;}
+body.modern-ui .progress-track { background: #e2e8f0; border-color: #cbd5e1; }
+body.modern-ui .progress-fill { background: #3b82f6; }
+body.modern-ui.dark-mode .progress-track { background: #0f1115; border-color: #333a4a; }
+body.modern-ui.dark-mode .progress-fill { background: var(--accent); }
+
+canvas { width: 100%; height: 100%; max-height: 500px; object-fit: contain; }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div>
+            <h1>Force <span class="version-tag">v1</span></h1>
+            <p class="credits">Made by Dawidolowid</p>
+        </div>
+        <div class="toggles-container">
+            <div class="header-center">
+                <label class="ui-switch-label">
+                    <span style="font-size:12px;font-weight:700;text-transform:uppercase;"><i class="fa-solid fa-wand-magic-sparkles"></i> Modern UI</span>
+                    <div class="ui-switch">
+                        <input type="checkbox" id="uiToggle" onchange="toggleModernUI()">
+                        <span class="slider"></span>
+                    </div>
+                </label>
+            </div>
+            <div class="header-center" id="darkModeWrapper" style="display:none;">
+                <label class="ui-switch-label">
+                    <span style="font-size:12px;font-weight:700;text-transform:uppercase;"><i class="fa-solid fa-moon"></i> Dark Mode</span>
+                    <div class="ui-switch">
+                        <input type="checkbox" id="darkToggle" onchange="toggleDarkMode()">
+                        <span class="slider"></span>
+                    </div>
+                </label>
+            </div>
+        </div>
+        <a href="#" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back to Hub</a>
+    </div>
+
+    <div class="layout">
+        <!-- SIDEBAR (INPUTS) -->
+        <div class="sidebar">
+            <div>
+                <span class="section-label">1. User (Attacker)</span>
+                
+                <div style="margin-bottom: 15px;">
+                    <div class="input-header"><span>Mass (kg)</span> <span id="m1-val" class="input-val">100 kg</span></div>
+                    <input type="range" id="m1" min="40" max="150" value="100" oninput="calculateForce()">
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <div class="input-header"><span>Speed (km/h)</span> <span id="v1-val" class="input-val">12 km/h</span></div>
+                    <input type="range" id="v1" min="1" max="30" value="12" oninput="calculateForce()">
+                </div>
+                
+                <!-- CUSTOM HIT PLACE -->
+                <div style="margin-bottom: 5px;">
+                    <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; cursor:pointer; padding: 5px 0;">
+                        <input type="checkbox" id="hitPlaceToggle" onchange="toggleHitPlace(); calculateForce();" style="width:16px; height:16px; margin:0;">
+                        Enable Custom Hit Place
+                    </label>
+                </div>
+                <div id="hitPlaceWrapper" style="display:none; margin-bottom: 15px; background:rgba(0,0,0,0.2); padding:12px; border-radius:10px; border:1px dashed var(--glass-border); transition: all 0.3s ease;">
+                    <div class="input-header"><span>Hit Height</span> <span id="hit-val" class="input-val">Chest</span></div>
+                    <input type="range" id="hitHeight" min="10" max="100" value="75" oninput="calculateForce()">
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid var(--glass-border); padding-top: 20px;">
+                <span class="section-label">2. Target (Receiver)</span>
+                
+                <div style="margin-bottom: 15px;">
+                    <div class="input-header"><span>Mass (kg)</span> <span id="m2-val" class="input-val">70 kg</span></div>
+                    <input type="range" id="m2" min="40" max="150" value="70" oninput="calculateForce()">
+                </div>
+                
+                <div style="margin-bottom: 5px;">
+                    <div class="input-header" style="margin-bottom: 6px;"><span>Target State</span></div>
+                    <select id="state" onchange="calculateForce()">
+                        <option value="standing">Standing (0 km/h)</option>
+                        <option value="running">Running Towards (-8 km/h)</option>
+                        <option value="away">Running Away (+8 km/h)</option>
+                        <option value="sideways">Running Sideways (Low stability)</option>
+                        <option value="braced">Braced (High Resistance)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="btn-main" onclick="playImpactAnimation()"><i class="fa-solid fa-bolt"></i> Simulate Impact</button>
+        </div>
+
+        <!-- MAIN WORKSPACE -->
+        <div class="chart-card">
+            
+            <div class="workspace-nav">
+                <span style="font-size:14px;font-weight:600;"><i class="fa-solid fa-crosshairs"></i> Biomechanical Simulation Engine</span>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <button class="btn-small" style="background:var(--accent);border:none;color:#fff;cursor:default;">Active</button>
+                </div>
+            </div>
+
+            <!-- CANVAS ENGINE -->
+            <div class="export-frame" id="exportFrame">
+                <canvas id="simCanvas" width="800" height="400"></canvas>
+            </div>
+
+            <!-- RESULTS SETTINGS WRAPPER -->
+            <div class="settings-wrapper">
+                
+                <!-- RAW PHYSICS -->
+                <div class="half-panel">
+                    <div style="font-size:12px;font-weight:700;margin-bottom:12px;text-transform:uppercase;">
+                        <i class="fa-solid fa-calculator"></i> Kinetic Data
+                    </div>
+                    
+                    <div class="config-row">
+                        <span style="font-size:13px;">Momentum (p)</span>
+                        <span id="res-momentum" class="stat-val">0 kg·m/s</span>
+                    </div>
+                    <div class="config-row">
+                        <span style="font-size:13px;">Kinetic Energy (Ek)</span>
+                        <span id="res-energy" class="stat-val">0 J</span>
+                    </div>
+                    <div class="config-row">
+                        <span style="font-size:13px;">Impact Force/Speed diff.</span>
+                        <span id="res-vf" class="stat-val">0 km/h</span>
+                    </div>
+                    <div class="config-row">
+                        <span style="font-size:13px;">Mass Advantage</span>
+                        <span id="res-advantage" class="stat-val">0%</span>
+                    </div>
+                </div>
+
+                <!-- TACTICS & KNOCKDOWN -->
+                <div class="half-panel">
+                    <div style="font-size:12px;font-weight:700;margin-bottom:12px;text-transform:uppercase;">
+                        <i class="fa-solid fa-shield-halved"></i> Effectiveness
+                    </div>
+                    
+                    <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; border:1px solid var(--glass-border); margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:600;">
+                            <span>Knockdown Probability</span>
+                            <span id="knockdown-percent" class="input-val">0%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" id="knockdown-bar"></div>
+                        </div>
+                    </div>
+
+                    <div class="origin-box" style="text-align:left; margin-top:0;">
+                        <div style="font-weight:700; margin-bottom:4px;" id="msg-title">Analysis</div>
+                        <div style="font-size:11px; opacity:0.8;" id="msg-desc">Loading...</div>
+                        <div style="font-size:11px; margin-top:8px; border-top:1px dashed var(--glass-border); padding-top:8px;">
+                            <i class="fa-solid fa-bullseye" style="opacity:0.7;"></i> <b>Tip:</b> <span id="msg-tip">Aim for the center of mass (pelvis).</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- UI TOGGLES (ChartStudio Logic) ---
+function toggleModernUI() {
+    const c = document.getElementById('uiToggle').checked;
+    if (c) {
+        document.body.classList.add('modern-ui');
+        document.getElementById('darkModeWrapper').style.display = 'flex';
+        if (document.getElementById('darkToggle').checked) {
+            document.body.classList.add('dark-mode');
+        }
+    } else {
+        document.body.classList.remove('modern-ui', 'dark-mode');
+        document.getElementById('darkModeWrapper').style.display = 'none';
+    }
+    calculateForce(); 
+}
+
+function toggleDarkMode() {
+    const c = document.getElementById('darkToggle').checked;
+    if (c) document.body.classList.add('dark-mode');
+    else document.body.classList.remove('dark-mode');
+    calculateForce(); 
+}
+
+function toggleHitPlace() {
+    const isChecked = document.getElementById('hitPlaceToggle').checked;
+    const wrapper = document.getElementById('hitPlaceWrapper');
+    wrapper.style.display = isChecked ? 'block' : 'none';
+}
+
+// --- PHYSICS ENGINE & CALCULATOR ---
+let animOffset = 0;
+let isAnimating = false;
+
+function calculateForce() {
+    // Get inputs
+    const m1 = parseFloat(document.getElementById('m1').value);
+    const v1_kmh = parseFloat(document.getElementById('v1').value);
+    const m2_raw = parseFloat(document.getElementById('m2').value);
+    const state = document.getElementById('state').value;
+    const hitPlaceActive = document.getElementById('hitPlaceToggle').checked;
+    const hitHeightPercent = parseFloat(document.getElementById('hitHeight').value);
+
+    // Update UI Labels
+    document.getElementById('m1-val').innerText = m1 + ' kg';
+    document.getElementById('v1-val').innerText = v1_kmh + ' km/h';
+    document.getElementById('m2-val').innerText = m2_raw + ' kg';
+
+    let hitValStr = "";
+    if (hitHeightPercent < 35) hitValStr = "Legs/Knees";
+    else if (hitHeightPercent < 55) hitValStr = "Pelvis/COM";
+    else if (hitHeightPercent < 85) hitValStr = "Chest/Shoulders";
+    else hitValStr = "Head/Neck";
+    document.getElementById('hit-val').innerText = hitValStr;
+
+    // Conversions
+    const v1_ms = v1_kmh / 3.6;
+    let v2_kmh = 0;
+    let m2 = m2_raw;
+    let stanceResistance = 1.0;
+
+    // Evaluate target state
+    if (state === 'running') {
+        v2_kmh = -8; 
+    } else if (state === 'away') {
+        v2_kmh = 8;
+    } else if (state === 'sideways') {
+        v2_kmh = 0; 
+        stanceResistance = 0.6; // Łatwo wywrócić kogoś z boku
+    } else if (state === 'braced') {
+        m2 = m2_raw * 1.4; // Zwiększona efektywna masa
+        stanceResistance = 1.6;
+    }
+    
+    const v2_ms = v2_kmh / 3.6;
+
+    // Formulas
+    const momentum = m1 * v1_ms; // kg*m/s
+    const energy = 0.5 * m1 * Math.pow(v1_ms, 2); // Joules
+    
+    // Relative impact logic
+    // Jeśli cel ucieka szybciej niż biegniemy, nie dogonimy go (prędkość względna = 0)
+    let relativeImpactSpeed = v1_ms - v2_ms;
+    if (relativeImpactSpeed < 0) relativeImpactSpeed = 0; 
+
+    const impactMomentum = m1 * relativeImpactSpeed;
+    const relative_kmh = relativeImpactSpeed * 3.6;
+
+    const advantage = ((m1 / m2_raw) - 1) * 100;
+
+    // Knockdown Score Heuristic
+    // Base score from momentum / resistance
+    let score = (impactMomentum / (m2 * stanceResistance)) * 15; 
+
+    // Leverage adjustment if Custom Hit Place is enabled
+    // 50% = COM (mnożnik 1.0). Wyżej = większa dźwignia. Niżej = mniejsza dźwignia.
+    if (hitPlaceActive && relativeImpactSpeed > 0) {
+        let leverage = hitHeightPercent / 50; 
+        
+        // Dodatkowy bonus za podcięcie nóg biegnącego celu
+        if ((state === 'running' || state === 'away' || state === 'sideways') && hitHeightPercent < 35) {
+            leverage = 1.5; // Trip hazard!
+        }
+        
+        // Mały debuff dla strzałów w głowę (łatwo ześlizgnąć się z celu)
+        if (hitHeightPercent > 90) {
+            leverage = leverage * 0.8; 
+        }
+
+        score = score * leverage;
+    }
+
+    // Specjalne przypadki dla stanów
+    if (state === 'running') score *= 1.2; 
+    if (relativeImpactSpeed === 0) score = 0;
+
+    score = Math.max(0, Math.min(100, score));
+
+    // Update Results UI
+    document.getElementById('res-momentum').innerText = Math.round(momentum) + ' kg·m/s';
+    document.getElementById('res-energy').innerText = Math.round(energy) + ' J';
+    document.getElementById('res-vf').innerText = relative_kmh.toFixed(1) + ' km/h';
+    document.getElementById('res-advantage').innerText = (advantage > 0 ? '+' : '') + Math.round(advantage) + '%';
+    
+    const bar = document.getElementById('knockdown-bar');
+    document.getElementById('knockdown-percent').innerText = Math.round(score) + '%';
+    bar.style.width = score + '%';
+
+    // Dynamic Messages
+    const msgTitle = document.getElementById('msg-title');
+    const msgDesc = document.getElementById('msg-desc');
+    const msgTip = document.getElementById('msg-tip');
+
+    if (relativeImpactSpeed === 0) {
+        msgTitle.innerText = "No Impact / Outrun";
+        msgTitle.style.color = "#a0aeb2";
+        msgDesc.innerText = "The target is moving away faster than or equal to your speed. You will not reach them.";
+        bar.style.background = "#a0aeb2";
+    } else if (score > 85) {
+        msgTitle.innerText = "Overwhelming Force";
+        msgTitle.style.color = "#4CAF50";
+        msgDesc.innerText = "High probability of complete target knockdown. The momentum transfer is massive.";
+        bar.style.background = "#4CAF50";
+    } else if (score > 50) {
+        msgTitle.innerText = "Strong Impact";
+        msgTitle.style.color = "#ffd89b";
+        msgDesc.innerText = "Target will be significantly displaced or off-balance. Follow-up required for complete knockdown.";
+        bar.style.background = "var(--accent)";
+        if(document.body.classList.contains('modern-ui') && !document.body.classList.contains('dark-mode')) {
+            msgTitle.style.color = "#3b82f6";
+            bar.style.background = "#3b82f6";
+        }
+    } else {
+        msgTitle.innerText = "High Risk of Bounce";
+        msgTitle.style.color = "#ff6b6b";
+        msgDesc.innerText = "Your momentum is insufficient to easily overcome the target's mass and stance. Risk of bouncing off.";
+        bar.style.background = "#ff6b6b";
+    }
+
+    // Dynamic Tips
+    if (state === 'braced') msgTip.innerText = "Target is braced. Aim higher (chest) to create rotational leverage, avoiding their grounded center of mass.";
+    else if (state === 'running' || state === 'away') msgTip.innerText = hitPlaceActive && hitHeightPercent < 35 ? "Great choice. Tripping a running target requires less force than a body check." : "Target is moving. Time the impact when they are mid-stride, or aim for the legs to trip them.";
+    else if (state === 'sideways') msgTip.innerText = "Target has low lateral balance. Even a moderate hit to the upper body will cause a knockdown.";
+    else msgTip.innerText = "Aim for the center of mass (pelvis/lower torso) to maximize direct kinetic energy transfer.";
+
+    // Render Canvas
+    if(!isAnimating) {
+        drawSimulation(score, state, momentum, hitPlaceActive, hitHeightPercent, relativeImpactSpeed);
+    }
+}
+
+// --- CANVAS RENDERING ENGINE ---
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+
+function playImpactAnimation() {
+    if(isAnimating) return;
+    isAnimating = true;
+    animOffset = -150;
+    
+    function frame() {
+        animOffset += 15;
+        if(animOffset >= 0) {
+            animOffset = 0;
+            isAnimating = false;
+            calculateForce(); // final draw
+            return;
+        }
+        calculateForce(); // redraws with animOffset
+        requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+}
+
+function getThemeColors() {
+    const isModern = document.body.classList.contains('modern-ui');
+    const isDark = document.body.classList.contains('dark-mode');
+    
+    if (isModern && !isDark) {
+        return {
+            bg: '#f8fafc',
+            figure: '#cbd5e1',
+            outline: '#94a3b8',
+            com: '#fbbf24', // Yellowish COM in light
+            arrow: '#3b82f6',
+            hit: '#ef4444' // Red hit dot
+        };
+    } else if (isModern && isDark) {
+        return {
+            bg: '#090a0f',
+            figure: '#1e293b',
+            outline: '#334155',
+            com: '#ffd89b',
+            arrow: '#3b82f6',
+            hit: '#ff4444'
+        };
+    } else {
+        // ChartStudio Classic
+        return {
+            bg: '#1e1b4b',
+            figure: 'rgba(255,255,255,0.1)',
+            outline: 'rgba(255,255,255,0.3)',
+            com: '#ffd89b',
+            arrow: '#ff6b6b',
+            hit: '#ff3333'
+        };
+    }
+}
+
+function drawSimulation(score, state, momentum, hitPlaceActive, hitPercent, relativeSpeed) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const colors = getThemeColors();
+
+    const cx = canvas.width / 2 + 100; // Target X
+    const cy = canvas.height / 2 + 50;  // Target Ground Y (feet)
+    const scale = 1.2; // Size multiplier
+
+    // Base body parts
+    const headSize = 30 * scale;
+    const torsoW = 50 * scale;
+    const torsoH = 90 * scale;
+    const legW = 18 * scale;
+    const legH = 80 * scale;
+    
+    // Total physical height mapped from Y=0 (ground) to Y = (legH + torsoH + headSize*2)
+    const totalHeight = legH + torsoH + (headSize * 2);
+
+    // Default COM Y (relative to pelvis)
+    const comOffsetY = -torsoH * 0.2; 
+    
+    // Calculate exact impact Y coordinate (local to the pivot at cy-legH)
+    // Hit percent 0 = ground (Y = legH)
+    // Hit percent 100 = top of head (Y = legH - totalHeight)
+    let impactLocalY = legH - (totalHeight * (hitPercent / 100));
+    
+    if (!hitPlaceActive) {
+        impactLocalY = comOffsetY; // Default to COM
+    }
+
+    // Posture adjustments
+    let legSpread = 20 * scale;
+    let bodyTilt = 0; // radians
+
+    if (state === 'braced') {
+        legSpread = 45 * scale; // Wider stance
+        bodyTilt = -0.15; // Leaning forward slightly
+    } else if (state === 'running' || state === 'away') {
+        legSpread = 35 * scale;
+        bodyTilt = -0.1;
+    } else if (state === 'sideways') {
+        legSpread = 10 * scale; // Nogi blisko siebie (widok z profilu złączone)
+        bodyTilt = 0;
+    }
+
+    // Effect of animation impact
+    if (animOffset === 0 && score > 50 && relativeSpeed > 0) {
+        // Slight tilt backward if hit
+        bodyTilt = (score/100) * 0.3; 
+    }
+
+    ctx.save();
+    ctx.translate(cx, cy - legH); // Rotate from hips
+    ctx.rotate(bodyTilt);
+    
+    // Draw Target Figure
+    ctx.fillStyle = colors.figure;
+    ctx.strokeStyle = colors.outline;
+    ctx.lineWidth = 3;
+
+    // Left Leg
+    ctx.fillRect(-legSpread, 0, legW, legH);
+    ctx.strokeRect(-legSpread, 0, legW, legH);
+    // Right Leg
+    if (state !== 'sideways') {
+        ctx.fillRect(legSpread - legW, 0, legW, legH);
+        ctx.strokeRect(legSpread - legW, 0, legW, legH);
+    }
+
+    // Torso
+    ctx.fillRect(-torsoW/2, -torsoH, torsoW, torsoH);
+    ctx.strokeRect(-torsoW/2, -torsoH, torsoW, torsoH);
+
+    // Head
+    ctx.beginPath();
+    ctx.arc(0, -torsoH - headSize, headSize, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Center of Mass (COM) Dot
+    ctx.beginPath();
+    ctx.arc(0, comOffsetY, 8, 0, Math.PI * 2); 
+    ctx.fillStyle = colors.com;
+    ctx.fill();
+    ctx.shadowColor = colors.com;
+    ctx.shadowBlur = 10;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Draw Hit Place Dot (Red) if active
+    if (hitPlaceActive) {
+        ctx.beginPath();
+        // Przyciągamy kropkę lekko do przedniej krawędzi klatki w zależności od wysokości
+        let hitX = -torsoW/2;
+        if (impactLocalY < -torsoH) hitX = -headSize; // Trafienie w głowę
+        else if (impactLocalY > 0) hitX = -legSpread; // Trafienie w nogi
+
+        ctx.arc(hitX, impactLocalY, 7, 0, Math.PI * 2);
+        ctx.fillStyle = colors.hit;
+        ctx.shadowColor = colors.hit;
+        ctx.shadowBlur = 15;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+    
+    ctx.restore();
+
+    // Draw Attacker Force Arrow (Only if there is relative speed)
+    if (relativeSpeed > 0) {
+        // To draw the arrow properly on the global canvas, we need the global Y position of the impact point
+        // Simplified translation: globalY = cy - legH + localY (ignoring rotation for the arrow's straight path)
+        // With tilt, actual Y changes slightly, but straight arrow aiming at the logical point looks best.
+        
+        let globalHitY = cy - legH + (Math.cos(bodyTilt) * impactLocalY) + (Math.sin(bodyTilt) * (-torsoW/2));
+        
+        const baseArrowLen = 100 + (momentum / 10); 
+        const arrowXEnd = cx - torsoW/2 - 20 + animOffset;
+        const arrowXStart = arrowXEnd - baseArrowLen;
+
+        ctx.beginPath();
+        ctx.moveTo(arrowXStart, globalHitY);
+        ctx.lineTo(arrowXEnd, globalHitY);
+        ctx.strokeStyle = colors.arrow;
+        ctx.lineWidth = Math.min(25, 5 + (momentum/100)); // Thickness based on momentum
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Arrow head
+        ctx.beginPath();
+        ctx.moveTo(arrowXEnd + 5, globalHitY);
+        ctx.lineTo(arrowXEnd - 15, globalHitY - 15);
+        ctx.lineTo(arrowXEnd - 15, globalHitY + 15);
+        ctx.fillStyle = colors.arrow;
+        ctx.fill();
+    }
+    
+    // Add ground line
+    ctx.beginPath();
+    ctx.moveTo(0, cy);
+    ctx.lineTo(canvas.width, cy);
+    ctx.strokeStyle = colors.outline;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+}
+
+// Initial calculation
+window.addEventListener('DOMContentLoaded', () => {
+    calculateForce();
+});
+
+</script>
+</body>
+</html>
