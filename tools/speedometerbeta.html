@@ -83,7 +83,7 @@
         <header class="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between w-full">
             <div>
                 <h1 class="text-3xl font-bold tracking-tight flex items-baseline gap-2">
-                    Velocify <span class="text-[0.4em] font-semibold bg-white/15 px-2.5 py-1 rounded-lg text-csAccent opacity-90 tracking-normal">v3</span>
+                    Velocify <span class="text-[0.4em] font-semibold bg-white/15 px-2.5 py-1 rounded-lg text-csAccent opacity-90 tracking-normal">v4</span>
                 </h1>
                 <p class="text-xs opacity-50 mt-1 font-medium">GPS Analytics Studio</p>
             </div>
@@ -176,32 +176,42 @@
                 </div>
             </div>
 
-            <!-- Secondary Stats Grid -->
-            <div class="w-full grid grid-cols-2 gap-3">
-                <div class="glass-panel rounded-[20px] p-4 flex items-center space-x-4 hover:bg-white/5">
-                    <div class="w-10 h-10 rounded-[12px] bg-white/10 border border-glassBorder flex items-center justify-center text-csAccent">
+            <!-- Secondary Stats Grid (Przebudowany na 3 kolumny by pomieścić przyspieszenie) -->
+            <div class="w-full grid grid-cols-3 gap-3">
+                <!-- Trip Time -->
+                <div class="glass-panel rounded-[20px] py-4 px-2 flex flex-col items-center justify-center hover:bg-white/5">
+                    <div class="flex items-center space-x-1.5 text-csAccent text-[10px] uppercase font-bold tracking-wider mb-2">
                         <i class="fa-solid fa-clock"></i>
+                        <span>Time</span>
                     </div>
-                    <div>
-                        <div class="text-[10px] text-white/50 font-bold uppercase tracking-wider">Trip Time</div>
-                        <div id="timeDisplay" class="tabular-nums text-base font-bold text-white mt-0.5">00:00:00</div>
-                    </div>
+                    <div id="timeDisplay" class="tabular-nums text-[17px] font-bold text-white">00:00:00</div>
+                    <span class="text-[10px] text-white/50 font-medium">h:m:s</span>
                 </div>
 
-                <div class="glass-panel rounded-[20px] p-4 flex items-center space-x-4 hover:bg-white/5">
-                    <div class="w-10 h-10 rounded-[12px] bg-white/10 border border-glassBorder flex items-center justify-center text-csAccent">
+                <!-- Average Speed -->
+                <div class="glass-panel rounded-[20px] p-4 flex flex-col items-center justify-center hover:bg-white/5">
+                    <div class="flex items-center space-x-1.5 text-csAccent text-[10px] uppercase font-bold tracking-wider mb-2">
                         <i class="fa-solid fa-gauge-simple"></i>
+                        <span>Avg</span>
                     </div>
-                    <div>
-                        <div class="text-[10px] text-white/50 font-bold uppercase tracking-wider">Average</div>
-                        <div id="avgSpeedDisplay" class="tabular-nums text-base font-bold text-white mt-0.5">0.0</div>
+                    <div id="avgSpeedDisplay" class="tabular-nums text-xl font-bold text-white">0.0</div>
+                    <span id="avgUnitLabel" class="text-[10px] text-white/50 font-medium">km/h</span>
+                </div>
+
+                <!-- Acceleration -->
+                <div class="glass-panel rounded-[20px] p-4 flex flex-col items-center justify-center hover:bg-white/5">
+                    <div class="flex items-center space-x-1.5 text-csAccent text-[10px] uppercase font-bold tracking-wider mb-2">
+                        <i class="fa-solid fa-rocket"></i>
+                        <span>Accel</span>
                     </div>
+                    <div id="accelDisplay" class="tabular-nums text-xl font-bold text-white">0.0</div>
+                    <span class="text-[10px] text-white/50 font-medium">m/s²</span>
                 </div>
             </div>
 
         </main>
 
-        <footer class="w-full pt-2">
+        <footer class="w-full pt-2 flex flex-col space-y-3">
             <div class="flex space-x-3">
                 <button id="startBtn" onclick="toggleTracking()" class="flex-1 py-4 rounded-[16px] bg-cs-accent-grad text-white font-bold text-sm uppercase tracking-wider shadow-lg hover:brightness-110 hover:scale-[1.02] transition-all flex items-center justify-center space-x-2 border border-glassBorder">
                     <i id="startIcon" class="fa-solid fa-play"></i>
@@ -211,6 +221,11 @@
                     <i class="fa-solid fa-rotate-right"></i>
                 </button>
             </div>
+            
+            <!-- Export Button -->
+            <button onclick="exportData()" class="w-full py-3 rounded-[12px] glass-panel text-white/80 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center shadow-lg font-bold text-[11px] uppercase tracking-wider border border-glassBorder">
+                <i class="fa-solid fa-file-export mr-2"></i> Eksportuj Statystyki i Trasę (JSON)
+            </button>
         </footer>
     </div>
 
@@ -239,8 +254,35 @@
         let elapsedTime = 0;
         let timerInterval = null;
 
+        // Acceleration State
+        let lastSpeedMps = null;
+        let lastSpeedTime = null;
+        let currentAccel = 0;
+        let maxAccel = 0;
+        let currentSpeedMps = 0;
+
+        // Route Array & Persistance
+        let routeData = [];
+        
         const MAX_GAUGE_SPEED_KMH = 160;
         const MAX_GAUGE_SPEED_MPH = 100;
+
+        // Generator losowych ID do docelowego formatu JSON
+        function generateId() {
+            return Math.random().toString(36).substr(2, 9);
+        }
+
+        // On Load - Restore from LocalStorage if exists
+        window.onload = () => {
+            try {
+                const savedRoute = localStorage.getItem('velocify_route');
+                if(savedRoute) {
+                    routeData = JSON.parse(savedRoute);
+                }
+            } catch (e) {
+                console.warn("Could not load previous route data.");
+            }
+        };
 
         function showMessage(title, message, isError = false) {
             document.getElementById('modalTitle').innerText = title;
@@ -267,11 +309,10 @@
             document.getElementById('unitLabel').innerText = currentUnit.toUpperCase();
             document.getElementById('speedUnitLabel').innerText = currentUnit === 'kmh' ? 'km/h' : 'mph';
             document.getElementById('maxUnitLabel').innerText = currentUnit === 'kmh' ? 'km/h' : 'mph';
+            document.getElementById('avgUnitLabel').innerText = currentUnit === 'kmh' ? 'km/h' : 'mph';
             
             updateDisplays(currentSpeedMps);
         }
-
-        let currentSpeedMps = 0;
 
         function toggleTracking() {
             if (!isTracking) {
@@ -297,13 +338,11 @@
             startTime = Date.now() - (elapsedTime * 1000);
             timerInterval = setInterval(updateTimer, 1000);
 
-            // Update UI buttons - Delete/Stop State
             const startBtn = document.getElementById('startBtn');
             startBtn.className = "flex-1 py-4 rounded-[16px] bg-csRedBg border border-csRedBorder text-csRed font-bold text-sm uppercase tracking-wider shadow-lg hover:bg-csRed/20 transition-all flex items-center justify-center space-x-2";
             document.getElementById('startIcon').className = "fa-solid fa-stop";
             document.getElementById('startText').innerText = "Stop Tracking";
 
-            // Update GPS status - Connecting State
             const badge = document.getElementById('gpsStatusBadge');
             badge.className = "flex items-center space-x-2 px-3 py-2 rounded-[12px] bg-csYellowBg border border-csYellowBorder text-csYellow text-xs font-bold";
             document.getElementById('gpsDot').className = "w-2 h-2 rounded-full bg-csYellow animate-pulse shadow-[0_0_8px_#FFC107]";
@@ -323,13 +362,11 @@
                 timerInterval = null;
             }
 
-            // Update UI buttons - Start State
             const startBtn = document.getElementById('startBtn');
             startBtn.className = "flex-1 py-4 rounded-[16px] bg-cs-accent-grad text-white font-bold text-sm uppercase tracking-wider shadow-lg hover:brightness-110 hover:scale-[1.02] transition-all flex items-center justify-center space-x-2 border border-glassBorder";
             document.getElementById('startIcon').className = "fa-solid fa-play";
             document.getElementById('startText').innerText = "Start Tracking";
 
-            // Update GPS status - Stopped State
             const badge = document.getElementById('gpsStatusBadge');
             badge.className = "flex items-center space-x-2 px-3 py-2 rounded-[12px] bg-csRedBg border border-csRedBorder text-csRed text-xs font-bold";
             document.getElementById('gpsDot').className = "w-2 h-2 rounded-full bg-csRed shadow-[0_0_8px_#ff6b6b]";
@@ -337,17 +374,29 @@
         }
 
         function successPosition(position) {
-            // Update GPS Badge to Active
             const badge = document.getElementById('gpsStatusBadge');
             badge.className = "flex items-center space-x-2 px-3 py-2 rounded-[12px] bg-csGreenBg border border-csGreenBorder text-csGreen text-xs font-bold";
             document.getElementById('gpsDot').className = "w-2 h-2 rounded-full bg-csGreen shadow-[0_0_8px_#4CAF50]";
             document.getElementById('gpsText').innerText = "GPS Active";
 
             const coords = position.coords;
-            document.getElementById('accuracyDisplay').innerHTML = `<i class="fa-solid fa-satellite-dish mr-1"></i> Accuracy: ${Math.round(coords.accuracy)} m`;
-
-            currentSpeedMps = coords.speed !== null && coords.speed >= 0 ? coords.speed : 0;
+            const currentTime = Date.now();
             
+            document.getElementById('accuracyDisplay').innerHTML = `<i class="fa-solid fa-satellite-dish mr-1"></i> Accuracy: ${Math.round(coords.accuracy)} m`;
+            currentSpeedMps = coords.speed !== null && coords.speed >= 0 ? coords.speed : 0;
+
+            // Wyliczanie przyspieszenia [m/s^2]
+            if (lastSpeedMps !== null && lastSpeedTime !== null) {
+                const dt = (currentTime - lastSpeedTime) / 1000; // różnica czasu w sekundach
+                if (dt > 0) {
+                    currentAccel = (currentSpeedMps - lastSpeedMps) / dt;
+                    if (currentAccel > maxAccel) maxAccel = currentAccel;
+                }
+            }
+            lastSpeedMps = currentSpeedMps;
+            lastSpeedTime = currentTime;
+            
+            // Dystans
             if (lastCoords) {
                 const dist = calculateDistance(lastCoords.latitude, lastCoords.longitude, coords.latitude, coords.longitude);
                 if (dist > 1.0) {
@@ -355,6 +404,25 @@
                 }
             }
             lastCoords = { latitude: coords.latitude, longitude: coords.longitude };
+
+            // Zapis do tablicy trasy
+            routeData.push({
+                lat: coords.latitude,
+                lon: coords.longitude,
+                alt: coords.altitude || 0,
+                speed: currentSpeedMps,
+                accel: currentAccel,
+                timestamp: currentTime
+            });
+
+            // Zapis do localStorage (pełna trasa) i do Cookies (podsumowanie - limit 4KB uniemożliwia trzymanie całej trasy GPS)
+            try {
+                localStorage.setItem('velocify_route', JSON.stringify(routeData));
+                const summary = { points: routeData.length, dist: totalDistance };
+                document.cookie = `velocify_summary=${encodeURIComponent(JSON.stringify(summary))}; path=/; max-age=86400`;
+            } catch (e) {
+                console.warn('Storage limit reached');
+            }
 
             if (coords.altitude !== null) {
                 document.getElementById('altitudeDisplay').innerText = Math.round(coords.altitude);
@@ -381,6 +449,9 @@
 
             const displaySpeed = currentUnit === 'kmh' ? speedKmh : speedMph;
             document.getElementById('speedDisplay').innerText = displaySpeed.toFixed(1);
+
+            // Aktualizacja wskazań przyspieszenia
+            document.getElementById('accelDisplay').innerText = currentAccel.toFixed(1);
 
             const currentMaxKmh = maxSpeed * 3.6;
             if (speedKmh > currentMaxKmh) {
@@ -434,6 +505,42 @@
             document.getElementById('timeDisplay').innerText = `${hours}:${minutes}:${seconds}`;
         }
 
+        // Eksport do wskazanego formatu JSON
+        function exportData() {
+            const avgMps = elapsedTime > 0 ? totalDistance / elapsedTime : 0;
+            
+            // Mapowanie naszych danych GPS do żądanej struktury Counters JSON
+            const statItems = [
+                { name: "Max Prędkość (km/h)", value: parseFloat((maxSpeed * 3.6).toFixed(1)), id: generateId() },
+                { name: "Dystans (km)", value: parseFloat((totalDistance / 1000).toFixed(2)), id: generateId() },
+                { name: "Czas Trasy (s)", value: elapsedTime, id: generateId() },
+                { name: "Średnia Prędkość (km/h)", value: parseFloat((avgMps * 3.6).toFixed(1)), id: generateId() },
+                { name: "Max Przyspieszenie (m/s2)", value: parseFloat(maxAccel.toFixed(1)), id: generateId() },
+                { name: "Zapisane Punkty GPS", value: routeData.length, id: generateId() }
+            ];
+
+            const exportObj = [
+                {
+                    name: `Trasa GPS ${new Date().toLocaleDateString()}`,
+                    items: statItems,
+                    id: generateId(),
+                    liveSyncTargets: []
+                }
+            ];
+
+            const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `velocify_statystyki_${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showMessage('Eksport Zakończony', 'Plik w wymaganym formacie JSON został pobrany na Twoje urządzenie.', false);
+        }
+
         function resetTrip() {
             if(isTracking) {
                 stopTracking();
@@ -444,12 +551,22 @@
             elapsedTime = 0;
             currentSpeedMps = 0;
             
+            lastSpeedMps = null;
+            lastSpeedTime = null;
+            currentAccel = 0;
+            maxAccel = 0;
+            routeData = [];
+
+            localStorage.removeItem('velocify_route');
+            document.cookie = "velocify_summary=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            
             document.getElementById('speedDisplay').innerText = '0.0';
             document.getElementById('maxSpeedDisplay').innerText = '0.0';
             document.getElementById('distanceDisplay').innerText = '0.00';
             document.getElementById('altitudeDisplay').innerText = '0';
             document.getElementById('timeDisplay').innerText = '00:00:00';
             document.getElementById('avgSpeedDisplay').innerText = '0.0';
+            document.getElementById('accelDisplay').innerText = '0.0';
             document.getElementById('accuracyDisplay').innerHTML = '<i class="fa-solid fa-satellite-dish mr-1"></i> Accuracy: -- m';
             
             document.getElementById('needleContainer').style.transform = `rotate(-135deg)`;
