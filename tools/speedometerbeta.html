@@ -1,195 +1,228 @@
 <!DOCTYPE html>
-<html lang="pl" class="dark">
+<html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GPS Speedometer & Trip Computer</title>
-    <!-- Tailwind CSS for modern styling -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
+                    fontFamily: {
+                        outfit: ['Outfit', 'sans-serif'],
+                    },
                     colors: {
-                        darkBg: '#0b0f19',
-                        cardBg: '#131c2e',
-                        accent: '#06b6d4',
-                        accentGlow: 'rgba(6, 182, 212, 0.4)',
+                        csAccent: '#ffd89b',
+                        csDark: '#19547b',
+                        glassBg: 'rgba(255, 255, 255, 0.07)',
+                        glassBorder: 'rgba(255, 255, 255, 0.2)',
+                        glassPanel: 'rgba(0, 0, 0, 0.3)',
+                        csRed: '#ff6b6b',
+                        csRedBg: 'rgba(255, 107, 107, 0.1)',
+                        csRedBorder: 'rgba(255, 107, 107, 0.3)',
+                        csGreen: '#4CAF50',
+                        csGreenBg: 'rgba(76, 175, 80, 0.1)',
+                        csGreenBorder: 'rgba(76, 175, 80, 0.3)',
+                        csYellow: '#FFC107',
+                        csYellowBg: 'rgba(255, 193, 7, 0.1)',
+                        csYellowBorder: 'rgba(255, 193, 7, 0.3)',
+                    },
+                    backgroundImage: {
+                        'cs-gradient': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        'cs-accent-grad': 'linear-gradient(135deg, #ffd89b 0%, #19547b 100%)',
                     }
                 }
             }
         }
     </script>
-    <!-- FontAwesome for crisp icons -->
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@600;700;900&display=swap" rel="stylesheet">
+    <!-- Google Fonts Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Outfit', sans-serif;
+            transition: background 0.4s ease, color 0.4s ease;
         }
-        .digital-font {
-            font-family: 'Orbitron', sans-serif;
+        
+        .glass-container {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(25px);
+            border-radius: 35px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.4s ease;
         }
-        .gauge-shadow {
-            box-shadow: inset 0 0 25px rgba(6, 182, 212, 0.15), 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+
+        .glass-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
         }
+
         .glow-text {
-            text-shadow: 0 0 12px rgba(6, 182, 212, 0.6);
+            text-shadow: 0 0 15px rgba(255, 216, 155, 0.4);
         }
-        .glow-btn {
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.35);
+
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
         }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
     </style>
 </head>
-<body class="bg-darkBg text-slate-100 min-h-screen flex flex-col items-center justify-between p-4 selection:bg-cyan-500 selection:text-white">
+<body class="bg-cs-gradient text-white min-h-screen flex items-center justify-center p-4 sm:p-8 selection:bg-csAccent selection:text-black font-outfit">
 
-    <header class="w-full max-w-md flex items-center justify-between py-2 px-1">
-        <div class="flex items-center space-x-2">
-            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center glow-btn">
-                <i class="fa-solid fa-gauge-high text-white text-lg"></i>
-            </div>
-            <h1 class="font-bold text-lg tracking-wide bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Velocify GPS</h1>
-        </div>
-        <div class="flex items-center space-x-3">
-            <!-- Unit Toggle -->
-            <button id="unitToggle" onclick="toggleUnits()" class="px-3 py-1.5 rounded-lg bg-cardBg border border-slate-800 text-xs font-semibold hover:border-cyan-500/50 transition flex items-center space-x-1.5 shadow-inner">
-                <i class="fa-solid fa-earth-americas text-cyan-400"></i>
-                <span id="unitLabel">KM/H</span>
-            </button>
-            <!-- GPS Status Badge -->
-            <div id="gpsStatusBadge" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-red-950/40 border border-red-900/50 text-red-400 text-xs font-medium">
-                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse" id="gpsDot"></span>
-                <span id="gpsText">Szukam GPS...</span>
-            </div>
-        </div>
-    </header>
-
-    <main class="w-full max-w-md flex flex-col items-center my-auto space-y-6">
+    <div class="glass-container w-full max-w-md flex flex-col p-6 space-y-8 relative overflow-hidden">
         
-        <!-- Analog & Digital Speed Gauge Container -->
-        <div class="relative w-72 h-72 sm:w-80 sm:h-80 rounded-full bg-cardBg gauge-shadow border border-slate-800/80 flex items-center justify-center p-4">
+        <!-- Header -->
+        <header class="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between w-full">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight flex items-baseline gap-2">
+                    Velocify <span class="text-[0.4em] font-semibold bg-white/15 px-2.5 py-1 rounded-lg text-csAccent opacity-90 tracking-normal">v3</span>
+                </h1>
+                <p class="text-xs opacity-50 mt-1 font-medium">GPS Analytics Studio</p>
+            </div>
+            <div class="flex items-center space-x-3 self-end sm:self-auto">
+                <!-- Unit Toggle -->
+                <button id="unitToggle" onclick="toggleUnits()" class="glass-panel px-4 py-2 text-xs font-semibold hover:bg-white/10 rounded-[12px] flex items-center space-x-1.5 shadow-sm">
+                    <i class="fa-solid fa-earth-americas text-csAccent"></i>
+                    <span id="unitLabel">KM/H</span>
+                </button>
+                <!-- GPS Status Badge -->
+                <div id="gpsStatusBadge" class="flex items-center space-x-2 px-3 py-2 rounded-[12px] bg-csRedBg border border-csRedBorder text-csRed text-xs font-bold">
+                    <span class="w-2 h-2 rounded-full bg-csRed animate-pulse" id="gpsDot"></span>
+                    <span id="gpsText">No Signal</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="w-full flex flex-col items-center space-y-6 flex-1">
             
-            <!-- SVG Gauge Scale Marks & Ticks -->
-            <svg class="absolute inset-0 w-full h-full p-4" viewBox="0 0 200 200">
-                <!-- Outer decorative circle -->
-                <circle cx="100" cy="100" r="88" fill="none" stroke="#1e293b" stroke-width="2" stroke-dasharray="4 4" />
-                <!-- Active track arc background -->
-                <circle cx="100" cy="100" r="78" fill="none" stroke="#1e293b" stroke-width="6" stroke-linecap="round" stroke-dasharray="367" stroke-dashoffset="95" transform="rotate(135 100 100)" />
-                <!-- Progress track arc (usunięto transition-all, ponieważ JS będzie animować to płynnie) -->
-                <circle id="progressArc" cx="100" cy="100" r="78" fill="none" stroke="url(#cyanGradient)" stroke-width="6" stroke-linecap="round" stroke-dasharray="367" stroke-dashoffset="367" transform="rotate(135 100 100)" />
+            <!-- Analog & Digital Speed Gauge Container -->
+            <div class="relative w-64 h-64 sm:w-80 sm:h-80 rounded-full glass-panel flex items-center justify-center p-4 shadow-[0_15px_40px_rgba(0,0,0,0.3)] hover:border-csAccent transition-colors duration-500">
                 
-                <defs>
-                    <linearGradient id="cyanGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#06b6d4" />
-                        <stop offset="100%" stop-color="#3b82f6" />
-                    </linearGradient>
-                </defs>
-            </svg>
+                <!-- SVG Gauge Scale Marks & Ticks -->
+                <svg class="absolute inset-0 w-full h-full p-5" viewBox="0 0 200 200">
+                    <!-- Outer decorative circle -->
+                    <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2" stroke-dasharray="4 4" />
+                    <!-- Active track arc background -->
+                    <circle cx="100" cy="100" r="78" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="8" stroke-linecap="round" stroke-dasharray="367" stroke-dashoffset="95" transform="rotate(135 100 100)" />
+                    <!-- Progress track arc -->
+                    <circle id="progressArc" cx="100" cy="100" r="78" fill="none" stroke="url(#csGradient)" stroke-width="8" stroke-linecap="round" stroke-dasharray="367" stroke-dashoffset="367" transform="rotate(135 100 100)" class="transition-all duration-300" />
+                    
+                    <defs>
+                        <linearGradient id="csGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#ffd89b" />
+                            <stop offset="100%" stop-color="#19547b" />
+                        </linearGradient>
+                    </defs>
+                </svg>
 
-            <!-- Rotating Needle (usunięto transition, JS robi to płynniej) -->
-            <div id="needleContainer" class="absolute inset-0 flex items-center justify-center pointer-events-none" style="transform: rotate(-135deg);">
-                <div class="w-full h-full relative">
-                    <div class="absolute top-1/2 left-1/2 w-1 h-28 bg-gradient-to-t from-transparent via-cyan-400 to-cyan-300 rounded-full -translate-x-1/2 -translate-y-full glow-text"></div>
+                <!-- Rotating Needle -->
+                <div id="needleContainer" class="absolute inset-0 flex items-center justify-center transition-transform duration-300 ease-out pointer-events-none" style="transform: rotate(-135deg);">
+                    <div class="w-full h-full relative">
+                        <div class="absolute top-1/2 left-1/2 w-1.5 h-[30%] bg-gradient-to-t from-transparent via-csAccent to-[#fff] rounded-full -translate-x-1/2 -translate-y-[90%] drop-shadow-[0_0_8px_rgba(255,216,155,0.8)]"></div>
+                    </div>
+                </div>
+
+                <!-- Center Digital Display -->
+                <div class="relative z-10 flex flex-col items-center justify-center text-center mt-4">
+                    <span id="speedDisplay" class="tabular-nums text-6xl sm:text-7xl font-black text-white glow-text tracking-tighter">0.0</span>
+                    <span id="speedUnitLabel" class="text-xs font-bold text-csAccent uppercase tracking-[0.2em] mt-1">km/h</span>
+                    <div id="accuracyDisplay" class="text-[10px] text-white/60 mt-3 glass-panel px-3 py-1 rounded-[10px]">
+                        <i class="fa-solid fa-satellite-dish mr-1"></i> Accuracy: -- m
+                    </div>
+                </div>
+                
+                <!-- Central Pin -->
+                <div class="absolute w-5 h-5 rounded-full bg-csAccent border-4 border-[rgba(25,84,123,0.8)] z-20 shadow-[0_0_15px_#ffd89b]"></div>
+            </div>
+
+            <!-- Primary Stats Grid -->
+            <div class="w-full grid grid-cols-3 gap-3">
+                <!-- Max Speed Card -->
+                <div class="glass-panel rounded-[20px] p-4 flex flex-col items-center justify-center hover:bg-white/5">
+                    <div class="flex items-center space-x-1.5 text-csAccent text-[10px] uppercase font-bold tracking-wider mb-2">
+                        <i class="fa-solid fa-gauge-high"></i>
+                        <span>Max</span>
+                    </div>
+                    <span id="maxSpeedDisplay" class="tabular-nums text-xl font-bold text-white">0.0</span>
+                    <span id="maxUnitLabel" class="text-[10px] text-white/50 font-medium">km/h</span>
+                </div>
+
+                <!-- Distance Card -->
+                <div class="glass-panel rounded-[20px] p-4 flex flex-col items-center justify-center hover:bg-white/5">
+                    <div class="flex items-center space-x-1.5 text-csAccent text-[10px] uppercase font-bold tracking-wider mb-2">
+                        <i class="fa-solid fa-route"></i>
+                        <span>Distance</span>
+                    </div>
+                    <span id="distanceDisplay" class="tabular-nums text-xl font-bold text-white">0.00</span>
+                    <span id="distanceUnitLabel" class="text-[10px] text-white/50 font-medium">km</span>
+                </div>
+
+                <!-- Altitude Card -->
+                <div class="glass-panel rounded-[20px] p-4 flex flex-col items-center justify-center hover:bg-white/5">
+                    <div class="flex items-center space-x-1.5 text-csAccent text-[10px] uppercase font-bold tracking-wider mb-2">
+                        <i class="fa-solid fa-mountain"></i>
+                        <span>Altitude</span>
+                    </div>
+                    <span id="altitudeDisplay" class="tabular-nums text-xl font-bold text-white">0</span>
+                    <span class="text-[10px] text-white/50 font-medium">m a.s.l.</span>
                 </div>
             </div>
 
-            <!-- Center Digital Display -->
-            <div class="relative z-10 flex flex-col items-center justify-center text-center">
-                <span id="speedDisplay" class="digital-font text-5xl sm:text-6xl font-black text-white glow-text tracking-tight">0.0</span>
-                <span id="speedUnitLabel" class="text-xs font-bold text-cyan-400 uppercase tracking-widest mt-1">km/h</span>
-                <div id="accuracyDisplay" class="text-[10px] text-slate-400 mt-2 bg-slate-900/60 px-2 py-0.5 rounded-full border border-slate-800">
-                    Dokładność: -- m
-                </div>
-            </div>
-            
-            <!-- Central Pin -->
-            <div class="absolute w-4 h-4 rounded-full bg-cyan-400 border-2 border-darkBg z-20 glow-btn"></div>
-        </div>
-
-        <div class="w-full grid grid-cols-3 gap-3">
-            <!-- Max Speed Card -->
-            <div class="bg-cardBg border border-slate-800/80 rounded-2xl p-3.5 flex flex-col items-center justify-center shadow-lg">
-                <div class="flex items-center space-x-1.5 text-slate-400 text-xs mb-1">
-                    <i class="fa-solid fa-gauge text-cyan-400"></i>
-                    <span>MAX</span>
-                </div>
-                <span id="maxSpeedDisplay" class="digital-font text-lg font-bold text-white">0.0</span>
-                <span id="maxUnitLabel" class="text-[10px] text-slate-500">km/h</span>
-            </div>
-
-            <!-- Distance Card -->
-            <div class="bg-cardBg border border-slate-800/80 rounded-2xl p-3.5 flex flex-col items-center justify-center shadow-lg">
-                <div class="flex items-center space-x-1.5 text-slate-400 text-xs mb-1">
-                    <i class="fa-solid fa-route text-cyan-400"></i>
-                    <span>DYSTANS</span>
-                </div>
-                <span id="distanceDisplay" class="digital-font text-lg font-bold text-white">0.00</span>
-                <span id="distanceUnitLabel" class="text-[10px] text-slate-500">km</span>
-            </div>
-
-            <!-- Altitude Card -->
-            <div class="bg-cardBg border border-slate-800/80 rounded-2xl p-3.5 flex flex-col items-center justify-center shadow-lg">
-                <div class="flex items-center space-x-1.5 text-slate-400 text-xs mb-1">
-                    <i class="fa-solid fa-mountain text-cyan-400"></i>
-                    <span>WYSOKOŚĆ</span>
-                </div>
-                <span id="altitudeDisplay" class="digital-font text-lg font-bold text-white">0</span>
-                <span class="text-[10px] text-slate-500">m n.p.m.</span>
-            </div>
-        </div>
-
-        <!-- Secondary Stats Grid (Time & Average Speed) -->
-        <div class="w-full grid grid-cols-2 gap-3">
-            <div class="bg-cardBg border border-slate-800/80 rounded-2xl p-3 flex items-center justify-between px-4">
-                <div class="flex items-center space-x-3">
-                    <div class="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-                        <i class="fa-solid fa-clock text-xs"></i>
+            <!-- Secondary Stats Grid -->
+            <div class="w-full grid grid-cols-2 gap-3">
+                <div class="glass-panel rounded-[20px] p-4 flex items-center space-x-4 hover:bg-white/5">
+                    <div class="w-10 h-10 rounded-[12px] bg-white/10 border border-glassBorder flex items-center justify-center text-csAccent">
+                        <i class="fa-solid fa-clock"></i>
                     </div>
                     <div>
-                        <div class="text-[10px] text-slate-400 font-medium">CZAS PODRÓŻY</div>
-                        <div id="timeDisplay" class="digital-font text-sm font-bold text-white">00:00:00</div>
+                        <div class="text-[10px] text-white/50 font-bold uppercase tracking-wider">Trip Time</div>
+                        <div id="timeDisplay" class="tabular-nums text-base font-bold text-white mt-0.5">00:00:00</div>
                     </div>
                 </div>
-            </div>
 
-            <div class="bg-cardBg border border-slate-800/80 rounded-2xl p-3 flex items-center justify-between px-4">
-                <div class="flex items-center space-x-3">
-                    <div class="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-                        <i class="fa-solid fa-gauge-simple text-xs"></i>
+                <div class="glass-panel rounded-[20px] p-4 flex items-center space-x-4 hover:bg-white/5">
+                    <div class="w-10 h-10 rounded-[12px] bg-white/10 border border-glassBorder flex items-center justify-center text-csAccent">
+                        <i class="fa-solid fa-gauge-simple"></i>
                     </div>
                     <div>
-                        <div class="text-[10px] text-slate-400 font-medium">ŚREDNIA</div>
-                        <div id="avgSpeedDisplay" class="digital-font text-sm font-bold text-white">0.0</div>
+                        <div class="text-[10px] text-white/50 font-bold uppercase tracking-wider">Average</div>
+                        <div id="avgSpeedDisplay" class="tabular-nums text-base font-bold text-white mt-0.5">0.0</div>
                     </div>
                 </div>
             </div>
-        </div>
 
-    </main>
+        </main>
 
-    <footer class="w-full max-w-md pt-2">
-        <div class="flex space-x-3">
-            <button id="startBtn" onclick="toggleTracking()" class="flex-1 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-sm tracking-wide shadow-lg glow-btn hover:opacity-95 transition flex items-center justify-center space-x-2">
-                <i id="startIcon" class="fa-solid fa-play"></i>
-                <span id="startText">ROZPOCZNIJ ŚLEDZENIE</span>
-            </button>
-            <button onclick="resetTrip()" class="px-5 py-4 rounded-2xl bg-cardBg border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 transition flex items-center justify-center" title="Resetuj podsumowanie">
-                <i class="fa-solid fa-rotate-right"></i>
-            </button>
-        </div>
-    </footer>
+        <footer class="w-full pt-2">
+            <div class="flex space-x-3">
+                <button id="startBtn" onclick="toggleTracking()" class="flex-1 py-4 rounded-[16px] bg-cs-accent-grad text-white font-bold text-sm uppercase tracking-wider shadow-lg hover:brightness-110 hover:scale-[1.02] transition-all flex items-center justify-center space-x-2 border border-glassBorder">
+                    <i id="startIcon" class="fa-solid fa-play"></i>
+                    <span id="startText">Start Tracking</span>
+                </button>
+                <button onclick="resetTrip()" class="px-6 py-4 rounded-[16px] glass-panel text-white/80 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center shadow-lg" title="Reset Trip">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+        </footer>
+    </div>
 
     <!-- Custom Modal for Alerts/Messages -->
-    <div id="messageModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-cardBg border border-slate-800 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl">
-            <div id="modalIconContainer" class="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto mb-4 text-2xl">
+    <div id="messageModal" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[rgba(15,15,35,0.98)] border border-csAccent rounded-[25px] max-w-sm w-full p-8 text-center shadow-[0_0_60px_rgba(0,0,0,0.9)]">
+            <div id="modalIconContainer" class="w-16 h-16 rounded-[16px] bg-white/10 border border-glassBorder text-csAccent flex items-center justify-center mx-auto mb-5 text-3xl">
                 <i id="modalIcon" class="fa-solid fa-circle-info"></i>
             </div>
-            <h3 id="modalTitle" class="text-lg font-bold text-white mb-2">Powiadomienie</h3>
-            <p id="modalMessage" class="text-sm text-slate-400 mb-6">Treść wiadomości...</p>
-            <button onclick="closeModal()" class="w-full py-3 rounded-xl bg-cyan-500 text-white font-semibold text-sm glow-btn hover:bg-cyan-400 transition">Rozumiem</button>
+            <h3 id="modalTitle" class="text-xl font-bold text-white mb-2 tracking-tight">Notification</h3>
+            <p id="modalMessage" class="text-sm text-white/70 mb-8 leading-relaxed">Message content...</p>
+            <button onclick="closeModal()" class="w-full py-3.5 rounded-[12px] glass-panel text-white font-semibold hover:bg-csAccent hover:text-black hover:border-transparent transition duration-300">Got it</button>
         </div>
     </div>
 
@@ -197,20 +230,15 @@
         // Application State
         let isTracking = false;
         let watchId = null;
-        let currentUnit = 'kmh'; // 'kmh' or 'mph'
+        let currentUnit = 'kmh'; 
         
         let maxSpeed = 0;
-        let totalDistance = 0; // in meters
+        let totalDistance = 0; 
         let lastCoords = null;
         let startTime = null;
         let elapsedTime = 0;
         let timerInterval = null;
 
-        // Smooth Animation Variables
-        let targetSpeedMps = 0;    // Rzeczywista prędkość z GPS
-        let displayedSpeedMps = 0; // Wygładzona, "wyświetlana" prędkość (płynnie dąży do targetu)
-
-        // Max scale values for the gauge needle rotation
         const MAX_GAUGE_SPEED_KMH = 160;
         const MAX_GAUGE_SPEED_MPH = 100;
 
@@ -221,10 +249,10 @@
             const iconContainer = document.getElementById('modalIconContainer');
             
             if(isError) {
-                iconContainer.className = "w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto mb-4 text-2xl";
+                iconContainer.className = "w-16 h-16 rounded-[16px] bg-csRedBg border border-csRedBorder text-csRed flex items-center justify-center mx-auto mb-5 text-3xl";
                 iconEl.className = "fa-solid fa-triangle-exclamation";
             } else {
-                iconContainer.className = "w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto mb-4 text-2xl";
+                iconContainer.className = "w-16 h-16 rounded-[16px] bg-white/10 border border-glassBorder text-csAccent flex items-center justify-center mx-auto mb-5 text-3xl";
                 iconEl.className = "fa-solid fa-circle-info";
             }
             document.getElementById('messageModal').classList.remove('hidden');
@@ -240,8 +268,10 @@
             document.getElementById('speedUnitLabel').innerText = currentUnit === 'kmh' ? 'km/h' : 'mph';
             document.getElementById('maxUnitLabel').innerText = currentUnit === 'kmh' ? 'km/h' : 'mph';
             
-            updateStats();
+            updateDisplays(currentSpeedMps);
         }
+
+        let currentSpeedMps = 0;
 
         function toggleTracking() {
             if (!isTracking) {
@@ -253,7 +283,7 @@
 
         function startTracking() {
             if (!navigator.geolocation) {
-                showMessage('Błąd GPS', 'Twoja przeglądarka nie wspiera geolokalizacji.', true);
+                showMessage('GPS Error', 'Twoja przeglądarka nie wspiera geolokalizacji.', true);
                 return;
             }
 
@@ -267,17 +297,17 @@
             startTime = Date.now() - (elapsedTime * 1000);
             timerInterval = setInterval(updateTimer, 1000);
 
-            // Update UI buttons
+            // Update UI buttons - Delete/Stop State
             const startBtn = document.getElementById('startBtn');
-            startBtn.className = "flex-1 py-4 rounded-2xl bg-red-600 text-white font-bold text-sm tracking-wide shadow-lg hover:bg-red-500 transition flex items-center justify-center space-x-2";
+            startBtn.className = "flex-1 py-4 rounded-[16px] bg-csRedBg border border-csRedBorder text-csRed font-bold text-sm uppercase tracking-wider shadow-lg hover:bg-csRed/20 transition-all flex items-center justify-center space-x-2";
             document.getElementById('startIcon').className = "fa-solid fa-stop";
-            document.getElementById('startText').innerText = "ZATRZYMAJ ŚLEDZENIE";
+            document.getElementById('startText').innerText = "Stop Tracking";
 
-            // Update GPS status
+            // Update GPS status - Connecting State
             const badge = document.getElementById('gpsStatusBadge');
-            badge.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-yellow-950/40 border border-yellow-900/50 text-yellow-400 text-xs font-medium";
-            document.getElementById('gpsDot').className = "w-2 h-2 rounded-full bg-yellow-500 animate-pulse";
-            document.getElementById('gpsText').innerText = "Łączenie...";
+            badge.className = "flex items-center space-x-2 px-3 py-2 rounded-[12px] bg-csYellowBg border border-csYellowBorder text-csYellow text-xs font-bold";
+            document.getElementById('gpsDot').className = "w-2 h-2 rounded-full bg-csYellow animate-pulse shadow-[0_0_8px_#FFC107]";
+            document.getElementById('gpsText').innerText = "Connecting...";
 
             watchId = navigator.geolocation.watchPosition(successPosition, errorPosition, options);
         }
@@ -292,51 +322,45 @@
                 clearInterval(timerInterval);
                 timerInterval = null;
             }
-            
-            targetSpeedMps = 0; // Zeruj docelową prędkość, animacja płynnie spadnie do 0
 
-            // Update UI buttons
+            // Update UI buttons - Start State
             const startBtn = document.getElementById('startBtn');
-            startBtn.className = "flex-1 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-sm tracking-wide shadow-lg glow-btn hover:opacity-95 transition flex items-center justify-center space-x-2";
+            startBtn.className = "flex-1 py-4 rounded-[16px] bg-cs-accent-grad text-white font-bold text-sm uppercase tracking-wider shadow-lg hover:brightness-110 hover:scale-[1.02] transition-all flex items-center justify-center space-x-2 border border-glassBorder";
             document.getElementById('startIcon').className = "fa-solid fa-play";
-            document.getElementById('startText').innerText = "ROZPOCZNIJ ŚLEDZENIE";
+            document.getElementById('startText').innerText = "Start Tracking";
 
-            // Update GPS status
+            // Update GPS status - Stopped State
             const badge = document.getElementById('gpsStatusBadge');
-            badge.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-red-950/40 border border-red-900/50 text-red-400 text-xs font-medium";
-            document.getElementById('gpsDot').className = "w-2 h-2 rounded-full bg-red-500 animate-pulse";
-            document.getElementById('gpsText').innerText = "Zatrzymano";
+            badge.className = "flex items-center space-x-2 px-3 py-2 rounded-[12px] bg-csRedBg border border-csRedBorder text-csRed text-xs font-bold";
+            document.getElementById('gpsDot').className = "w-2 h-2 rounded-full bg-csRed shadow-[0_0_8px_#ff6b6b]";
+            document.getElementById('gpsText').innerText = "Stopped";
         }
 
         function successPosition(position) {
             // Update GPS Badge to Active
             const badge = document.getElementById('gpsStatusBadge');
-            badge.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-900/50 text-emerald-400 text-xs font-medium";
-            document.getElementById('gpsDot').className = "w-2 h-2 rounded-full bg-emerald-500";
-            document.getElementById('gpsText').innerText = "GPS Aktywny";
+            badge.className = "flex items-center space-x-2 px-3 py-2 rounded-[12px] bg-csGreenBg border border-csGreenBorder text-csGreen text-xs font-bold";
+            document.getElementById('gpsDot').className = "w-2 h-2 rounded-full bg-csGreen shadow-[0_0_8px_#4CAF50]";
+            document.getElementById('gpsText').innerText = "GPS Active";
 
             const coords = position.coords;
-            document.getElementById('accuracyDisplay').innerText = `Dokładność: ${Math.round(coords.accuracy)} m`;
+            document.getElementById('accuracyDisplay').innerHTML = `<i class="fa-solid fa-satellite-dish mr-1"></i> Accuracy: ${Math.round(coords.accuracy)} m`;
 
-            // Odbiór prędkości jako CELU do płynnej animacji (target)
-            targetSpeedMps = coords.speed !== null && coords.speed >= 0 ? coords.speed : 0;
+            currentSpeedMps = coords.speed !== null && coords.speed >= 0 ? coords.speed : 0;
             
-            // Calculate Distance if previous coordinates exist
             if (lastCoords) {
                 const dist = calculateDistance(lastCoords.latitude, lastCoords.longitude, coords.latitude, coords.longitude);
-                // Filter out small GPS jumps (< 1 meter jitter)
                 if (dist > 1.0) {
                     totalDistance += dist;
                 }
             }
             lastCoords = { latitude: coords.latitude, longitude: coords.longitude };
 
-            // Altitude
             if (coords.altitude !== null) {
                 document.getElementById('altitudeDisplay').innerText = Math.round(coords.altitude);
             }
 
-            updateStats();
+            updateDisplays(currentSpeedMps);
         }
 
         function errorPosition(error) {
@@ -348,77 +372,51 @@
             } else if (error.code === error.TIMEOUT) {
                 msg = "Przekroczono czas oczekiwania na sygnał GPS.";
             }
-            showMessage('Błąd GPS', msg, true);
+            showMessage('GPS Error', msg, true);
         }
 
-        // PĘTLA ANIMACJI PRĘDKOŚCIOMIERZA (Biega w ~60 FPS)
-        function animateSpeedometer() {
-            // Interpolacja liniowa (Lerp) - to odpowiada za "płynność"
-            // Współczynnik 0.04 to szybkość wygładzania. Zmniejsz aby wolniej reagowało, zwiększ by szybciej.
-            displayedSpeedMps += (targetSpeedMps - displayedSpeedMps) * 0.04;
+        function updateDisplays(speedMps) {
+            const speedKmh = speedMps * 3.6;
+            const speedMph = speedMps * 2.23694;
 
-            // Zabezpieczenie przed mikrokalkulacjami
-            if (Math.abs(targetSpeedMps - displayedSpeedMps) < 0.01) {
-                displayedSpeedMps = targetSpeedMps;
-            }
+            const displaySpeed = currentUnit === 'kmh' ? speedKmh : speedMph;
+            document.getElementById('speedDisplay').innerText = displaySpeed.toFixed(1);
 
-            // Convert to display units
-            const displaySpeed = currentUnit === 'kmh' ? (displayedSpeedMps * 3.6) : (displayedSpeedMps * 2.23694);
-            
-            // 1. Zaktualizuj tekst wyświetlacza płynnie
-            document.getElementById('speedDisplay').innerText = Math.max(0, displaySpeed).toFixed(1);
-
-            // 2. Rotate Needle & Arc Progress płynnie
-            const maxGauge = currentUnit === 'kmh' ? MAX_GAUGE_SPEED_KMH : MAX_GAUGE_SPEED_MPH;
-            let percentage = displaySpeed / maxGauge;
-            if (percentage > 1) percentage = 1;
-            if (percentage < 0) percentage = 0;
-
-            const angle = -135 + (percentage * 270);
-            document.getElementById('needleContainer').style.transform = `rotate(${angle}deg)`;
-
-            const strokeDashoffset = 367 - (percentage * 272);
-            document.getElementById('progressArc').style.strokeDashoffset = strokeDashoffset;
-
-            // Wywołaj klatkę w następnym cyklu malowania przeglądarki
-            requestAnimationFrame(animateSpeedometer);
-        }
-
-        // Rozpocznij pętlę animacji na start aplikacji
-        requestAnimationFrame(animateSpeedometer);
-
-        // ODDZIELNE WYLICZENIE STATYSTYK (Aktualizowane skokowo/natychmiast)
-        function updateStats() {
-            // Update Max Speed (Zawsze na podstawie faktycznego targetSpeedMps, by był dokładny)
             const currentMaxKmh = maxSpeed * 3.6;
-            const speedKmh = targetSpeedMps * 3.6;
             if (speedKmh > currentMaxKmh) {
-                maxSpeed = targetSpeedMps;
+                maxSpeed = speedMps;
             }
             const displayMax = currentUnit === 'kmh' ? (maxSpeed * 3.6) : (maxSpeed * 2.23694);
             document.getElementById('maxSpeedDisplay').innerText = displayMax.toFixed(1);
 
-            // Update Average Speed
             if (elapsedTime > 0) {
                 const avgMps = totalDistance / elapsedTime;
                 const displayAvg = currentUnit === 'kmh' ? (avgMps * 3.6) : (avgMps * 2.23694);
                 document.getElementById('avgSpeedDisplay').innerText = displayAvg.toFixed(1);
             }
 
-            // Update Distance (Display in km or miles)
-            let displayDist = totalDistance / 1000; // km
+            let displayDist = totalDistance / 1000; 
             let distUnit = 'km';
             if (currentUnit === 'mph') {
-                displayDist = totalDistance / 1609.34; // miles
+                displayDist = totalDistance / 1609.34; 
                 distUnit = 'mi';
             }
             document.getElementById('distanceDisplay').innerText = displayDist >= 10 ? displayDist.toFixed(1) : displayDist.toFixed(2);
             document.getElementById('distanceUnitLabel').innerText = distUnit;
+
+            const maxGauge = currentUnit === 'kmh' ? MAX_GAUGE_SPEED_KMH : MAX_GAUGE_SPEED_MPH;
+            let percentage = displaySpeed / maxGauge;
+            if (percentage > 1) percentage = 1;
+
+            const angle = -135 + (percentage * 270);
+            document.getElementById('needleContainer').style.transform = `rotate(${angle}deg)`;
+
+            const strokeDashoffset = 367 - (percentage * 272);
+            document.getElementById('progressArc').style.strokeDashoffset = strokeDashoffset;
         }
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            // Haversine formula
-            const R = 6371000; // Earth radius in meters
+            const R = 6371000; 
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -434,32 +432,28 @@
             const minutes = String(Math.floor((elapsedTime % 3600) / 60)).padStart(2, '0');
             const seconds = String(elapsedTime % 60).padStart(2, '0');
             document.getElementById('timeDisplay').innerText = `${hours}:${minutes}:${seconds}`;
-            
-            // Zaktualizuj średnią prędkość co sekundę
-            updateStats();
         }
 
         function resetTrip() {
             if(isTracking) {
                 stopTracking();
             }
-            
-            // Zerowanie zmiennych
             maxSpeed = 0;
             totalDistance = 0;
             lastCoords = null;
             elapsedTime = 0;
+            currentSpeedMps = 0;
             
-            // Animacja prędkościomierza samoczynnie zjedzie w dół płynnie:
-            targetSpeedMps = 0; 
-            
-            // Natychmiastowe resetowanie tekstów w UI
+            document.getElementById('speedDisplay').innerText = '0.0';
             document.getElementById('maxSpeedDisplay').innerText = '0.0';
             document.getElementById('distanceDisplay').innerText = '0.00';
             document.getElementById('altitudeDisplay').innerText = '0';
             document.getElementById('timeDisplay').innerText = '00:00:00';
             document.getElementById('avgSpeedDisplay').innerText = '0.0';
-            document.getElementById('accuracyDisplay').innerText = 'Dokładność: -- m';
+            document.getElementById('accuracyDisplay').innerHTML = '<i class="fa-solid fa-satellite-dish mr-1"></i> Accuracy: -- m';
+            
+            document.getElementById('needleContainer').style.transform = `rotate(-135deg)`;
+            document.getElementById('progressArc').style.strokeDashoffset = 367;
         }
     </script>
 </body>
